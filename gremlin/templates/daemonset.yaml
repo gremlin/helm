@@ -1,0 +1,78 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: {{ include "gremlin.fullname" . }}
+  labels:
+    app.kubernetes.io/name: {{ include "gremlin.name" . }}
+    helm.sh/chart: {{ include "gremlin.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    version: v1
+spec:
+  template:
+    metadata:
+      labels:
+        k8s-app: gremlin
+        version: v1
+    spec:
+      hostPID: {{ .Values.gremlin.hostPID }}
+      hostNetwork: {{ .Values.gremlin.hostNetwork }}
+      containers:
+      - name: {{ .Chart.Name }}
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        args: [ "daemon" ]
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+              - SYS_BOOT
+              - SYS_TIME
+              - KILL
+        env:
+          - name: GREMLIN_TEAM_ID
+            value: {{ .Values.gremlin.teamID }}
+          - name: GREMLIN_TEAM_CERTIFICATE_OR_FILE
+            value: file:///var/lib/gremlin/cert/gremlin.cert
+          - name: GREMLIN_TEAM_PRIVATE_KEY_OR_FILE
+            value: file:///var/lib/gremlin/cert/gremlin.key
+          - name: GREMLIN_IDENTIFIER
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        volumeMounts:
+          - name: docker-sock
+            mountPath: /var/run/docker.sock
+          - name: gremlin-state
+            mountPath: /var/lib/gremlin
+          - name: gremlin-logs
+            mountPath: /var/log/gremlin
+          - name: shutdown-trigger
+            mountPath: /sysrq           
+          - name: gremlin-cert
+            mountPath: /var/lib/gremlin/cert
+            readOnly: true
+      volumes:
+        # Gremlin uses the Docker socket to discover eligible containers to attack,
+        # and to launch Gremlin sidecar containers
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+        # The Gremlin daemon communicates with Gremlin sidecars via its state directory.
+        # This should be shared with the Kubernetes host
+        - name: gremlin-state
+          hostPath:
+            path: /var/lib/gremlin
+        # The Gremlin daemon forwards logs from the Gremlin sidecars to the Gremlin control plane
+        # These logs should be shared with the host
+        - name: gremlin-logs
+          hostPath:
+            path: /var/log/gremlin
+        # If you want to run shutdown attacks on the host, the Gremlin Daemon requires a /proc/sysrq-trigger:/sysrq mount
+        - name: shutdown-trigger
+          hostPath:
+            path: /proc/sysrq-trigger
+        # Distribute the certificate and key
+        - name: gremlin-cert
+          secret:
+            secretName: {{ .Values.gremlin.client.secretName }}
