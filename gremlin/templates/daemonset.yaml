@@ -9,12 +9,23 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     version: v1
 spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "gremlin.name" . }}
   template:
     metadata:
       labels:
-        k8s-app: gremlin
+        app.kubernetes.io/name: {{ include "gremlin.name" . }}
+        helm.sh/chart: {{ include "gremlin.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
         version: v1
     spec:
+      {{- if .Values.nodeSelector }}
+      nodeSelector:
+        {{ .Values.nodeSelector }}
+      {{- end }}
+      name: {{ include "gremlin.name"  . }}
       hostPID: {{ .Values.gremlin.hostPID }}
       hostNetwork: {{ .Values.gremlin.hostNetwork }}
       containers:
