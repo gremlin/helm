@@ -21,9 +21,17 @@ spec:
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         version: v1
     spec:
+      {{- if .Values.affinity }}
+      affinity:
+{{ toYaml .Values.affinity | trimSuffix "\n" | indent 8 }}
+      {{- end }}
       {{- if .Values.nodeSelector }}
       nodeSelector:
-        {{ .Values.nodeSelector }}
+{{ toYaml .Values.nodeSelector | trimSuffix "\n" | indent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | trimSuffix "\n" | indent 8 }}
       {{- end }}
       name: {{ include "gremlin.name"  . }}
       hostPID: {{ .Values.gremlin.hostPID }}
