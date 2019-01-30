@@ -52,9 +52,9 @@ spec:
           - name: GREMLIN_TEAM_ID
             value: {{ .Values.gremlin.teamID }}
           - name: GREMLIN_TEAM_CERTIFICATE_OR_FILE
-            value: file:///var/lib/gremlin/cert/gremlin.cert
+            value: {{ trimSuffix "\n" .Values.gremlin.client.cert }}
           - name: GREMLIN_TEAM_PRIVATE_KEY_OR_FILE
-            value: file:///var/lib/gremlin/cert/gremlin.key
+            value: {{ trimSuffix "\n" .Values.gremlin.client.key }}
           - name: GREMLIN_IDENTIFIER
             valueFrom:
               fieldRef:

@@ -22,3 +22,5 @@ gremlin:
   hostNetwork: false
   client:
     secretName: gremlin-team-cert
+    cert: file:///var/lib/gremlin/cert/gremlin.cert
+    key: file:///var/lib/gremlin/cert/gremlin.key

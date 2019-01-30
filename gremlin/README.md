@@ -12,18 +12,20 @@ cluster.
 The following table lists common configurable parameters of the chart and
 their default values. See values.yaml for all available options.
 
-|       Parameter                        |           Description                       |                         Default                     |
-|----------------------------------------|---------------------------------------------|-----------------------------------------------------|
-| `image.pullPolicy`                     | Container pull policy                       | `Always`                                            |
-| `image.repository`                     | Container image to use                      | `gremlin/gremlin`                                   |
-| `image.tag`                            | Container image tag to deploy               | `latest`                                            |
-| `nodeSelector`                         | Map of node labels for pod assignment       | `{}`                                                |
-| `tolerations`                          | List of node taints to tolerate             | `[]`                                                |
-| `affinity`                             | Map of node/pod affinities                  | `{}`                                                |
-| `gremlin.teamID`                       | Gremlin Team ID to authenticate with        | `""`                                                |
-| `gremlin.hostPID`                      | Enable host-level process killing           | `false`                                             |
-| `gremlin.hostNetwork`                  | Enable host-level network attacks           | `false`                                             |
-| `gremlin.client.secretName`            | Kubernetes secret containing credentials    | `gremlin-team-cert`                                 |
+|       Parameter                        |           Description                                          |                         Default                                             |
+|----------------------------------------|----------------------------------------------------------------|-----------------------------------------------------------------------------|
+| `image.pullPolicy`                     | Container pull policy                                          | `Always`                                                                    |
+| `image.repository`                     | Container image to use                                         | `gremlin/gremlin`                                                           |
+| `image.tag`                            | Container image tag to deploy                                  | `latest`                                                                    |
+| `nodeSelector`                         | Map of node labels for pod assignment                          | `{}`                                                                        |
+| `tolerations`                          | List of node taints to tolerate                                | `[]`                                                                        |
+| `affinity`                             | Map of node/pod affinities                                     | `{}`                                                                        |
+| `gremlin.teamID`                       | Gremlin Team ID to authenticate with                           | `""`                                                                        |
+| `gremlin.hostPID`                      | Enable host-level process killing                              | `false`                                                                     |
+| `gremlin.hostNetwork`                  | Enable host-level network attacks                              | `false`                                                                     |
+| `gremlin.client.secretName`            | Kubernetes secret containing credentials                       | `gremlin-team-cert`                                                         |
+| `gremlin.client.cert`                  | Path to the client cert or the cert material base64 encoded    | `file:///var/lib/gremlin/cert/gremlin.cert`                                 |
+| `gremlin.client.key`                   | Path to the client key or the key material base64 encoded      | `file:///var/lib/gremlin/cert/gremlin.key`                                  |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.
