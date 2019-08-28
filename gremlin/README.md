@@ -56,7 +56,6 @@ helm install --name my-gremlin gremlin/gremlin
 
 ```shell
 helm repo add gremlin https://helm.gremlin.com
-helm install gremlin/gremlin --set gremlin.teamID=YOUR-TEAM-ID
 helm install --name my-gremlin gremlin/gremlin --set gremlin.client.certCreateSecret=true --set-file gremlin.client.certContent=gremlin.cert --set-file gremlin.client.keyContent=gremlin.key
 ```
 
