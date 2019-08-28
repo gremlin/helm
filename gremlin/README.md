@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-* Kubernetes with extensions/v1beta1 available
+* Kubernetes with apps/v1 available
 
 ## Configuration
 
@@ -26,6 +26,9 @@ their default values. See values.yaml for all available options.
 | `gremlin.client.secretName`            | Kubernetes secret containing credentials                       | `gremlin-team-cert`                                                         |
 | `gremlin.client.cert`                  | Path to the client cert or the cert material base64 encoded    | `file:///var/lib/gremlin/cert/gremlin.cert`                                 |
 | `gremlin.client.key`                   | Path to the client key or the key material base64 encoded      | `file:///var/lib/gremlin/cert/gremlin.key`                                  |
+| `gremlin.client.certCreateSecret`                   | Instruct Helm to create a Secret for storing certs/keys      | `false`                                  |
+| `gremlin.client.certContent`                   | ASCII armored client cert material      | `""`                                  |
+| `gremlin.client.keyContent`                   | ASCII armored client key material      | `""`                                  |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.
@@ -34,7 +37,9 @@ Specify each parameter using the `--set key=value[,key=value]` argument to
 
 If you don't already have them available, download you team certificates from the Gremlin app. To do so, go to [Company Settings](https://app.gremlin.com/settings/teams), and select your team. Click on the button labelled `Download` next to `Certificates`. If you don't see a button labelled `Download`, click on `Create New` to generate a new certificate.
 
-When you unzip the downloaded file, you will see two files named `TEAM_NAME-client.priv_key.pem` and `TEAM_NAME-client.pub_cert.pem`. Rename these to `gremlin.key` and `gremlin.cert` respectively, then create a kubernetes secret as follows:
+When you unzip the downloaded file, you will see two files named `TEAM_NAME-client.priv_key.pem` and `TEAM_NAME-client.pub_cert.pem`. Rename these to `gremlin.key` and `gremlin.cert` respectively.
+
+### Deploying with a manually created Kubernetes Secret
 
 ```shell
 kubectl create secret generic gremlin-team-cert --from-file=./gremlin.cert --from-file=./gremlin.key
@@ -45,6 +50,14 @@ Once your secret is created, install this chart with Helm:
 ```shell
 helm repo add gremlin https://helm.gremlin.com
 helm install --name my-gremlin gremlin/gremlin
+```
+
+### Deploying with a Helm created Kubernetes Secret
+
+```shell
+helm repo add gremlin https://helm.gremlin.com
+helm install gremlin/gremlin --set gremlin.teamID=YOUR-TEAM-ID
+helm install --name my-gremlin gremlin/gremlin --set gremlin.client.certCreateSecret=true --set-file gremlin.client.certContent=gremlin.cert --set-file gremlin.client.keyContent=gremlin.key
 ```
 
 ## Uninstall
