@@ -69,7 +69,7 @@ spec:
           - name: gremlin-logs
             mountPath: /var/log/gremlin
           - name: shutdown-trigger
-            mountPath: /sysrq           
+            mountPath: /sysrq
           - name: gremlin-cert
             mountPath: /var/lib/gremlin/cert
             readOnly: true
