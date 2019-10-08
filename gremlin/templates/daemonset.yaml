@@ -59,6 +59,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+          - name: GREMLIN_CLIENT_TAGS
+            value: {{ .Values.gremlin.clientTags }}
         volumeMounts:
           - name: docker-sock
             mountPath: /var/run/docker.sock
