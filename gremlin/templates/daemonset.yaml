@@ -59,6 +59,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+          - name: GREMLIN_DOCKER_IMAGE
+            value: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         volumeMounts:
           - name: docker-sock
             mountPath: /var/run/docker.sock
