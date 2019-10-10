@@ -30,3 +30,19 @@ Create chart name and version as used by the chart label.
 {{- define "gremlin.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{/*
+Create an apparmor profile from the following order of operations:
+1. if `apparmorOverride` has been supplied, use that
+2. if `apparmorOverride` is not supplied, and `hostPID` has been supplied and is `true`: use `unconfined`
+3. None of the above is supplied: use `runtime/default`
+*/}}
+{{- define "gremlin.apparmor" -}}
+{{- if .Values.apparmorOverride -}}
+{{- .Values.apparmorOverride -}}
+{{- else if .values.hostPID -}}
+{{- "unconfined" }}
+{{- else }}
+{{- "runtime/default" }}
+{{- end -}}
+{{- end -}}

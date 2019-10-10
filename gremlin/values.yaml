@@ -9,6 +9,7 @@ image:
 
 nameOverride: ""
 fullnameOverride: ""
+apparmorOverride: ""
 
 nodeSelector: {}
 

@@ -20,6 +20,9 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         version: v1
+      annotations:
+        # Tell the Gremlin Daemon containers to launch in the unconfined
+        container.apparmor.security.beta.kubernetes.io/{{ include "gremlin.fullname" . }}: {{ include "gremlin.apparmor" }}
     spec:
       {{- if .Values.affinity }}
       affinity:
