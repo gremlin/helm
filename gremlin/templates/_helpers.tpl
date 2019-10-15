@@ -40,7 +40,7 @@ Create an apparmor profile from the following order of operations:
 {{- define "gremlin.apparmor" -}}
 {{- if .Values.apparmorOverride -}}
 {{- .Values.apparmorOverride -}}
-{{- else if .values.hostPID -}}
+{{- else if .Values.gremlin.hostPID -}}
 {{- "unconfined" }}
 {{- else }}
 {{- "runtime/default" }}
