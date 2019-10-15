@@ -22,7 +22,7 @@ spec:
         version: v1
       annotations:
         # Tell the Gremlin Daemon containers to launch in the unconfined
-        container.apparmor.security.beta.kubernetes.io/{{ include "gremlin.fullname" . }}: {{ include "gremlin.apparmor" }}
+        container.apparmor.security.beta.kubernetes.io/{{ include "gremlin.fullname" . }}: {{ include "gremlin.apparmor" . }}
     spec:
       {{- if .Values.affinity }}
       affinity:
