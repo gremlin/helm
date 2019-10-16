@@ -26,6 +26,7 @@ their default values. See values.yaml for all available options.
 | `gremlin.client.secretName`            | Kubernetes secret containing credentials                       | `gremlin-team-cert`                                                         |
 | `gremlin.client.cert`                  | Path to the client cert or the cert material base64 encoded    | `file:///var/lib/gremlin/cert/gremlin.cert`                                 |
 | `gremlin.client.key`                   | Path to the client key or the key material base64 encoded      | `file:///var/lib/gremlin/cert/gremlin.key`                                  |
+| `gremlin.client.tags`                  | Comma-separated list of custom tags to assign to this client   | `""`                                                                        |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.
