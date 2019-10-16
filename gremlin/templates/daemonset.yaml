@@ -20,6 +20,9 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         version: v1
+      annotations:
+        # Tell the Gremlin Daemon containers to launch in the unconfined
+        container.apparmor.security.beta.kubernetes.io/{{ include "gremlin.fullname" . }}: {{ include "gremlin.apparmor" . }}
     spec:
       {{- if .Values.affinity }}
       affinity:
@@ -61,6 +64,8 @@ spec:
                 fieldPath: spec.nodeName
           - name: GREMLIN_CLIENT_TAGS
             value: {{ .Values.gremlin.client.tags }}
+          - name: GREMLIN_DOCKER_IMAGE
+            value: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         volumeMounts:
           - name: docker-sock
             mountPath: /var/run/docker.sock
