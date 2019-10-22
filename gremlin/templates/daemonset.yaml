@@ -62,6 +62,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+          - name: GREMLIN_CLIENT_TAGS
+            value: {{ .Values.gremlin.client.tags }}
           - name: GREMLIN_DOCKER_IMAGE
             value: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         volumeMounts:
@@ -72,7 +74,7 @@ spec:
           - name: gremlin-logs
             mountPath: /var/log/gremlin
           - name: shutdown-trigger
-            mountPath: /sysrq           
+            mountPath: /sysrq
           - name: gremlin-cert
             mountPath: /var/lib/gremlin/cert
             readOnly: true
