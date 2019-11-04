@@ -38,7 +38,6 @@ spec:
       tolerations:
 {{ toYaml .Values.tolerations | trimSuffix "\n" | indent 8 }}
       {{- end }}
-      name: {{ include "gremlin.name"  . }}
       hostPID: {{ .Values.gremlin.hostPID }}
       hostNetwork: {{ .Values.gremlin.hostNetwork }}
       containers:
