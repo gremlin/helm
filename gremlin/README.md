@@ -20,6 +20,7 @@ their default values. See values.yaml for all available options.
 | `nodeSelector`                         | Map of node labels for pod assignment                          | `{}`                                                                        |
 | `tolerations`                          | List of node taints to tolerate                                | `[]`                                                                        |
 | `affinity`                             | Map of node/pod affinities                                     | `{}`                                                                        |
+| `gremlin.apparmor`                     | Apparmor profile to set for the Gremlin Daemon                 | `""` (When empty, no profile is set)                                        |
 | `gremlin.teamID`                       | Gremlin Team ID to authenticate with                           | `""`                                                                        |
 | `gremlin.hostPID`                      | Enable host-level process killing                              | `false`                                                                     |
 | `gremlin.hostNetwork`                  | Enable host-level network attacks                              | `false`                                                                     |
@@ -27,8 +28,10 @@ their default values. See values.yaml for all available options.
 | `gremlin.client.cert`                  | Path to the client cert or the cert material base64 encoded    | `file:///var/lib/gremlin/cert/gremlin.cert`                                 |
 | `gremlin.client.key`                   | Path to the client key or the key material base64 encoded      | `file:///var/lib/gremlin/cert/gremlin.key`                                  |
 | `gremlin.client.certCreateSecret`                   | Instruct Helm to create a Secret for storing certs/keys      | `false`                                  |
+| `gremlin.client.tags`                  | Comma-separated list of custom tags to assign to this client   | `""`
 | `gremlin.client.certContent`                   | ASCII armored client cert material      | `""`                                  |
 | `gremlin.client.keyContent`                   | ASCII armored client key material      | `""`                                  |
+
 
 Specify each parameter using the `--set key=value[,key=value]` argument to
 `helm install`.

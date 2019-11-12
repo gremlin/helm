@@ -17,6 +17,7 @@ tolerations: []
 affinity: {}
 
 gremlin:
+  apparmor: ""
   teamID: ""
   hostPID: false
   hostNetwork: false
@@ -24,6 +25,7 @@ gremlin:
     secretName: gremlin-team-cert
     cert: file:///var/lib/gremlin/cert/gremlin.cert
     key: file:///var/lib/gremlin/cert/gremlin.key
+    tags: ""
 
     # # Uncomment and fill this block to have Helm create the secret
     # # populated with your Gremlin key and cert
