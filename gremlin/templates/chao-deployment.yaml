@@ -1,0 +1,49 @@
+{{ if .Values.gremlin.installK8sClient }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/instance: chao
+    app.kubernetes.io/name: chao
+    app.kubernetes.io/version: "1"
+  name: chao
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: chao
+      app.kubernetes.io/name: chao
+      app.kubernetes.io/version: "1"
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/instance: chao
+        app.kubernetes.io/name: chao
+        app.kubernetes.io/version: "1"
+    spec:
+      serviceAccountName: chao
+      containers:
+        - image: gremlin/chao:latest
+          args:
+          - "-team_id"
+          - {{ .Values.gremlin.teamID }}
+          - "-cluster_id"
+          - {{ .Values.gremlin.clusterID }}
+          - "-cert_path"
+          - "/var/lib/gremlin/cert/gremlin.cert"
+          - "-key_path"
+          - "/var/lib/gremlin/cert/gremlin.key"
+          imagePullPolicy: Always
+          name: chao
+          volumeMounts:
+          - name: gremlin-cert
+            mountPath: /var/lib/gremlin/cert
+            readOnly: true
+      volumes:
+      - name: gremlin-cert
+        secret:
+          secretName: gremlin-team-cert
+---
+{{ end }}
+
