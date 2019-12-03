@@ -38,7 +38,7 @@ Specify each parameter using the `--set[-file] key=value[,key=value]` argument t
 
 ## Installation
 
-All Gremlin installations require authentication with our Gremlin control plane. There are two types of authentication available to Gremlin and Helm: `certificate`, and `secret`. You can find out more about these authentication types here.
+All Gremlin installations require authentication with our Gremlin control plane. There are two types of authentication available to Gremlin and Helm: `certificate`, and `secret`. You can find out more about these authentication types [here](https://www.gremlin.com/docs/infrastructure-layer/authentication/).
 
 For this Helm chart, you'll need to download your team certificate or team secret from the Gremlin app.
 
