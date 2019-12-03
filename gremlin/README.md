@@ -43,67 +43,37 @@ If you don't already have them available, download you team certificates from th
 
 When you unzip the downloaded file, you will see two files named `TEAM_NAME-client.priv_key.pem` and `TEAM_NAME-client.pub_cert.pem`. Rename these to `gremlin.key` and `gremlin.cert` respectively.
 
-### Deploying with a manually created Kubernetes Secret
-
-```shell
-kubectl create secret generic gremlin-team-cert --from-file=./gremlin.cert --from-file=./gremlin.key
-```
-
-Once your secret is created, install this chart with Helm:
-
-```shell
-helm repo add gremlin https://helm.gremlin.com
-helm install --name my-gremlin gremlin/gremlin
-```
-
-### Deploying with a Helm created Kubernetes Secret
-
-```shell
-helm repo add gremlin https://helm.gremlin.com
-helm install --name my-gremlin gremlin/gremlin --set gremlin.client.certCreateSecret=true --set-file gremlin.client.certContent=gremlin.cert --set-file gremlin.client.keyContent=gremlin.key
-```
-
-## Uninstall
-
-```shell
-helm delete my-gremlin
-```
-
-To delete the deployment and its history:
-```shell
-helm delete --purge my-gremlin
-```
-
-### Deployment Examples
-
-#### With Managed Secrets
+### With Managed Secrets
 
 Some find it preferable to have this chart manage Gremlin's secret values instead of administrating them outside of Helm.
 
-```shell
-helm install gremlin/gremlin \
-    --name gremlin \
-    --namespace gremlin \
-    --set      gremlin.secret.managed=true \
-    --set      gremlin.secret.teamID=deadbeef \
-    --set      gremlin.secret.clusterID=my-cluster \
-    --set-file gremlin.secret.certificate=gremlin.cert \
-    --set-file gremlin.secret.key=gremlin.key
-```
+#### For certificate auth
 
 ```shell
 helm install gremlin/gremlin \
     --name gremlin \
     --namespace gremlin \
     --set      gremlin.secret.managed=true \
-    --set      gremlin.secret.managed=true \
-    --set      gremlin.secret.teamID=deadbeef \
-    --set      gremlin.secret.clusterID=my-cluster \
-    --set-file gremlin.secret.certificate=gremlin.cert \
-    --set-file gremlin.secret.teamSecret=5ec4e7
+    --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
+    --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
+    --set-file gremlin.secret.certificate=/path/to/gremlin.cert \
+    --set-file gremlin.secret.key=/path/to/gremlin.key
 ```
 
-#### Without Managed Secrets
+#### For secret auth
+
+```shell
+helm install gremlin/gremlin \
+    --name gremlin \
+    --namespace gremlin \
+    --set gremlin.secret.managed=true \
+    --set gremlin.secret.type=secret \
+    --set gremlin.secret.teamID=$GREMLIN_TEAM_ID \
+    --set gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
+    --set gremlin.secret.teamSecret=$GREMLIN_TEAM_SECRET
+```
+
+### Without Managed Secrets
 
 If you do not want this Chart to manage the kubernetes secrets for Gremlin, point this chart to your external secret with `gremlin.secret.name` and `gremlin.secret.type`
 
@@ -111,10 +81,11 @@ If you do not want this Chart to manage the kubernetes secrets for Gremlin, poin
 Create the external secret
 
 ```shell
-kubectl create secret --namespace gremlin \
-    --from-literal=GREMLIN_TEAM_ID=deadbeef \
-    --from-literal=GREMLIN_TEAM_SECRET=5ec4e7 \
-    --from-literal=GREMLIN_CLUSTER_ID=my-cluster
+kubectl create secret generic gremlin-team-secret \
+    --namespace gremlin \
+    --from-literal=GREMLIN_TEAM_ID=$GREMLIN_TEAM_ID \
+    --from-literal=GREMLIN_TEAM_SECRET=$GREMLIN_TEAM_SECRET \
+    --from-literal=GREMLIN_CLUSTER_ID=$GREMLIN_CLUSTER_ID
 ```
 
 Install the Helm chart
@@ -126,14 +97,13 @@ helm install gremlin/gremlin \
     --set gremlin.secret.type=secret # Default is gremlin.secret.type=certificate
 ```
 
-##### For certificate auth
+#### For certificate auth
 
 Create the external secret
 
 ```shell
-kubectl create secret --namespace gremlin \
-    --from-literal=GREMLIN_TEAM_ID=deadbeef \
-    --from-literal=GREMLIN_CLUSTER_ID=my-cluster \
+kubectl create secret generic gremlin-team-cert \
+    --namespace gremlin \
     --from-file=gremlin.cert=/path/to/gremlin.cert \
     --from-file=gremlin.key=/path/to/gremlin.key
 ```
@@ -142,5 +112,16 @@ kubectl create secret --namespace gremlin \
 helm install gremlin/gremlin \
     --name gremlin \
     --set gremlin.secret.name=gremlin-team-cert
+```
+
+## Uninstallation
+
+```shell
+helm delete gremlin
+```
+
+To delete the deployment and its history:
+```shell
+helm delete --purge gremlin
 ```
 
