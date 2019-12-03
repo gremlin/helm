@@ -12,7 +12,14 @@ Add this Chart repo to Helm, and install:
 
 ```console
 helm repo add gremlin https://helm.gremlin.com/
-helm install gremlin/gremlin --set gremlin.teamID=YOUR-TEAM-ID
+helm install gremlin/gremlin \
+    --name gremlin \
+    --namespace gremlin \
+    --set gremlin.secret.managed=true \
+    --set gremlin.secret.type=secret \
+    --set gremlin.secret.teamID=YOUR-TEAM-ID \
+    --set gremlin.secret.clusterID=YOUR-CLUSTER-ID \
+    --set gremlin.secret.teamSecret=YOUR-TEAM-SECRET
 ```
 
 For more detailed instructions, see the chart's documentation [here](https://github.com/gremlin/helm/blob/master/gremlin/README.md).

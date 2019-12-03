@@ -18,18 +18,22 @@ affinity: {}
 
 gremlin:
   apparmor: ""
-  teamID: ""
+  teamID: ""                    # DEPRECATED: moved to gremlin.secret.teamID
+  clusterID: ""                 # DEPRECATED: moved to gremlin.secret.clusterID
   hostPID: false
   hostNetwork: false
   installK8sClient: true
   client:
-    secretName: gremlin-team-cert
-    cert: file:///var/lib/gremlin/cert/gremlin.cert
-    key: file:///var/lib/gremlin/cert/gremlin.key
     tags: ""
-
-    # # Uncomment and fill this block to have Helm create the secret
-    # # populated with your Gremlin key and cert
-    # certCreateSecret: true
-    # certContent: ""
-    # keyContent: ""
+  secret: {}
+    # Gremlin supports both `certificate` and `secret` types
+    # # By default, Gremlin will not manage secret values
+    # # To manage secrets with helm, uncomment the following
+    # NOTE: `certificate`+`key` OR `secret` is required, not both. `type` dictates which will be used
+    # type: certificate
+    # managed: true
+    # teamID: 1d1d1d1d-1d1d-1d1d-1d1d-1d1d1d1d1d1d
+    # clusterID: my-cluster-id
+    # certificate: -----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----
+    # key: -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----
+    # teamSecret: 5ec4e75e-c4e7-5ec4-e75e-c4e75ec4e75e

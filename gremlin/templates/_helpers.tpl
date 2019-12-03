@@ -30,3 +30,38 @@ Create chart name and version as used by the chart label.
 {{- define "gremlin.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{/*
+Because we've evolved the recommended way to pass the secret name over time, we hide the following order of operations behind this computed value:
+In later versions of this chart, we will remove the use of `.Values.gremlin.client.secretName` and the fallback value of `gremlin-team-cert`
+*/}}
+{{- define "gremlin.secretName" -}}
+{{- $defaultName := "" -}}
+{{- if .Values.gremlin.secret.managed -}}
+{{- $defaultName = "gremlin-secret" -}}
+{{- else -}}
+{{- $defaultName = "gremlin-team-cert" -}}
+{{- end -}}
+{{- default .Values.gremlin.client.secretName .Values.gremlin.secret.name | default $defaultName -}}
+{{- end -}}
+
+{{/*
+Create a computed value for the intended Gremlin secret type which can either be `certificate` or `secret`
+*/}}
+{{- define "gremlin.secretType" -}}
+{{- if .Values.gremlin.secret.type -}}
+{{- .Values.gremlin.secret.type -}}
+{{- else -}}
+{{- if .Values.gremlin.client.certCreateSecret -}}
+{{- "certificate" -}}
+{{- else if .Values.gremlin.secret.managed -}}
+{{- if .Values.gremlin.secret.teamSecret -}}
+{{- "secret" -}}
+{{- else -}}
+{{- "certificate" -}}
+{{- end -}}
+{{- else -}}
+{{- "certificate" -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
