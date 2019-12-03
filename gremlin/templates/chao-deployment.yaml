@@ -25,17 +25,44 @@ spec:
       serviceAccountName: chao
       containers:
         - image: gremlin/chao:latest
+          env:
+            - name: GREMLIN_TEAM_ID
+{{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
+{{- if (and (not .Values.gremlin.secret.managed) (default .Values.gremlin.teamID .Values.gremlin.secret.teamID)) }}
+              value: {{ default .Values.gremlin.teamID .Values.gremlin.secret.teamID | quote }}
+{{- else }}
+              valueFrom:
+                secretKeyRef:
+                  name:  {{ include "gremlin.secretName" . }}
+                  key: GREMLIN_TEAM_ID
+{{- end }}
+            - name: GREMLIN_CLUSTER_ID
+{{- /* If we aren't managing this secret and a clusterID was supplied, assume clusterID is not in the external secret */}}
+{{- if (and (not .Values.gremlin.secret.managed) (default .Values.gremlin.clusterID .Values.gremlin.secret.clusterID)) }}
+              value: {{ default .Values.gremlin.clusterID .Values.gremlin.secret.clusterID | quote }}
+{{- else }}
+              valueFrom:
+                secretKeyRef:
+                  name:  {{ include "gremlin.secretName" . }}
+                  key: GREMLIN_CLUSTER_ID
+{{- end }}
+{{- if (eq (include "gremlin.secretType" .) "secret") }}
+            - name: GREMLIN_TEAM_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gremlin.secretName" . }}
+                  key: GREMLIN_TEAM_SECRET
+{{- end }}
+{{- if (eq (include "gremlin.secretType" .) "certificate") }}
           args:
-          - "-team_id"
-          - {{ .Values.gremlin.teamID }}
-          - "-cluster_id"
-          - {{ .Values.gremlin.clusterID }}
           - "-cert_path"
           - "/var/lib/gremlin/cert/gremlin.cert"
           - "-key_path"
           - "/var/lib/gremlin/cert/gremlin.key"
+{{- end }}
           imagePullPolicy: Always
           name: chao
+{{- if (eq (include "gremlin.secretType" .) "certificate") }}
           volumeMounts:
           - name: gremlin-cert
             mountPath: /var/lib/gremlin/cert
@@ -43,7 +70,8 @@ spec:
       volumes:
       - name: gremlin-cert
         secret:
-          secretName: gremlin-team-cert
+          secretName: {{ include "gremlin.secretName" . }}
+{{ end }}
 ---
 {{ end }}
 

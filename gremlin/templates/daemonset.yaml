@@ -55,11 +55,28 @@ spec:
               - KILL
         env:
           - name: GREMLIN_TEAM_ID
-            value: {{ .Values.gremlin.teamID }}
+            {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
+            {{- if (and (not .Values.gremlin.secret.managed) (default .Values.gremlin.teamID .Values.gremlin.secret.teamID)) }}
+            value: {{ default .Values.gremlin.teamID .Values.gremlin.secret.teamID | quote }}
+            {{- else }}
+            valueFrom:
+              secretKeyRef:
+                name:  {{ include "gremlin.secretName" . }}
+                key: GREMLIN_TEAM_ID
+            {{- end }}
+
+          {{- if (eq (include "gremlin.secretType" .) "secret") }}
+          - name: GREMLIN_TEAM_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: {{ include "gremlin.secretName" . }}
+                key: GREMLIN_TEAM_SECRET
+          {{- else }}
           - name: GREMLIN_TEAM_CERTIFICATE_OR_FILE
-            value: {{ trimSuffix "\n" .Values.gremlin.client.cert }}
+            value: file:///var/lib/gremlin/cert/gremlin.cert
           - name: GREMLIN_TEAM_PRIVATE_KEY_OR_FILE
-            value: {{ trimSuffix "\n" .Values.gremlin.client.key }}
+            value: file:///var/lib/gremlin/cert/gremlin.key
+          {{- end }}
           - name: GREMLIN_IDENTIFIER
             valueFrom:
               fieldRef:
@@ -77,9 +94,11 @@ spec:
             mountPath: /var/log/gremlin
           - name: shutdown-trigger
             mountPath: /sysrq
+          {{- if (eq (include "gremlin.secretType" .) "certificate") }}
           - name: gremlin-cert
             mountPath: /var/lib/gremlin/cert
             readOnly: true
+          {{- end }}
       volumes:
         # Gremlin uses the Docker socket to discover eligible containers to attack,
         # and to launch Gremlin sidecar containers
@@ -100,7 +119,8 @@ spec:
         - name: shutdown-trigger
           hostPath:
             path: /proc/sysrq-trigger
-        # Distribute the certificate and key
+        {{- if (eq (include "gremlin.secretType" .) "certificate") }}
         - name: gremlin-cert
           secret:
-            secretName: {{ .Values.gremlin.client.secretName }}
+            secretName: {{ include "gremlin.secretName" . }}
+        {{- end }}
