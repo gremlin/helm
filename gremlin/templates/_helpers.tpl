@@ -46,7 +46,7 @@ In later versions of this chart, we will remove the use of `.Values.gremlin.clie
 {{- end -}}
 
 {{/*
-Create a computed value for the inteded Gremlin secret type which can either be `certificate` or `secret`
+Create a computed value for the intended Gremlin secret type which can either be `certificate` or `secret`
 */}}
 {{- define "gremlin.secretType" -}}
 {{- if .Values.gremlin.secret.type -}}
