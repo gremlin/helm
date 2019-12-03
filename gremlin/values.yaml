@@ -32,8 +32,8 @@ gremlin:
     # NOTE: `certificate`+`key` OR `secret` is required, not both. `type` dictates which will be used
     # type: certificate
     # managed: true
-    # teamID: e7352a6b-a9a0-513c-81e4-980f680a70c2
+    # teamID: 1d1d1d1d-1d1d-1d1d-1d1d-1d1d1d1d1d1d
     # clusterID: my-cluster-id
-    # certificate: '-----BEGIN CERTIFICATE-----\nMIIBsjCCAVigAwIBAgIBATAKBggqhkjOPQQDAjBTMSMwIQYDVQQDDBpHcmVtbGlu\nIENsaWVudCBDZXJ0aWZpY2F0ZTEVMBMGA1UECwwMR3JlbWxpbiBJbmMuMRUwEwYD\nVQQKDAxHcmVtbGluIEluYy4wHhcNMTkxMDEwMDY1NDEyWhcNMjAxMDA5MDY1NDEy\nWjBTMSMwIQYDVQQDDBpHcmVtbGluIENsaWVudCBDZXJ0aWZpY2F0ZTEVMBMGA1UE\nCwwMR3JlbWxpbiBJbmMuMRUwEwYDVQQKDAxHcmVtbGluIEluYy4wWTATBgcqhkjO\nPQIBBggqhkjOPQMBBwNCAASibCF99hulTHhlngJE+tf2svxDJYoeo4wdcvneww8e\n7HQsofGjnAZlGRXYo8Fwf4Na+2rV41YYCg/5MOU5Vw9/ox0wGzAJBgNVHRMEAjAA\nMA4GA1UdDwEB/wQEAwIHgDAKBggqhkjOPQQDAgNIADBFAiEAwZjyROE8tBZkf/vA\nIyheUuk8fwjg56eH06c/rnvWUGYCIAaHZL8qryIDbQ/byeQhRezTHOTB8g95SLM8\nScH02pXi\n-----END CERTIFICATE-----\n'
-    # key: '-----BEGIN EC PRIVATE KEY-----\nMHcCAQEEIHgi79kb1QAdfNbi3ZKybeFNklWYfUqxz7mN1dHAaQsCoAoGCCqGSM49\nAwEHoUQDQgAEomwhffYbpUx4ZZ4CRPrX9rL8QyWKHqOMHXL53sMPHux0LKHxo5wG\nZRkV2KPBcH+DWvtq1eNWGAoP+TDlOVcPfw==\n-----END EC PRIVATE KEY-----\n'
+    # certificate: -----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----
+    # key: -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----
     # teamSecret: 5ec4e75e-c4e7-5ec4-e75e-c4e75ec4e75e
