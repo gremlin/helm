@@ -80,7 +80,7 @@ helm delete --purge my-gremlin
 
 Some find it preferable to have this chart manage Gremlin's secret values instead of administrating them outside of Helm.
 
-```
+```shell
 helm install gremlin/gremlin \
     --name gremlin \
     --namespace gremlin \
@@ -91,7 +91,7 @@ helm install gremlin/gremlin \
     --set-file gremlin.secret.key=gremlin.key
 ```
 
-```
+```shell
 helm install gremlin/gremlin \
     --name gremlin \
     --namespace gremlin \
@@ -110,7 +110,7 @@ If you do not want this Chart to manage the kubernetes secrets for Gremlin, poin
 ##### For secret auth
 Create the external secret
 
-```bash
+```shell
 kubectl create secret --namespace gremlin \
     --from-literal=GREMLIN_TEAM_ID=deadbeef \
     --from-literal=GREMLIN_TEAM_SECRET=5ec4e7 \
@@ -119,7 +119,7 @@ kubectl create secret --namespace gremlin \
 
 Install the Helm chart
 
-```bash
+```shell
 helm install gremlin/gremlin \
     --name gremlin \
     --set gremlin.secret.name=gremlin-team-secret \
@@ -130,7 +130,7 @@ helm install gremlin/gremlin \
 
 Create the external secret
 
-```bash
+```shell
 kubectl create secret --namespace gremlin \
     --from-literal=GREMLIN_TEAM_ID=deadbeef \
     --from-literal=GREMLIN_CLUSTER_ID=my-cluster \
@@ -138,7 +138,7 @@ kubectl create secret --namespace gremlin \
     --from-file=gremlin.key=/path/to/gremlin.key
 ```
 
-```
+```shell
 helm install gremlin/gremlin \
     --name gremlin \
     --set gremlin.secret.name=gremlin-team-cert
