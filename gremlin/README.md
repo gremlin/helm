@@ -21,27 +21,36 @@ their default values. See values.yaml for all available options.
 | `tolerations`                          | List of node taints to tolerate                                | `[]`                                                                        |
 | `affinity`                             | Map of node/pod affinities                                     | `{}`                                                                        |
 | `gremlin.apparmor`                     | Apparmor profile to set for the Gremlin Daemon                 | `""` (When empty, no profile is set)                                        |
-| `gremlin.teamID`                       | Gremlin Team ID to authenticate with                           | `""`                                                                        |
-| `gremlin.clusterID`                   | Arbitrary string that uniquely identifies your cluster (e.g. `my-production-cluster`) | `""`                                                                        |
+| `gremlin.secret.managed`               | Specifies whether Gremlin should manage its secrets with Helm  | `false`                                                                     |
+| `gremlin.secret.type`                  | The type of certificate to use, can be either `certificate` or `secret` | `certificate`                                                      |
+| `gremlin.secret.name`                  | The name of certificate to use, like in the case of pointing to an eternally managed secret | `gremlin-team-cert`                            |
+| `gremlin.secret.teamID`                | Gremlin Team ID to authenticate with                           | `""`                                                                        |
+| `gremlin.secret.clusterID`             | Arbitrary string that uniquely identifies your cluster (e.g. `my-production-cluster`) | `""`                                                 |
+| `gremlin.secret.certificate`           | Contents of the certificate. Required if using managed secrets of `type=certificate`  | `""`                                                 |
+| `gremlin.secret.key`                   | Contents of the private key. Required if using managed secrets of `type=certificate`  | `""`                                                 |
+| `gremlin.secret.teamSecret`            | Gremlin's team secret. Required if using managed secrets of `type=secret`  | `""`                                                            |
 | `gremlin.hostPID`                      | Enable host-level process killing                              | `false`                                                                     |
 | `gremlin.hostNetwork`                  | Enable host-level network attacks                              | `false`                                                                     |
-| `gremlin.client.secretName`            | Kubernetes secret containing credentials                       | `gremlin-team-cert`                                                         |
-| `gremlin.client.cert`                  | Path to the client cert or the cert material base64 encoded    | `file:///var/lib/gremlin/cert/gremlin.cert`                                 |
-| `gremlin.client.key`                   | Path to the client key or the key material base64 encoded      | `file:///var/lib/gremlin/cert/gremlin.key`                                  |
-| `gremlin.client.certCreateSecret`      | Instruct Helm to create a Secret for storing certs/keys        | `false`                                                                     |
 | `gremlin.client.tags`                  | Comma-separated list of custom tags to assign to this client   | `""`                                                                        |
-| `gremlin.client.certContent`           | ASCII armored client cert material                             | `""`                                                                        |
-| `gremlin.client.keyContent`            | ASCII armored client key material                              | `""`                                                                        |
 | `gremlin.installK8sClient`             | Enable kubernetes targeting by installing k8s client           |  true                                                                       |
 
-Specify each parameter using the `--set key=value[,key=value]` argument to
-`helm install`.
+Specify each parameter using the `--set[-file] key=value[,key=value]` argument to `helm install`.
 
 ## Installation
 
-If you don't already have them available, download you team certificates from the Gremlin app. To do so, go to [Company Settings](https://app.gremlin.com/settings/teams), and select your team. Click on the button labelled `Download` next to `Certificates`. If you don't see a button labelled `Download`, click on `Create New` to generate a new certificate.
+All Gremlin installations require authentication with our Gremlin control plane. There are two types of authentication available to Gremlin and Helm: `certificate`, and `secret`. You can find out more about these authentication types here.
 
-When you unzip the downloaded file, you will see two files named `TEAM_NAME-client.priv_key.pem` and `TEAM_NAME-client.pub_cert.pem`. Rename these to `gremlin.key` and `gremlin.cert` respectively.
+For this Helm chart, you'll need to download your team certificate or team secret from the Gremlin app.
+
+**Certificate**
+1. go to [Company Settings](https://app.gremlin.com/settings/teams), and select your team, and then `Configuration`
+2. Click on the button labeled `Download` next to `Certificates` (If you don't see a button labelled `Download`, click on `Create New` to generate a new certificate)
+3. When you unzip the downloaded file, you will see two files named `TEAM_NAME-client.priv_key.pem` and `TEAM_NAME-client.pub_cert.pem`. Rename these to `gremlin.key` and `gremlin.cert` respectively. These will be refered to as `/path/to/gremlin.cert` and `/path/to/gremlin.key` in later instructions.
+
+**Secret**
+1. go to [Company Settings](https://app.gremlin.com/settings/teams), and select your team, and then `Configuration`
+2. Click on the button labeled `New` next to `Secret Key` (If you don't see a button labeled `New`, it's already been created. Talk to your administrator who should have the key or click the `Reset` button to create a new one)
+3. You should see a value named `GREMLIN_TEAM_SECRET`, this will be refered to as `$GREMLIN_TEAM_SECRET` in later instructions
 
 ### With Managed Secrets
 
