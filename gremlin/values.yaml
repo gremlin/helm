@@ -7,6 +7,11 @@ image:
   tag: latest
   pullPolicy: Always
 
+chaoimage:
+  repository: gremlin/chao
+  tag: latest
+  pullPolicy: Always
+
 nameOverride: ""
 fullnameOverride: ""
 

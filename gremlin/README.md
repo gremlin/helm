@@ -17,6 +17,9 @@ their default values. See values.yaml for all available options.
 | `image.pullPolicy`                     | Container pull policy                                          | `Always`                                                                    |
 | `image.repository`                     | Container image to use                                         | `gremlin/gremlin`                                                           |
 | `image.tag`                            | Container image tag to deploy                                  | `latest`                                                                    |
+| `chaoimage.pullPolicy`                 | Container pull policy for the `chao` container                 | `Always`                                                                    |
+| `chaoimage.repository`                 | Container image to use for the `chao` container                | `gremlin/chao`                                                              |
+| `chaoimage.tag`                        | Container image tag to deploy for the `chao` container         | `latest`                                                                    |
 | `nodeSelector`                         | Map of node labels for pod assignment                          | `{}`                                                                        |
 | `tolerations`                          | List of node taints to tolerate                                | `[]`                                                                        |
 | `affinity`                             | Map of node/pod affinities                                     | `{}`                                                                        |
