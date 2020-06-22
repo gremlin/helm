@@ -25,6 +25,10 @@ spec:
       serviceAccountName: chao
       containers:
         - image: {{ .Values.chaoimage.repository }}:{{ .Values.chaoimage.tag }}
+        {{- if .Values.resources }}
+          resources:
+{{ toYaml .Values.resources | trimSuffix "\n" | indent 12 }}
+        {{- end }}
           env:
             - name: GREMLIN_TEAM_ID
 {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}

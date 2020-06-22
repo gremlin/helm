@@ -23,6 +23,8 @@ their default values. See values.yaml for all available options.
 | `nodeSelector`                         | Map of node labels for pod assignment                          | `{}`                                                                        |
 | `tolerations`                          | List of node taints to tolerate                                | `[]`                                                                        |
 | `affinity`                             | Map of node/pod affinities                                     | `{}`                                                                        |
+| `resources`                            | Map of node/pod resources                                      | `{}`
+                                                                    |
 | `gremlin.apparmor`                     | Apparmor profile to set for the Gremlin Daemon                 | `""` (When empty, no profile is set)                                        |
 | `gremlin.secret.managed`               | Specifies whether Gremlin should manage its secrets with Helm  | `false`                                                                     |
 | `gremlin.secret.type`                  | The type of certificate to use, can be either `certificate` or `secret` | `certificate`                                                      |
