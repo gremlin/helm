@@ -1,5 +1,5 @@
 name: gremlin
-version: 0.1.8
+version: 0.1.9
 description: The Gremlin Inc client application
 appVersion: "2.12.21"
 apiVersion: v1
@@ -8,4 +8,6 @@ maintainers:
 - name: Sean "thor" Swehla
   email: thor@gremlin.com
 - name: Philip Gebhardt
-  email: phil@gremlin.com
+  email: phil@gremlin.coma
+- name: Kyle Hultman
+  email: kyle@gremlin.com
