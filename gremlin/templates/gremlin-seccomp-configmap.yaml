@@ -12,6 +12,10 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/version: "1"
 data:
+  # The following profile extends Docker's default seccomp profile, adding `keyctl` and `pivot_root` to the list of
+  # allowed syscalls.
+  #
+  # See: https://github.com/moby/moby/blob/master/profiles/seccomp/default.json
   seccomp.json: |
     {
       "defaultAction": "SCMP_ACT_ERRNO",
