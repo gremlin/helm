@@ -7,7 +7,7 @@ Clusters with restrictive PSPs will disallow Gremlin behavior unless a suitable 
 This Helm Chart can create the exact PodSecurityPolicy Gremlin needs when installing with `gremlin.podSecurity.podSecurityPolicy.create=true`.
 
 ```shell
-helm install gremlin ./gremlin \
+helm install gremlin gremlin/gremlin \
     --namespace gremlin \
     --set      gremlin.podSecurity.podSecurityPolicy.create=true \
     --set      gremlin.secret.managed=true \
