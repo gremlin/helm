@@ -12,7 +12,7 @@ helm install gremlin gremlin/gremlin \
     --set      gremlin.podSecurity.securityContextConstraints.create=true \
     --set      gremlin.secret.managed=true \
     --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
-    --set      gremlin.secret.clusterID=phil-minikube \
+    --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
     --set-file gremlin.secret.certificate=$PATH_TO_CERTIFICATE \
     --set-file gremlin.secret.key=$PATH_TO_PRIVATE_KEY
 ```
