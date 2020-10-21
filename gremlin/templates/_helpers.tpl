@@ -102,3 +102,11 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- "" -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "pspApiVersion" -}}
+{{- if .Capabilities.APIVersions.Has "policy/v1/PodSecurityPolicy" -}}
+{{- "policy/v1" -}}
+{{- else -}}
+{{- "policy/v1beta1" -}}
+{{- end -}}
+{{- end -}}

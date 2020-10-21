@@ -1,6 +1,6 @@
 {{ if .Values.gremlin.podSecurity.podSecurityPolicy.create }}
 ---
-apiVersion: policy/v1beta1
+apiVersion: {{ include "pspApiVersion" . }}
 kind: PodSecurityPolicy
 metadata:
   name: chao
