@@ -28,7 +28,7 @@ their default values. See values.yaml for all available options.
 | `gremlin.cgroup.root`                  | Specifies the absolute path for the cgroup controller root on target host systems | `/sys/fs/cgroup` |
 | `gremlin.serviceAccount.create`        | Specifies whether Gremlin's kubernetes service account should be created by this helm chart | `true` | 
 | `gremlin.podSecurity.allowPrivilegeEscalation` | Allows Gremlin containers privilege escalation powers  | `false` | 
-| `gremlin.podSecurity.capabilities`     | Specifies which Linux capabilities should be granted to Gremlin| `[KILL, NET_ADMIN, SYS_BOOT, SYS_TIME, SYS_ADMIN, SYS_PTRACE, SETFCAP, AUDIT_WRITE, MKNOD] |`
+| `gremlin.podSecurity.capabilities`     | Specifies which Linux capabilities should be granted to Gremlin| `[KILL, NET_ADMIN, SYS_BOOT, SYS_TIME, SYS_ADMIN, SYS_PTRACE, SETFCAP, AUDIT_WRITE, MKNOD]` |
 | `gremlin.podSecurity.readOnlyRootFilesystem` | Forces the Gremlin Daemonset containers to run with a read-only root filesystem | `false` |
 | `gremlin.podSecurity.supplementalGroups.rule` | Specifies the Linux groups the Gremlin Daemonset containers should run as | `RunAsAny` | 
 | `gremlin.podSecurity.fsGroup.rule`     | Specifies the Linux groups applied to mounted volumes          | `RunAsAny` | 
@@ -160,3 +160,4 @@ To delete the deployment and its history:
 helm delete --purge gremlin
 ```
 
+[driverexample]: examples/drivers
