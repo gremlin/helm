@@ -24,6 +24,25 @@ their default values. See values.yaml for all available options.
 | `tolerations`                          | List of node taints to tolerate                                | `[]`                                                                        |
 | `affinity`                             | Map of node/pod affinities                                     | `{}`                                                                        |
 | `gremlin.apparmor`                     | Apparmor profile to set for the Gremlin Daemon                 | `""` (When empty, no profile is set)                                        |
+| `gremlin.container.driver`             | Specifies which container driver with which to run Gremlin. [See example][driverexample] | `docker` | 
+| `gremlin.cgroup.root`                  | Specifies the absolute path for the cgroup controller root on target host systems | `/sys/fs/cgroup` |
+| `gremlin.serviceAccount.create`        | Specifies whether Gremlin's kubernetes service account should be created by this helm chart | `true` | 
+| `gremlin.podSecurity.allowPrivilegeEscalation` | Allows Gremlin containers privilege escalation powers  | `false` | 
+| `gremlin.podSecurity.capabilities`     | Specifies which Linux capabilities should be granted to Gremlin| `[KILL, NET_ADMIN, SYS_BOOT, SYS_TIME, SYS_ADMIN, SYS_PTRACE, SETFCAP, AUDIT_WRITE, MKNOD]` |
+| `gremlin.podSecurity.readOnlyRootFilesystem` | Forces the Gremlin Daemonset containers to run with a read-only root filesystem | `false` |
+| `gremlin.podSecurity.supplementalGroups.rule` | Specifies the Linux groups the Gremlin Daemonset containers should run as | `RunAsAny` | 
+| `gremlin.podSecurity.fsGroup.rule`     | Specifies the Linux groups applied to mounted volumes          | `RunAsAny` | 
+| `gremlin.podSecurity.volumes`          | Specifies the volume types the Gremlin Daemonset is allowed to use | `[configMap, secret, hostPath]` | 
+| `gremlin.podSecurity.podSecurityPolicy.create` | When true, Gremlin creates and uses a custom PodSecurityPolicy, granting all behaviors Gremlin needs | `false` |
+| `gremlin.podSecurity.podSecurityPolicy.seLinux` | Sets the SecurityContext for the PSP used by the Gremlin Daemonset | `{ rule: MustRunAs, seLinuxOptions: { type: gremlin.process } }` | 
+| `gremlin.podSecurity.podSecurityPolicy.runAsUser.rule`   | Specifies the Linux user the Gremlin Daemonset containers should run as | `RunAsAny` |
+| `gremlin.podSecurity.securityContextConstraints.create` | When true, Gremlin creates and uses a custom SecurityContextConstraints, granting all behaviors Gremlin needs | `false` |
+| `gremlin.podSecurity.securityContextConstraints.allowHostDirVolumePlugin` | Specifies whether the Gremlin Daemonset has access to host path directories as mounted volumes | `true` |
+| `gremlin.podSecurity.securityContextConstraints.seLinuxContext` | Sets the SecurityContext for the SCC used by the Gremlin Daemonset | `{ type: MustRunAs, seLinuxOptions: { type: gremlin.process } }` |
+| `gremlin.podSecurity.securityContextConstraints.runAsUser.type`   | Specifies the Linux user the Gremlin Daemonset containers should run as | `RunAsAny` |
+| `gremlin.podSecurity.privileged`       | Determines whether the Gremlin Daemonset should run privileged containers | `false` |
+| `gremlin.podSecurity.seccomp.enabled`  | Determines whether the Gremlin Daemonset should be annotated with the seccomp profile | `false` |
+| `gremlin.podSecurity.seccomp.profile`  | Describes the name of the seccomp profile to use               | `localhost/gremlin` |
 | `gremlin.secret.managed`               | Specifies whether Gremlin should manage its secrets with Helm  | `false`                                                                     |
 | `gremlin.secret.type`                  | The type of certificate to use, can be either `certificate` or `secret` | `certificate`                                                      |
 | `gremlin.secret.name`                  | The name of certificate to use, like in the case of pointing to an eternally managed secret | `gremlin-team-cert`                            |
@@ -105,6 +124,7 @@ Install the Helm chart
 ```shell
 helm install gremlin/gremlin \
     --name gremlin \
+    --namespace gremlin \
     --set gremlin.secret.name=gremlin-team-secret \
     --set gremlin.secret.type=secret # Default is gremlin.secret.type=certificate
 ```
@@ -116,6 +136,8 @@ Create the external secret
 ```shell
 kubectl create secret generic gremlin-team-cert \
     --namespace gremlin \
+    --from-literal=GREMLIN_TEAM_ID=$GREMLIN_TEAM_ID \
+    --from-literal=GREMLIN_CLUSTER_ID=$GREMLIN_CLUSTER_ID \
     --from-file=gremlin.cert=/path/to/gremlin.cert \
     --from-file=gremlin.key=/path/to/gremlin.key
 ```
@@ -123,6 +145,7 @@ kubectl create secret generic gremlin-team-cert \
 ```shell
 helm install gremlin/gremlin \
     --name gremlin \
+    --namespace gremlin \
     --set gremlin.secret.name=gremlin-team-cert
 ```
 
@@ -137,3 +160,4 @@ To delete the deployment and its history:
 helm delete --purge gremlin
 ```
 
+[driverexample]: examples/drivers

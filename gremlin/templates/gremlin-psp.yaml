@@ -1,0 +1,49 @@
+{{ if .Values.gremlin.podSecurity.podSecurityPolicy.create }}
+apiVersion: {{ include "pspApiVersion" . }}
+kind: PodSecurityPolicy
+metadata:
+  name: gremlin
+  {{- if or .Values.gremlin.apparmor .Values.gremlin.podSecurity.seccomp.enabled }}
+  annotations:
+    {{- if .Values.gremlin.podSecurity.seccomp.enabled }}
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: {{ join "," .Values.gremlin.podSecurity.seccomp.profile | quote }}
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
+    {{- end }}
+    {{- if .Values.gremlin.apparmor }}
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: {{ .Values.gremlin.apparmor }}
+    apparmor.security.beta.kubernetes.io/defaultProfileName: "runtime/default"
+    {{- end }}
+  {{- end }}
+spec:
+  privileged: {{ .Values.gremlin.podSecurity.privileged }}
+  allowPrivilegeEscalation: {{ .Values.gremlin.podSecurity.allowPrivilegeEscalation }}
+  readOnlyRootFilesystem: {{ .Values.gremlin.podSecurity.readOnlyRootFilesystem }}
+  hostNetwork: {{ .Values.gremlin.hostNetwork }}
+  hostIPC: false
+  hostPID: {{ .Values.gremlin.hostPID }}
+  allowedCapabilities: {{ toYaml .Values.gremlin.podSecurity.capabilities | nindent 4 }}
+  volumes: {{ toYaml .Values.gremlin.podSecurity.volumes | nindent 4 }}
+  runAsUser: {{ toYaml .Values.gremlin.podSecurity.podSecurityPolicy.runAsUser | nindent 4 }}
+  seLinux: {{ toYaml .Values.gremlin.podSecurity.podSecurityPolicy.seLinux | nindent 4 }}
+  supplementalGroups: {{ toYaml .Values.gremlin.podSecurity.supplementalGroups | nindent 4 }}
+  fsGroup: {{ toYaml .Values.gremlin.podSecurity.fsGroup | nindent 4 }}
+  allowedHostPaths:
+    - pathPrefix: /var/lib/gremlin
+      readOnly: false
+    - pathPrefix: /var/log/gremlin
+      readOnly: false
+    - pathPrefix: /proc/sysrq-trigger
+      readOnly: false
+    - pathPrefix: {{ .Values.gremlin.cgroup.root }}
+      readOnly: true
+    - pathPrefix: {{ include "runtimeSocket" . }}
+      readOnly: true
+    {{- if include "runtimeRunc" . }}
+    - pathPrefix: {{ include "runtimeRunc" . }}
+      readOnly: false
+    {{- end }}
+    {{- if and .Values.gremlin.podSecurity.seccomp.enabled (eq "localhost/gremlin" .Values.gremlin.podSecurity.seccomp.profile) }}
+    - pathPrefix: {{ .Values.gremlin.podSecurity.seccomp.root }}
+      readOnly: false
+    {{- end }}
+{{ end }}

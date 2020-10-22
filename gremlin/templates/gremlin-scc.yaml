@@ -1,0 +1,34 @@
+{{ if .Values.gremlin.podSecurity.securityContextConstraints.create }}
+---
+kind: SecurityContextConstraints
+apiVersion: security.openshift.io/v1
+metadata:
+  annotations:
+    kubernetes.io/description: 'This SCC provides as many restrictions from the `restricted` SCC as possible while
+    allowing host mounts, any UID by a pod, and forces the process to run as the gremlin.process SELinux type. This is
+    intended to be used solely by  Gremlin. WARNING: this SCC allows host file system access as root Grant with caution.'
+  name: gremlin
+allowHostDirVolumePlugin: {{ .Values.gremlin.podSecurity.securityContextConstraints.allowHostDirVolumePlugin }}
+allowHostIPC: false
+allowHostNetwork: {{ .Values.gremlin.hostNetwork }}
+allowHostPID: {{ .Values.gremlin.hostPID }}
+allowHostPorts: false
+allowPrivilegeEscalation: {{ .Values.gremlin.podSecurity.allowPrivilegeEscalation }}
+allowPrivilegedContainer: {{ .Values.gremlin.podSecurity.privileged }}
+allowedCapabilities: {{ toYaml .Values.gremlin.podSecurity.capabilities | nindent 2 }}
+defaultAddCapabilities: null
+fsGroup: {{ toYaml .Values.gremlin.podSecurity.fsGroup | nindent 2 }}
+groups: []
+priority: null
+readOnlyRootFilesystem: {{ .Values.gremlin.podSecurity.readOnlyRootFilesystem }}
+requiredDropCapabilities: []
+runAsUser: {{ toYaml .Values.gremlin.podSecurity.securityContextConstraints.runAsUser | nindent 2 }}
+seLinuxContext: {{ toYaml .Values.gremlin.podSecurity.securityContextConstraints.seLinuxContext | nindent 2 }}
+seccompProfiles:
+  - "runtime/default"
+  {{- if .Values.gremlin.podSecurity.seccomp.enabled }}
+  - {{ .Values.gremlin.podSecurity.seccomp.profile | quote }}
+  {{- end }}
+supplementalGroups: {{ toYaml .Values.gremlin.podSecurity.supplementalGroups | nindent 2 }}
+volumes: {{ toYaml .Values.gremlin.podSecurity.volumes | nindent 2 }}
+{{ end }}
