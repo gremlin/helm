@@ -58,6 +58,24 @@ their default values. See values.yaml for all available options.
 
 Specify each parameter using the `--set[-file] key=value[,key=value]` argument to `helm install`.
 
+**Example Usage**
+```
+$ helm install gremlin gremlin/gremlin \
+  --set       gremlin.client.tags="k8s,kubernetes" \
+  --set       gremlin.clusterID=my-cluster \
+  --set       gremlin.hostNetwork=true \
+  --set       gremlin.hostPID=true \
+  --set       gremlin.secret.managed=true \
+  --set       gremlin.secret.type=certificate \
+  --set       gremlin.secret.teamID="$GREMLIN_TEAM_ID" \
+  --set-file  gremlin.secret.certificate=/path/to/gremlin.cert \
+  --set-file  gremlin.secret.key=/path/to/gremlin.key \
+  --set       'tolerations[0].effect=NoSchedule' \
+  --set       'tolerations[0].key=node-role.kubernetes.io/master' \
+  --set       'tolerations[0].operation=Exists'
+```
+_note_: Depending on your shell you may need different quoting around `tolerations[0]`
+
 ## Installation
 
 All Gremlin installations require authentication with our Gremlin control plane. There are two types of authentication available to Gremlin and Helm: `certificate`, and `secret`. You can find out more about these authentication types [here](https://www.gremlin.com/docs/infrastructure-layer/authentication/).
