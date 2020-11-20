@@ -22,9 +22,7 @@ their default values. See values.yaml for all available options.
 | `chaoimage.tag`                        | Container image tag to deploy for the `chao` container         | `latest`                                                                    |
 | `nodeSelector`                         | Map of node labels for pod assignment                          | `{}`                                                                        |
 | `tolerations`                          | List of node taints to tolerate                                | `[]`                                                                        |
-| `affinity`                             | Map of node/pod affinities                                     | `{}`                                                                        |
-| `resources`                            | Map of node/pod resources                                      | `{}`
-                                                                    |
+| `affinity`                             | Map of node/pod affinities                                     | `{}`                                                                        |                                                                    |
 | `gremlin.apparmor`                     | Apparmor profile to set for the Gremlin Daemon                 | `""` (When empty, no profile is set)                                        |
 | `gremlin.container.driver`             | Specifies which container driver with which to run Gremlin. [See example][driverexample] | `docker` | 
 | `gremlin.cgroup.root`                  | Specifies the absolute path for the cgroup controller root on target host systems | `/sys/fs/cgroup` |
@@ -53,6 +51,7 @@ their default values. See values.yaml for all available options.
 | `gremlin.secret.certificate`           | Contents of the certificate. Required if using managed secrets of `type=certificate`  | `""`                                                 |
 | `gremlin.secret.key`                   | Contents of the private key. Required if using managed secrets of `type=certificate`  | `""`                                                 |
 | `gremlin.secret.teamSecret`            | Gremlin's team secret. Required if using managed secrets of `type=secret`  | `""`                                                            |
+| `gremlin.resources`                    | Set resource requests and limits                               | `{}`
 | `gremlin.hostPID`                      | Enable host-level process killing                              | `false`                                                                     |
 | `gremlin.hostNetwork`                  | Enable host-level network attacks                              | `false`                                                                     |
 | `gremlin.client.tags`                  | Comma-separated list of custom tags to assign to this client   | `""`                                                                        |
