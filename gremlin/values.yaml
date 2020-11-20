@@ -21,6 +21,10 @@ tolerations: []
 
 affinity: {}
 
+
+resources: {} 
+
+
 gremlin:
   apparmor: ""
   teamID: ""                    # DEPRECATED: moved to gremlin.secret.teamID
