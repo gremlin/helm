@@ -31,6 +31,11 @@ gremlin:
   #   at the host-level (e.g. any root-owned process)
   apparmor:
 
+  collect:
+    # gremlin.collect.processes -
+    # Specifies whether Gremlin should collect process information
+    processes: false
+
   # gremlin.hostPID -
   # This must be true for Gremlin container drivers: `docker-runc`, `crio-runc` and `containerd-runc`. It is also
   #   required for any Gremlin installation that wishes to carry out Process Killer attacks at the host-level
@@ -117,11 +122,6 @@ gremlin:
 
       - MKNOD       # Required by container drivers: docker-runc, crio-runc, containerd-runc
                     #   to create new devices for Gremlin attack sidecars
-
-    collect:
-      # gremlin.collect.processes -
-      # Specifies whether Gremlin should collect process information
-      processes: false
 
     # gremlin.podSecurity.readOnlyRootFilesystem -
     # Forces the Gremlin Daemonset containers to run with a read-only root filesystem
