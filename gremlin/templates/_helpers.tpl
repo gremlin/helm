@@ -37,7 +37,7 @@ In later versions of this chart, we will remove the use of `.Values.gremlin.clie
 */}}
 {{- define "gremlin.secretName" -}}
 {{- if .Values.gremlin.secret.managed -}}
-{{- $defaultName := "gremlin-secret" -}}
+{{- default .Values.gremlin.client.secretName .Values.gremlin.secret.name | default "gremlin-secret" -}}
 {{- else -}}
 {{- $defaultName := "gremlin-team-cert" -}}
 {{- end -}}
