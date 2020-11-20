@@ -36,7 +36,6 @@ Because we've evolved the recommended way to pass the secret name over time, we 
 In later versions of this chart, we will remove the use of `.Values.gremlin.client.secretName` and the fallback value of `gremlin-team-cert`
 */}}
 {{- define "gremlin.secretName" -}}
-{{- $defaultName := "gremlin-team-cert" -}}
 {{- if .Values.gremlin.secret.managed -}}
 {{- $defaultName := "gremlin-secret" -}}
 {{- else -}}
