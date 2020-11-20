@@ -108,3 +108,11 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- "policy/v1beta1" -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "gremlinServiceUrl" -}}
+{{- if .Values.gremlin.serviceUrl -}}
+{{- .Values.gremlin.serviceUrl -}}
+{{- else -}}
+{{- "https://api.gremlin.com/v1" -}}
+{{- end -}}
+{{- end -}}

@@ -101,6 +101,12 @@ spec:
             value: {{ .Values.gremlin.client.tags }}
           - name: GREMLIN_DOCKER_IMAGE
             value: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          {{- if .Values.gremlin.collect.processes }}
+          - name: GREMLIN_COLLECT_PROCESSES
+            value: "true"
+          {{- end }}
+          - name: GREMLIN_SERVICE_URL
+            value: {{ include "gremlinServiceUrl" . }}
         volumeMounts:
           - name: gremlin-state
             mountPath: /var/lib/gremlin

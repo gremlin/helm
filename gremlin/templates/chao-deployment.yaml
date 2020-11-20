@@ -57,13 +57,15 @@ spec:
                   name: {{ include "gremlin.secretName" . }}
                   key: GREMLIN_TEAM_SECRET
 {{- end }}
-{{- if (eq (include "gremlin.secretType" .) "certificate") }}
           args:
-          - "-cert_path"
-          - "/var/lib/gremlin/cert/gremlin.cert"
-          - "-key_path"
-          - "/var/lib/gremlin/cert/gremlin.key"
-{{- end }}
+            - "-api_url"
+            - "{{ include "gremlinServiceUrl" . }}/kubernetes"
+            {{- if (eq (include "gremlin.secretType" .) "certificate") }}
+            - "-cert_path"
+            - "/var/lib/gremlin/cert/gremlin.cert"
+            - "-key_path"
+            - "/var/lib/gremlin/cert/gremlin.key"
+            {{- end }}
           imagePullPolicy: {{ .Values.chaoimage.pullPolicy }}
           name: chao
 {{- if (eq (include "gremlin.secretType" .) "certificate") }}
