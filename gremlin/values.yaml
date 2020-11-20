@@ -21,10 +21,6 @@ tolerations: []
 
 affinity: {}
 
-
-resources: {} 
-
-
 gremlin:
 
   # gremlin.apparmor -
@@ -196,6 +192,14 @@ gremlin:
       # gremlin.podSecurity.seccomp.root
       # The absolute path pointing to the seccomp profile root on cluster nodes
       root: /var/lib/kubelet/seccomp
+
+  # gremlin.resources -
+  # Set resource requests and limits
+  # See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
+  #
+  # NOTE: This resource specification affects the Gremlin agent which is used for host attacks. This resource
+  # Attacks targeting other Kubernetes pods will use the resource specification of their target.
+  resources: {}
 
   secret:
     # Gremlin supports both `certificate` and `secret` types
