@@ -63,6 +63,9 @@ spec:
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         args: [ "daemon" ]
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if .Values.gremlin.resources }}
+        resources: {{ toYaml .Values.gremlin.resources | nindent 10 }}
+        {{- end }}
         securityContext:
           capabilities:
             add: {{ toYaml .Values.gremlin.podSecurity.capabilities | nindent 14 }}
