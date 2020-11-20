@@ -100,8 +100,7 @@ Some find it preferable to have this chart manage Gremlin's secret values instea
 #### For certificate auth
 
 ```shell
-helm install gremlin/gremlin \
-    --name gremlin \
+helm install gremlin gremlin/gremlin \
     --namespace gremlin \
     --set      gremlin.secret.managed=true \
     --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
@@ -113,8 +112,7 @@ helm install gremlin/gremlin \
 #### For secret auth
 
 ```shell
-helm install gremlin/gremlin \
-    --name gremlin \
+helm install gremlin gremlin/gremlin \
     --namespace gremlin \
     --set gremlin.secret.managed=true \
     --set gremlin.secret.type=secret \
@@ -141,8 +139,7 @@ kubectl create secret generic gremlin-team-secret \
 Install the Helm chart
 
 ```shell
-helm install gremlin/gremlin \
-    --name gremlin \
+helm install gremlin gremlin/gremlin \
     --namespace gremlin \
     --set gremlin.secret.name=gremlin-team-secret \
     --set gremlin.secret.type=secret # Default is gremlin.secret.type=certificate
@@ -162,8 +159,7 @@ kubectl create secret generic gremlin-team-cert \
 ```
 
 ```shell
-helm install gremlin/gremlin \
-    --name gremlin \
+helm install gremlin gremlin/gremlin \
     --namespace gremlin \
     --set gremlin.secret.name=gremlin-team-cert
 ```
