@@ -118,6 +118,11 @@ gremlin:
       - MKNOD       # Required by container drivers: docker-runc, crio-runc, containerd-runc
                     #   to create new devices for Gremlin attack sidecars
 
+    collect:
+      # gremlin.collect.processes -
+      # Specifies whether Gremlin should collect process information
+      processes: false
+
     # gremlin.podSecurity.readOnlyRootFilesystem -
     # Forces the Gremlin Daemonset containers to run with a read-only root filesystem
     readOnlyRootFilesystem: false
