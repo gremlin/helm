@@ -12,8 +12,7 @@ Add this Chart repo to Helm, and install:
 
 ```console
 helm repo add gremlin https://helm.gremlin.com/
-helm install gremlin/gremlin \
-    --name gremlin \
+helm install gremlin gremlin/gremlin \
     --namespace gremlin \
     --set gremlin.secret.managed=true \
     --set gremlin.secret.type=secret \

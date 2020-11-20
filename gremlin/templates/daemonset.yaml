@@ -21,26 +21,43 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         version: v1
-      {{- if .Values.gremlin.apparmor }}
+      {{- if or .Values.gremlin.apparmor .Values.gremlin.podSecurity.seccomp.enabled }}
       annotations:
-        # Tell the Gremlin Daemon containers to launch in the unconfined
+        {{- if .Values.gremlin.apparmor }}
         container.apparmor.security.beta.kubernetes.io/{{ .Chart.Name }}: {{ .Values.gremlin.apparmor }}
+        {{- end }}
+        {{- if .Values.gremlin.podSecurity.seccomp.enabled }}
+        container.seccomp.security.alpha.kubernetes.io/{{ .Chart.Name }}: {{ .Values.gremlin.podSecurity.seccomp.profile }}
+        {{- end }}
       {{- end }}
     spec:
+      serviceAccountName: gremlin
       {{- if .Values.affinity }}
-      affinity:
-{{ toYaml .Values.affinity | trimSuffix "\n" | indent 8 }}
+      affinity: {{ toYaml .Values.affinity | trimSuffix "\n" | indent 8 }}
       {{- end }}
       {{- if .Values.nodeSelector }}
-      nodeSelector:
-{{ toYaml .Values.nodeSelector | trimSuffix "\n" | indent 8 }}
+      nodeSelector: {{ toYaml .Values.nodeSelector | trimSuffix "\n" | nindent 8 }}
       {{- end }}
       {{- if .Values.tolerations }}
-      tolerations:
-{{ toYaml .Values.tolerations | trimSuffix "\n" | indent 8 }}
+      tolerations: {{ toYaml .Values.tolerations | trimSuffix "\n" | nindent 8 }}
       {{- end }}
       hostPID: {{ .Values.gremlin.hostPID }}
       hostNetwork: {{ .Values.gremlin.hostNetwork }}
+      {{- if and .Values.gremlin.podSecurity.seccomp.enabled (eq "localhost/gremlin" .Values.gremlin.podSecurity.seccomp.profile) }}
+      initContainers:
+        - name: seccomp-init
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          volumeMounts:
+            - mountPath: {{ .Values.gremlin.podSecurity.seccomp.root }}
+              name: seccomp-root
+            - mountPath: /gremlin
+              name: seccomp-profile
+          command:
+            - cp
+            - /gremlin/seccomp.json
+            - {{ .Values.gremlin.podSecurity.seccomp.root }}/gremlin
+      {{- end }}
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -52,11 +69,7 @@ spec:
         {{- end }}
         securityContext:
           capabilities:
-            add:
-              - NET_ADMIN
-              - SYS_BOOT
-              - SYS_TIME
-              - KILL
+            add: {{ toYaml .Values.gremlin.podSecurity.capabilities | nindent 14 }}
         env:
           - name: GREMLIN_TEAM_ID
             {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
@@ -90,25 +103,42 @@ spec:
           - name: GREMLIN_DOCKER_IMAGE
             value: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         volumeMounts:
-          - name: docker-sock
-            mountPath: /var/run/docker.sock
           - name: gremlin-state
             mountPath: /var/lib/gremlin
+            readOnly: false
           - name: gremlin-logs
             mountPath: /var/log/gremlin
+            readOnly: false
+          - name: cgroup-root
+            mountPath: /sys/fs/cgroup
+            readOnly: true
+          - name: runtime-sock
+            mountPath: {{ include "runtimeSocket" . }}
+            readOnly: true
           - name: shutdown-trigger
             mountPath: /sysrq
+          {{- if include "runtimeRunc" . }}
+          - name: runtime-runc
+            mountPath: {{ include "runtimeRunc" . }}
+            readOnly: false
+          {{- end }}
           {{- if (eq (include "gremlin.secretType" .) "certificate") }}
           - name: gremlin-cert
             mountPath: /var/lib/gremlin/cert
             readOnly: true
           {{- end }}
       volumes:
-        # Gremlin uses the Docker socket to discover eligible containers to attack,
-        # and to launch Gremlin sidecar containers
-        - name: docker-sock
+        - name: cgroup-root
           hostPath:
-            path: /var/run/docker.sock
+            path: {{ .Values.gremlin.cgroup.root }}
+        - name: runtime-sock
+          hostPath:
+            path: {{ include "runtimeSocket" . }}
+        {{- if include "runtimeRunc" . }}
+        - name: runtime-runc
+          hostPath:
+            path: {{ include "runtimeRunc" . }}
+        {{- end }}
         # The Gremlin daemon communicates with Gremlin sidecars via its state directory.
         # This should be shared with the Kubernetes host
         - name: gremlin-state
@@ -119,7 +149,6 @@ spec:
         - name: gremlin-logs
           hostPath:
             path: /var/log/gremlin
-        # If you want to run shutdown attacks on the host, the Gremlin Daemon requires a /proc/sysrq-trigger:/sysrq mount
         - name: shutdown-trigger
           hostPath:
             path: /proc/sysrq-trigger
@@ -127,4 +156,12 @@ spec:
         - name: gremlin-cert
           secret:
             secretName: {{ include "gremlin.secretName" . }}
+        {{- end }}
+        {{- if and .Values.gremlin.podSecurity.seccomp.enabled (eq "localhost/gremlin" .Values.gremlin.podSecurity.seccomp.profile) }}
+        - name: seccomp-root
+          hostPath:
+            path: {{ .Values.gremlin.podSecurity.seccomp.root }}
+        - name: seccomp-profile
+          configMap:
+            name: {{ template "gremlin.fullname" . }}-seccomp
         {{- end }}
