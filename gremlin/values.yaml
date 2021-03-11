@@ -123,6 +123,13 @@ gremlin:
       - MKNOD       # Required by container drivers: docker-runc, crio-runc, containerd-runc
                     #   to create new devices for Gremlin attack sidecars
 
+      - SYS_CHROOT  # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                    #   to create and enter new namespaces for Gremlin attack sidecars
+
+      - NET_RAW     # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                    #   Not actively used by Gremlin but requested by sidecars
+                    #   This capability will be removed in a later release
+
     # gremlin.podSecurity.readOnlyRootFilesystem -
     # Forces the Gremlin Daemonset containers to run with a read-only root filesystem
     readOnlyRootFilesystem: false
