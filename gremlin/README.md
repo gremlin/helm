@@ -44,7 +44,7 @@ their default values. See values.yaml for all available options.
 | `gremlin.podSecurity.seccomp.enabled`  | Determines whether the Gremlin Daemonset should be annotated with the seccomp profile | `false` |
 | `gremlin.podSecurity.seccomp.profile`  | Describes the name of the seccomp profile to use               | `localhost/gremlin` |
 | `gremlin.secret.managed`               | Specifies whether Gremlin should manage its secrets with Helm  | `false`                                                                     |
-| `gremlin.secret.create`                | Specifies whether Gremlin should create its secrets with Helm  | `false`                                                                     |
+| `gremlin.secret.create`                | Specifies whether Gremlin should create its secrets with Helm  | `true`                                                                     |
 | `gremlin.secret.type`                  | The type of certificate to use, can be either `certificate` or `secret` | `certificate`                                                      |
 | `gremlin.secret.name`                  | The name of certificate to use, like in the case of pointing to an eternally managed secret | `gremlin-team-cert`                            |
 | `gremlin.secret.teamID`                | Gremlin Team ID to authenticate with                           | `""`                                                                        |
