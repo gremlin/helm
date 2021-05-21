@@ -218,6 +218,10 @@ gremlin:
     # To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections
     type: certificate
     managed: false
+    # For use your secret, set `create=false`
+    create: true
+    # custom name for secret
+    name: 
     # team identifier (e.g. 11111111-1111-1111-1111-111111111111)
     teamID:
     # string uniquely identifying this kubernetes cluster in Gremlin (e.g. my-cluster)

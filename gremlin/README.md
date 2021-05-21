@@ -44,6 +44,7 @@ their default values. See values.yaml for all available options.
 | `gremlin.podSecurity.seccomp.enabled`  | Determines whether the Gremlin Daemonset should be annotated with the seccomp profile | `false` |
 | `gremlin.podSecurity.seccomp.profile`  | Describes the name of the seccomp profile to use               | `localhost/gremlin` |
 | `gremlin.secret.managed`               | Specifies whether Gremlin should manage its secrets with Helm  | `false`                                                                     |
+| `gremlin.secret.create`                | Specifies whether Gremlin should create its secrets with Helm  | `false`                                                                     |
 | `gremlin.secret.type`                  | The type of certificate to use, can be either `certificate` or `secret` | `certificate`                                                      |
 | `gremlin.secret.name`                  | The name of certificate to use, like in the case of pointing to an eternally managed secret | `gremlin-team-cert`                            |
 | `gremlin.secret.teamID`                | Gremlin Team ID to authenticate with                           | `""`                                                                        |
@@ -67,6 +68,7 @@ $ helm install gremlin gremlin/gremlin \
   --set       gremlin.hostNetwork=true \
   --set       gremlin.hostPID=true \
   --set       gremlin.secret.managed=true \
+  --set       gremlin.secret.create=true \
   --set       gremlin.secret.type=certificate \
   --set       gremlin.secret.teamID="$GREMLIN_TEAM_ID" \
   --set-file  gremlin.secret.certificate=/path/to/gremlin.cert \
@@ -103,6 +105,7 @@ Some find it preferable to have this chart manage Gremlin's secret values instea
 helm install gremlin gremlin/gremlin \
     --namespace gremlin \
     --set      gremlin.secret.managed=true \
+    --set      gremlin.secret.create=true \
     --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
     --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
     --set-file gremlin.secret.certificate=/path/to/gremlin.cert \
