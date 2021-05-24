@@ -73,7 +73,7 @@ $ helm install gremlin gremlin/gremlin \
   --set-file  gremlin.secret.key=/path/to/gremlin.key \
   --set       'tolerations[0].effect=NoSchedule' \
   --set       'tolerations[0].key=node-role.kubernetes.io/master' \
-  --set       'tolerations[0].operation=Exists'
+  --set       'tolerations[0].operator=Exists'
 ```
 _note_: Depending on your shell you may need different quoting around `tolerations[0]`
 
