@@ -56,6 +56,7 @@ their default values. See values.yaml for all available options.
 | `gremlin.hostNetwork`                  | Enable host-level network attacks                              | `false`                                                                     |
 | `gremlin.client.tags`                  | Comma-separated list of custom tags to assign to this client   | `""`                                                                        |
 | `gremlin.installK8sClient`             | Enable kubernetes targeting by installing k8s client           |  true                                                                       |
+| `gremlin.proxy.url`                    | Specifies the http proxy the agent should use to communicate with api.gremlin.com. |  `""` (no proxy)                                        |
 
 Specify each parameter using the `--set[-file] key=value[,key=value]` argument to `helm install`.
 
@@ -162,6 +163,21 @@ kubectl create secret generic gremlin-team-cert \
 helm install gremlin gremlin/gremlin \
     --namespace gremlin \
     --set gremlin.secret.name=gremlin-team-cert
+```
+
+### With an HTTP_PROXY
+
+Gremlin can be configured to communicate with api.gremlin.com through an http_proxy. You can set this proxy with `gremlin.proxy.url`.
+
+```shell
+helm install gremlin gremlin/gremlin \
+    --namespace gremlin \
+    --set      gremlin.secret.managed=true \
+    --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
+    --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
+    --set-file gremlin.secret.certificate=/path/to/gremlin.cert \
+    --set-file gremlin.secret.key=/path/to/gremlin.key \
+    --set      gremlin.proxy.url=http://localhost:3128
 ```
 
 ## Uninstallation

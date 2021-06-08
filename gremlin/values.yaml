@@ -232,3 +232,9 @@ gremlin:
     ## Secret auth requires: `teamSecret`
     # team secret (e.g. 00000000-0000-0000-0000-000000000000)
     teamSecret:
+
+  proxy:
+    # gremlin.proxy.url -
+    # Specifies the http proxy that the Gremlin Agent and Gremlin Kubernetes agent should use to communicate with
+    # api.gremlin.com. This value is ignored when blank or absent.
+    url:

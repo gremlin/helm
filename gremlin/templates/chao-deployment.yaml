@@ -57,6 +57,12 @@ spec:
                   name: {{ include "gremlin.secretName" . }}
                   key: GREMLIN_TEAM_SECRET
 {{- end }}
+{{- if .Values.gremlin.proxy.url }}
+            - name: https_proxy
+              value: {{ .Values.gremlin.proxy.url }}
+            - name: no_proxy
+              value: $(KUBERNETES_SERVICE_HOST):$(KUBERNETES_SERVICE_PORT)
+{{- end }}
           args:
             - "-api_url"
             - "{{ include "gremlinServiceUrl" . }}/kubernetes"

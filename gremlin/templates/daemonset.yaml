@@ -107,6 +107,10 @@ spec:
           {{- end }}
           - name: GREMLIN_SERVICE_URL
             value: {{ include "gremlinServiceUrl" . }}
+          {{- if .Values.gremlin.proxy.url }}
+          - name: https_proxy
+            value: {{ .Values.gremlin.proxy.url }}
+          {{- end }}
         volumeMounts:
           - name: gremlin-state
             mountPath: /var/lib/gremlin
