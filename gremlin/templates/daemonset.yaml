@@ -63,6 +63,12 @@ spec:
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         args: [ "daemon" ]
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- if .Values.image.imagePullSecrets }}
+        imagePullSecrets:
+          {{- range .Values.image.imagePullSecrets }}
+          - name: {{ . }}
+          {{- end }}
+        {{- end }}
         {{- if .Values.gremlin.resources }}
         resources: {{ toYaml .Values.gremlin.resources | nindent 10 }}
         {{- end }}

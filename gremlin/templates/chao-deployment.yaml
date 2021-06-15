@@ -25,6 +25,12 @@ spec:
       serviceAccountName: chao
       containers:
         - image: {{ .Values.chaoimage.repository }}:{{ .Values.chaoimage.tag }}
+        {{- if .Values.image.imagePullSecrets }}
+        imagePullSecrets:
+          {{- range .Values.image.imagePullSecrets }}
+          - name: {{ . }}
+          {{- end }}
+        {{- end }}
         {{- if .Values.resources }}
           resources:
 {{ toYaml .Values.resources | trimSuffix "\n" | indent 12 }}
