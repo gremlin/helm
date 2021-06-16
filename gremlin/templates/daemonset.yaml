@@ -107,6 +107,12 @@ spec:
           {{- end }}
           - name: GREMLIN_SERVICE_URL
             value: {{ include "gremlinServiceUrl" . }}
+        {{- if .Values.image.imagePullSecrets }}
+        imagePullSecrets:
+          {{- range .Values.image.imagePullSecrets }}
+          - name: {{ . }}
+          {{- end }}
+        {{- end }}
         volumeMounts:
           - name: gremlin-state
             mountPath: /var/lib/gremlin
