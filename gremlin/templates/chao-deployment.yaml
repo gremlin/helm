@@ -73,12 +73,6 @@ spec:
           - name: gremlin-cert
             mountPath: /var/lib/gremlin/cert
             readOnly: true
-      {{- if .Values.image.imagePullSecrets }}
-      imagePullSecrets:
-        {{- range .Values.image.imagePullSecrets }}
-        - name: {{ . }}
-        {{- end }}
-      {{- end }}
       volumes:
       - name: gremlin-cert
         secret:

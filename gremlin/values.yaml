@@ -6,7 +6,6 @@ image:
   repository: gremlin/gremlin
   tag: latest
   pullPolicy: Always
-  imagePullSecrets: ["docker-auth-config"]
 
 chaoimage:
   repository: gremlin/chao
