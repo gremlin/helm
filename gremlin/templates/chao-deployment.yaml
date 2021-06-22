@@ -66,7 +66,8 @@ spec:
 {{- if .Values.ssl.certFile }}
             - name: SSL_CERT_FILE
               value: {{ .Values.ssl.certFile }}
-{{- end }}{{- if .Values.ssl.certDir }}
+{{- end }}
+{{- if .Values.ssl.certDir }}
             - name: SSL_CERT_DIR
               value: {{ .Values.ssl.certDir }}
 {{- end }}
