@@ -57,6 +57,8 @@ their default values. See values.yaml for all available options.
 | `gremlin.client.tags`                  | Comma-separated list of custom tags to assign to this client   | `""`                                                                        |
 | `gremlin.installK8sClient`             | Enable kubernetes targeting by installing k8s client           |  true                                                                       |
 | `gremlin.proxy.url`                    | Specifies the http proxy the agent should use to communicate with api.gremlin.com. |  `""` (no proxy)                                        |
+| `ssl.certFile`                         | sets the SSL_CERT_FILE environment variable on both the Gremlin agent and Kubernetes agent. Ignored when blank or unset. | `""` |            |
+| `ssl.certDir`                          | sets the SSL_CERT_DIR environment variable on the Kubernetes agent. The Gremlin agent ignores this variable. Ignored when blank or unset. | `""` | 
 
 Specify each parameter using the `--set[-file] key=value[,key=value]` argument to `helm install`.
 

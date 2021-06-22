@@ -241,8 +241,10 @@ gremlin:
 
 ssl:
   # ssl.certFile -
-  # sets the SSL_CERT_FILE environment variable on both the Gremlin agent and Kubernetes agent. Ignored when blank or unset.
+  # sets the SSL_CERT_FILE environment variable on both the Gremlin agent and Kubernetes agent.Ignored when blank or
+  # unset.
   certFile:
   # ssl.certDir -
-  # sets the SSL_CERT_DIR environment variable on the Kubernetes agent. The Gremlin agent ignores this variable. Ignored when blank or unset.
+  # sets the SSL_CERT_DIR environment variable on the Kubernetes agent. The Gremlin agent ignores this variable. Ignored
+  # when blank or unset.
   certDir:
