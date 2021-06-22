@@ -63,6 +63,13 @@ spec:
             - name: no_proxy
               value: $(KUBERNETES_SERVICE_HOST):$(KUBERNETES_SERVICE_PORT)
 {{- end }}
+{{- if .Values.ssl.certFile }}
+            - name: SSL_CERT_FILE
+              value: {{ .Values.ssl.certFile }}
+{{- end }}{{- if .Values.ssl.certDir }}
+            - name: SSL_CERT_DIR
+              value: {{ .Values.ssl.certDir }}
+{{- end }}
           args:
             - "-api_url"
             - "{{ include "gremlinServiceUrl" . }}/kubernetes"

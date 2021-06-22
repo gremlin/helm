@@ -111,6 +111,10 @@ spec:
           - name: https_proxy
             value: {{ .Values.gremlin.proxy.url }}
           {{- end }}
+          {{- if .Values.ssl.certFile }}
+          - name: SSL_CERT_FILE
+            value: {{ .Values.ssl.certFile }}
+          {{- end }}
         volumeMounts:
           - name: gremlin-state
             mountPath: /var/lib/gremlin
