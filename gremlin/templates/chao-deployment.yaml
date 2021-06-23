@@ -65,7 +65,7 @@ spec:
 {{- end }}
 {{- if .Values.ssl.certFile }}
             - name: SSL_CERT_FILE
-              value: {{ .Values.ssl.certFile }}
+              value: /etc/gremlin/ssl/certfile.pem
 {{- end }}
 {{- if .Values.ssl.certDir }}
             - name: SSL_CERT_DIR
@@ -87,10 +87,20 @@ spec:
           - name: gremlin-cert
             mountPath: /var/lib/gremlin/cert
             readOnly: true
+          {{- if .Values.ssl.certFile }}
+          - name: ssl-cert-file
+            mountPath: /etc/gremlin/ssl
+            readOnly: true
+          {{- end }}
       volumes:
       - name: gremlin-cert
         secret:
           secretName: {{ include "gremlin.secretName" . }}
+      {{- if .Values.ssl.certFile }}
+      - name: ssl-cert-file
+        secret:
+          secretName: ssl-cert-file
+      {{- end }}
 {{ end }}
 ---
 {{ end }}
