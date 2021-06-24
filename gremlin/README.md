@@ -179,7 +179,21 @@ helm install gremlin gremlin/gremlin \
     --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
     --set-file gremlin.secret.certificate=/path/to/gremlin.cert \
     --set-file gremlin.secret.key=/path/to/gremlin.key \
-    --set      gremlin.proxy.url=http://localhost:3128
+    --set      gremlin.proxy.url=http://proxy.net:3128
+```
+
+#### HTTPS_PROXY with custom certificate authority
+
+```shell
+helm install gremlin gremlin/gremlin \
+    --namespace gremlin \
+    --set      gremlin.secret.managed=true \
+    --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
+    --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
+    --set-file gremlin.secret.certificate=/path/to/gremlin.cert \
+    --set-file gremlin.secret.key=/path/to/gremlin.key \
+    --set      gremlin.proxy.url=https://proxy.net:3128 \
+    --set-file ssl.certFile=$HOME/Workspace/proxy/ca.pem
 ```
 
 ## Uninstallation
