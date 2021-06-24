@@ -57,8 +57,8 @@ their default values. See values.yaml for all available options.
 | `gremlin.client.tags`                  | Comma-separated list of custom tags to assign to this client   | `""`                                                                        |
 | `gremlin.installK8sClient`             | Enable kubernetes targeting by installing k8s client           |  true                                                                       |
 | `gremlin.proxy.url`                    | Specifies the http proxy the agent should use to communicate with api.gremlin.com. |  `""` (ignored) |                                        |
-| `ssl.certFile`                         | sets the SSL_CERT_FILE environment variable on both the Gremlin agent and Kubernetes agent. |  `""` (ignored) |
-| `ssl.certDir`                          | sets the SSL_CERT_DIR environment variable on the Kubernetes agent. The Gremlin agent ignores this variable. |  `""` (ignored) | 
+| `ssl.certFile`                         | Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the certificate(s) you wish to add. When set, this chart creates secret (`ssl-cert-file`) with the contents and passes it to both agents. This value is ignored when blank or absent. |  `""` (ignored) |
+| `ssl.certDir`                          | sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent. |  `""` (ignored) | 
 
 Specify each parameter using the `--set[-file] key=value[,key=value]` argument to `helm install`.
 

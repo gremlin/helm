@@ -246,6 +246,6 @@ ssl:
   # it to both agents. This value is ignored when blank or absent.
   certFile:
   # ssl.certDir -
-  # sets the SSL_CERT_DIR environment variable on the Kubernetes agent. Unlike ssl.certFile, this value accepts only a
+  # sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a
   # path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent.
   certDir:
