@@ -161,6 +161,7 @@ gremlin:
         rule: MustRunAs
         seLinuxOptions:
           type: gremlin.process
+          level: s0-s0:c0.c1023
       # gremlin.podSecurity.podSecurityPolicy.runAsUser -
       # Specifies the Linux user the Gremlin Daemonset containers should run as
       runAsUser:
@@ -179,6 +180,7 @@ gremlin:
         type: MustRunAs
         seLinuxOptions:
           type: gremlin.process
+          level: s0-s0:c0.c1023
       # gremlin.podSecurity.securityContextConstraints.runAsUser -
       # Specifies the Linux user the Gremlin Daemonset containers should run as
       runAsUser:
