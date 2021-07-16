@@ -82,25 +82,27 @@ spec:
             {{- end }}
           imagePullPolicy: {{ .Values.chaoimage.pullPolicy }}
           name: chao
-{{- if (eq (include "gremlin.secretType" .) "certificate") }}
+{{- if (or ((eq (include "gremlin.secretType" .) "certificate")) .Values.ssl.certFile) }}
           volumeMounts:
+{{- end }}
+{{- if (eq (include "gremlin.secretType" .) "certificate") }}
           - name: gremlin-cert
             mountPath: /var/lib/gremlin/cert
             readOnly: true
-          {{- if .Values.ssl.certFile }}
+{{- end }}
+{{- if .Values.ssl.certFile }}
           - name: ssl-cert-file
             mountPath: /etc/gremlin/ssl
             readOnly: true
-          {{- end }}
+{{- end }}
       volumes:
       - name: gremlin-cert
         secret:
           secretName: {{ include "gremlin.secretName" . }}
-      {{- if .Values.ssl.certFile }}
+{{- if .Values.ssl.certFile }}
       - name: ssl-cert-file
         secret:
           secretName: ssl-cert-file
-      {{- end }}
 {{ end }}
 ---
 {{ end }}
