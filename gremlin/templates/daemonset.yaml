@@ -119,6 +119,10 @@ spec:
           - name: SSL_CERT_DIR
             value: {{ .Values.ssl.certDir }}
           {{- end }}
+        {{- if .Values.image.pullSecrets }}
+        imagePullSecrets:
+          - name: {{ .Values.image.pullSecrets }}
+        {{- end }}
         volumeMounts:
           - name: gremlin-state
             mountPath: /var/lib/gremlin

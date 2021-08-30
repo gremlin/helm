@@ -23,6 +23,10 @@ spec:
         app.kubernetes.io/version: "1"
     spec:
       serviceAccountName: chao
+      {{- if .Values.chaoimage.pullSecrets }}
+      imagePullSecrets:
+      - name: {{ .Values.chaoimage.pullSecrets }}
+      {{- end }}
       containers:
         - image: {{ .Values.chaoimage.repository }}:{{ .Values.chaoimage.tag }}
         {{- if .Values.resources }}
