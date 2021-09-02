@@ -22,24 +22,217 @@ tolerations: []
 affinity: {}
 
 gremlin:
-  apparmor: ""
-  teamID: ""                    # DEPRECATED: moved to gremlin.secret.teamID
-  clusterID: ""                 # DEPRECATED: moved to gremlin.secret.clusterID
+
+  # gremlin.apparmor -
+  # Gremlin assumes apparmor is not enabled by default and so it will not specify any apparmor profile to use
+  # You may need to provide a specific profile if your environment requires it.
+  #
+  # NOTE: Gremlin requires a privileged apparmor profile such as `unconfined` to carry out Process Killer attacks
+  #   at the host-level (e.g. any root-owned process)
+  apparmor:
+
+  collect:
+    # gremlin.collect.processes -
+    # Specifies whether Gremlin should collect process information
+    processes: false
+
+  # gremlin.hostPID -
+  # This must be true for Gremlin container drivers: `docker-runc`, `crio-runc` and `containerd-runc`. It is also
+  #   required for any Gremlin installation that wishes to carry out Process Killer attacks at the host-level
+  #   (e.g. any root-owned process)
+  #
+  # NOTE: this is disabled by default to maintain behavior of previous versions
   hostPID: false
+
+  # gremlin.hostNetwork -
+  # This must be true for any Gremlin installation that wishes to carry out network attacks at the host-level
+  #   (e.g. impact network traffic to all host processes and containers)
   hostNetwork: false
+
+  # gremlin.installApparmorProfile -
+  # This controls if gremlin installs it's own apparmor profile.  This is only necessary if you're running apparmor
   installApparmorProfile: false
+
+  # gremlin.installK8sClient -
+  # Determines if the `chao` deployment should be installed. This deployment launches an agent that enabled Kubernetes
+  #   targeting for Gremlin attacks
   installK8sClient: true
+
   client:
+    # gremlin.client.tags -
+    # A string of comma separated key=value pairs that are used to decorate the Gremlin agent with tags.
+    #
+    # NOTE: This value's commas must be escaped. See https://github.com/gremlin/helm/issues/8
     tags: ""
-  secret: {}
+
+  container:
+    # gremlin.container.driver -
+    # Specifies which container driver with which to run Gremlin. Possible values and their meanings:
+    #   docker          =   Provides legacy integration with Docker containers
+    #                       Implies host mounts [/var/run/docker.sock]
+    #                       Does not support the systemd cgroup driver
+    #
+    #   docker-runc     =   Provides full integration with Docker containers
+    #                       Implies host mounts [/var/run/docker.sock, /run/docker/runtime-runc/moby]
+    #
+    #   crio-runc       =   Provides full integration with Cri-O containers
+    #                       Implies host mounts [/run/crio/crio.sock, /run/runc]
+    #
+    #   containerd-runc =   Provides full integration with Containerd containers
+    #                       Implies host mounts [/run/containers/containers.sock, /run/containerd/runc/k8s.io]
+    #
+    driver: docker
+
+  cgroup:
+    # gremlin.cgroup.root -
+    # Specifies the absolute path for the cgroup controller root on target host systems
+    root: /sys/fs/cgroup
+
+  serviceAccount:
+    # gremlin.serviceAccount.create -
+    # Specifies whether Gremlin's kubernetes service account should be created by this helm chart. When true, this
+    #   creates a service account with the name `gremlin`, along with ClusterRole and ClusterRole bindings that enable
+    #   Gremlin's requirements (see gremlin.podSecurity.podSecurityPolicy and
+    #   gremlin.podSecurity.securityContextConstraints)
+    create: true
+
+  podSecurity:
+
+    # gremlin.podSecurity.allowPrivilegeEscalation -
+    # Allows Gremlin containers privilege escalation powers
+    allowPrivilegeEscalation: false
+
+    # gremlin.podSecurity.capabilities -
+    # Specifies which Linux capabilities should be granted to Gremlin. Each capability is provided to the Gremlin
+    #   Daemonset as well as any pod security resource that governs it. Capabilities that are required for specific
+    #   attacks can be removed from this list if running such attacks are not desired.
+    capabilities:
+      - KILL        # Required to run Process Killer attacks
+      - NET_ADMIN   # Required to run network attacks
+      - SYS_BOOT    # Required to run Shutdown attacks
+      - SYS_TIME    # Required to run Time Travel attacks
+
+      - SYS_ADMIN   # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                    #   to run attacks against running containers
+
+      - SYS_PTRACE  # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                    #   to determine if Gremlin is in the host's pid namespace
+
+      - SETFCAP     # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                    #   to set capabilities on Gremlin attack sidecars
+
+      - AUDIT_WRITE # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                    #   to write to the Kernel's audit log
+
+      - MKNOD       # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                    #   to create new devices for Gremlin attack sidecars
+
+      - SYS_CHROOT  # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                    #   to create and enter new namespaces for Gremlin attack sidecars
+
+      - NET_RAW     # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                    #   Not actively used by Gremlin but requested by sidecars
+                    #   This capability will be removed in a later release
+
+    # gremlin.podSecurity.readOnlyRootFilesystem -
+    # Forces the Gremlin Daemonset containers to run with a read-only root filesystem
+    readOnlyRootFilesystem: false
+
+    # gremlin.podSecurity.supplementalGroups -
+    # Specifies the Linux groups the Gremlin Daemonset containers should run as
+    supplementalGroups:
+      rule: RunAsAny
+
+    # gremlin.podSecurity.fsGroup -
+    # Specifies the Linux groups applied to mounted volumes
+    fsGroup:
+      rule: RunAsAny
+
+    # gremlin.podSecurity.volumes -
+    # Specifies the volume types the Gremlin Daemonset is allowed to use
+    volumes:
+      - configMap   # Required when the Gremlin Daemonset installs a seccomp profile (see gremlin.podSecurity.seccomp)
+      - secret      # Required to store and load secret information like certificates that authenticate Gremlin
+      - hostPath    # Required by Gremlin to store attack logs (/var/log/gremlin) and attack state (/var/lib/gremlin)
+
+    podSecurityPolicy:
+      # gremlin.podSecurity.podSecurityPolicy.create -
+      # When true, Gremlin creates and uses a custom PodSecurityPolicy, granting all behaviors Gremlin needs
+      create: false
+      # gremlin.podSecurity.podSecurityPolicy.seLinux
+      # Sets the SecurityContext for the PSP used by the Gremlin Daemonset
+      seLinux:
+        rule: MustRunAs
+        seLinuxOptions:
+          type: gremlin.process
+      # gremlin.podSecurity.podSecurityPolicy.runAsUser -
+      # Specifies the Linux user the Gremlin Daemonset containers should run as
+      runAsUser:
+        rule: RunAsAny
+
+    securityContextConstraints:
+      # gremlin.podSecurity.securityContextConstraints.create -
+      # When true, Gremlin creates and uses a custom SecurityContextConstraints, granting all behaviors Gremlin needs
+      create: false
+      # gremlin.podSecurity.securityContextConstraints.allowHostDirVolumePlugin -
+      # Specifies whether the Gremlin Daemonset has access to host path directories as mounted volumes
+      allowHostDirVolumePlugin: true
+      # gremlin.podSecurity.securityContextConstraints.seLinuxContext
+      # Sets the SecurityContext for the SCC used by the Gremlin Daemonset
+      seLinuxContext:
+        type: MustRunAs
+        seLinuxOptions:
+          type: gremlin.process
+      # gremlin.podSecurity.securityContextConstraints.runAsUser -
+      # Specifies the Linux user the Gremlin Daemonset containers should run as
+      runAsUser:
+        type: RunAsAny
+
+    # gremlin.podSecurity.privileged -
+    # Determines whether the Gremlin Daemonset should run privileged containers
+    privileged: false
+
+    # gremlin.podSecurity.seccomp -
+    # All of Gremlin's behavior runs under Docker's default seccomp profile. For systems with a more restrictive
+    #   runtime/default profile, Gremlin can create and the specific seccomp profile it needs.
+    seccomp:
+      # gremlin.podSecurity.seccomp.enabled -
+      # Determines whether the Gremlin Daemonset should be annotated with the seccomp profile specified by
+      #   gremlin.podSecurity.seccomp.profile
+      enabled: false
+      # gremlin.podSecurity.seccomp.profile -
+      # Describes the name of the seccomp profile to use
+      #
+      # NOTE: When this values is `localhost/gremlin`, Gremlin will create it's own custom seccomp profile
+      profile: localhost/gremlin
+      # gremlin.podSecurity.seccomp.root
+      # The absolute path pointing to the seccomp profile root on cluster nodes
+      root: /var/lib/kubelet/seccomp
+
+  # gremlin.resources -
+  # Set resource requests and limits
+  # See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
+  #
+  # NOTE: This resource specification affects the Gremlin agent which is used for host attacks. This resource
+  # Attacks targeting other Kubernetes pods will use the resource specification of their target.
+  resources: {}
+
+  secret:
     # Gremlin supports both `certificate` and `secret` types
-    # # By default, Gremlin will not manage secret values
-    # # To manage secrets with helm, uncomment the following
-    # NOTE: `certificate`+`key` OR `secret` is required, not both. `type` dictates which will be used
-    # type: certificate
-    # managed: true
-    # teamID: 1d1d1d1d-1d1d-1d1d-1d1d-1d1d1d1d1d1d
-    # clusterID: my-cluster-id
-    # certificate: -----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----
-    # key: -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----
-    # teamSecret: 5ec4e75e-c4e7-5ec4-e75e-c4e75ec4e75e
+    # To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections
+    type: certificate
+    managed: false
+    # team identifier (e.g. 11111111-1111-1111-1111-111111111111)
+    teamID:
+    # string uniquely identifying this kubernetes cluster in Gremlin (e.g. my-cluster)
+    clusterID:
+
+    ## Certificate auth requires: `certificate` and `key`
+    # team certificate (e.g. -----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----)
+    certificate:
+    # team private key (e.g. -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----)
+    key:
+
+    ## Secret auth requires: `teamSecret`
+    # team secret (e.g. 00000000-0000-0000-0000-000000000000)
+    teamSecret:

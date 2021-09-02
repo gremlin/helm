@@ -25,6 +25,10 @@ spec:
       serviceAccountName: chao
       containers:
         - image: {{ .Values.chaoimage.repository }}:{{ .Values.chaoimage.tag }}
+        {{- if .Values.resources }}
+          resources:
+{{ toYaml .Values.resources | trimSuffix "\n" | indent 12 }}
+        {{- end }}
           env:
             - name: GREMLIN_TEAM_ID
 {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
@@ -53,13 +57,15 @@ spec:
                   name: {{ include "gremlin.secretName" . }}
                   key: GREMLIN_TEAM_SECRET
 {{- end }}
-{{- if (eq (include "gremlin.secretType" .) "certificate") }}
           args:
-          - "-cert_path"
-          - "/var/lib/gremlin/cert/gremlin.cert"
-          - "-key_path"
-          - "/var/lib/gremlin/cert/gremlin.key"
-{{- end }}
+            - "-api_url"
+            - "{{ include "gremlinServiceUrl" . }}/kubernetes"
+            {{- if (eq (include "gremlin.secretType" .) "certificate") }}
+            - "-cert_path"
+            - "/var/lib/gremlin/cert/gremlin.cert"
+            - "-key_path"
+            - "/var/lib/gremlin/cert/gremlin.key"
+            {{- end }}
           imagePullPolicy: {{ .Values.chaoimage.pullPolicy }}
           name: chao
 {{- if (eq (include "gremlin.secretType" .) "certificate") }}
