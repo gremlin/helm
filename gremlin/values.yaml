@@ -27,6 +27,7 @@ gremlin:
   clusterID: ""                 # DEPRECATED: moved to gremlin.secret.clusterID
   hostPID: false
   hostNetwork: false
+  installApparmorProfile: false
   installK8sClient: true
   client:
     tags: ""

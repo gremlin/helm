@@ -24,6 +24,7 @@ their default values. See values.yaml for all available options.
 | `tolerations`                          | List of node taints to tolerate                                | `[]`                                                                        |
 | `affinity`                             | Map of node/pod affinities                                     | `{}`                                                                        |
 | `gremlin.apparmor`                     | Apparmor profile to set for the Gremlin Daemon                 | `""` (When empty, no profile is set)                                        |
+| `gremlin.installApparmorProfile`       | Have Gremlin install their own [Apparmor Profile](agent_apparmor.profile)                | `false`
 | `gremlin.secret.managed`               | Specifies whether Gremlin should manage its secrets with Helm  | `false`                                                                     |
 | `gremlin.secret.type`                  | The type of certificate to use, can be either `certificate` or `secret` | `certificate`                                                      |
 | `gremlin.secret.name`                  | The name of certificate to use, like in the case of pointing to an eternally managed secret | `gremlin-team-cert`                            |
