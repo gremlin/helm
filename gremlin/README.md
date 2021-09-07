@@ -15,11 +15,11 @@ their default values. See values.yaml for all available options.
 |       Parameter                        |           Description                                          |                         Default                                             |
 |----------------------------------------|----------------------------------------------------------------|-----------------------------------------------------------------------------|
 | `image.pullPolicy`                     | Container pull policy                                          | `Always`                                                                    |
-| `image.pullSecrets`                    | Pull secrets for a private registry                            | `""` (When empty, no authentication is used)                                |
+| `image.pullSecret`                    | Pull secrets for a private registry                            | `""` (When empty, no authentication is used)                                |
 | `image.repository`                     | Container image to use                                         | `gremlin/gremlin`                                                           |
 | `image.tag`                            | Container image tag to deploy                                  | `latest`                                                                    |
 | `chaoimage.pullPolicy`                 | Container pull policy for the `chao` container                 | `Always`                                                                    |
-| `chaoimage.pullSecrets`                | Pull secrets for a private registry for the `chao` container   | `""` (When empty, no authentication is used)                                |
+| `chaoimage.pullSecret`                | Pull secrets for a private registry for the `chao` container   | `""` (When empty, no authentication is used)                                |
 | `chaoimage.repository`                 | Container image to use for the `chao` container                | `gremlin/chao`                                                              |
 | `chaoimage.tag`                        | Container image tag to deploy for the `chao` container         | `latest`                                                                    |
 | `nodeSelector`                         | Map of node labels for pod assignment                          | `{}`                                                                        |

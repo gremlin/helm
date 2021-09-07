@@ -43,9 +43,9 @@ spec:
       {{- end }}
       hostPID: {{ .Values.gremlin.hostPID }}
       hostNetwork: {{ .Values.gremlin.hostNetwork }}
-      {{- if .Values.image.pullSecrets }}
+      {{- if .Values.image.pullSecret }}
       imagePullSecrets:
-        - name: {{ .Values.image.pullSecrets }}
+        - name: {{ .Values.image.pullSecret }}
       {{- end }}
       {{- if and .Values.gremlin.podSecurity.seccomp.enabled (eq "localhost/gremlin" .Values.gremlin.podSecurity.seccomp.profile) }}
       initContainers:
