@@ -5,6 +5,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: chao
     app.kubernetes.io/name: chao
+    helm.sh/chart: {{ include "gremlin.chart" . }}
     app.kubernetes.io/version: "1"
   name: chao
   namespace: {{ .Release.Namespace }}
@@ -20,6 +21,7 @@ spec:
       labels:
         app.kubernetes.io/instance: chao
         app.kubernetes.io/name: chao
+        helm.sh/chart: {{ include "gremlin.chart" . }}
         app.kubernetes.io/version: "1"
     spec:
       serviceAccountName: chao
