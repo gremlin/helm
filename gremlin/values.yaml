@@ -6,11 +6,13 @@ image:
   repository: gremlin/gremlin
   tag: latest
   pullPolicy: Always
+  pullSecrets:
 
 chaoimage:
   repository: gremlin/chao
   tag: latest
   pullPolicy: Always
+  pullSecrets:
 
 nameOverride: ""
 fullnameOverride: ""
