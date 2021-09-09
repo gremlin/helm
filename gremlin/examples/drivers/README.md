@@ -6,6 +6,9 @@ is used to integrate with Docker, Cri-O, and Containerd respectively.
 In order to preserve the behaviors of previous versions of this chart, none of the above drivers are enabled by
 default. Instead, Gremlin will try to run under the legacy `docker` driver, which has [some limitations][cgroup-driver].
 
+You also have the option of specifying `all` which will mount the locations for all drivers and then gremlin will
+attempt to determine the correct one.  This can be a good options if you don't know which driver you have
+
 ## Requirements
 
 In order to use one of the recommended container drivers, you must run the Gremlin Daemonset in the host's PID namespace,

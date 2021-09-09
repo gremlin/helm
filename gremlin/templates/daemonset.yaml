@@ -129,15 +129,17 @@ spec:
           - name: cgroup-root
             mountPath: /sys/fs/cgroup
             readOnly: true
-          - name: runtime-sock
-            mountPath: {{ include "runtimeSocket" . }}
-            readOnly: true
           - name: shutdown-trigger
             mountPath: /sysrq
-          {{- if include "runtimeRunc" . }}
+          {{- if include "containerRuntime" . }}
+          {{- range include "containerRuntime" .}}
+          - name: runtime-sock
+            mountPath: {{ .runtimeSocket }}
+            readOnly: true
           - name: runtime-runc
-            mountPath: {{ include "runtimeRunc" . }}
+            mountPath: {{ .runtimeRunc }}
             readOnly: false
+          {{- end }}
           {{- end }}
           {{- if (eq (include "gremlin.secretType" .) "certificate") }}
           - name: gremlin-cert
@@ -153,13 +155,15 @@ spec:
         - name: cgroup-root
           hostPath:
             path: {{ .Values.gremlin.cgroup.root }}
-        - name: runtime-sock
+        {{- if include "containerRuntime" . }}
+        {{- range include "containerRuntime" .}}
+        - name: {{ .name }}-sock
           hostPath:
-            path: {{ include "runtimeSocket" . }}
-        {{- if include "runtimeRunc" . }}
-        - name: runtime-runc
+            path: {{ .runtimeSocket }}
+        - name: {{ .name }}-runc
           hostPath:
-            path: {{ include "runtimeRunc" . }}
+            path: {{ .runtimeRunc }}
+        {{- end}}
         {{- end }}
         # The Gremlin daemon communicates with Gremlin sidecars via its state directory.
         # This should be shared with the Kubernetes host

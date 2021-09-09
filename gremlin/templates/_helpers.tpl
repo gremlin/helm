@@ -77,29 +77,20 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- end -}}
 {{- end -}}
 
-{{- define "runtimeSocket" -}}
+{{- define "containerRuntime" -}}
 {{- if eq "docker-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- "/var/run/docker.sock" -}}
+{{- [.Values.containerDrivers.docker-runc] -}}
 {{- else if eq "containerd-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- "/run/containerd/containerd.sock" -}}
+{{- [.Values.containerDrivers.containerd-runc] -}}
 {{- else if eq "crio-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- "/run/crio/crio.sock" -}}
+{{- [.Values.containerDrivers.crio-runc] -}}
+{{- else if eq "all" (include "containerDriverWithDefaultOrError" .) -}}
+{{- [.Values.containerDrivers.docker-runc, .Values.containerDrivers.containerd-runc, .Values.containerDrivers.crio-runc] -}}
 {{- else -}}
-{{- "/var/run/docker.sock" -}}
+{{- [.Values.containerDrivers.docker-runc] -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "runtimeRunc" -}}
-{{- if eq "docker-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- "/run/docker/runtime-runc/moby" -}}
-{{- else if eq "containerd-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- "/run/containerd/runc/k8s.io" -}}
-{{- else if eq "crio-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- "/run/runc" -}}
-{{- else -}}
-{{- "" -}}
-{{- end -}}
-{{- end -}}
 
 {{- define "pspApiVersion" -}}
 {{- if .Capabilities.APIVersions.Has "policy/v1/PodSecurityPolicy" -}}

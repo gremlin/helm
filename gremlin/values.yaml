@@ -251,3 +251,17 @@ ssl:
   # sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a
   # path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent.
   certDir:
+
+containerDrivers:
+  docker-runc:
+    runtimeSocket: "/var/run/docker.sock"
+    runtimeRunc: "/run/docker/runtime-runc/moby"
+    name: "docker"
+  containerd-runc:
+    runtimeSocket: "/run/containerd/containerd.sock"
+    runtimeRunc: "/run/containerd/runc/k8s.io"
+    name: "containerd"
+  crio-runc:
+    runtimeSocket: "/run/crio/crio.sock"
+    runtimeRunc: "/run/runc"
+    name: "crio"
