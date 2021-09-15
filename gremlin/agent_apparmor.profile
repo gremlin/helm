@@ -4,7 +4,6 @@
 profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   #include <abstractions/base>
 
-  # Allow rules
   network,
   file,
   umount,
@@ -13,7 +12,6 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   /var/lib/gremlin/** rwix,
   /var/log/gremlin/** rwix,
   /etc/gremlin/** rwix,
-  /dev/null rw,
 
   # Container runtime
   /run/docker/runtime-runc/moby rwix,
@@ -22,6 +20,12 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   /run/runc rwix,
   /run/containers/containers.sock rwix,
   /run/containerd/runc/k8s.io rwix,
+
+  # We need access to Pid 1's real pid to resolve the container driver
+  # we're just taking a read perm here to accomlish this
+  file r @{PROC}/1/ns/pid,
+  ptrace read,
+
 
   # Attack capabilities
   /proc/sysrq-trigger w,
@@ -41,7 +45,9 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   capability dac_read_search,
   capability sys_ptrace,
 
-  # Deny rules
+  # General deny
+  deny /proc/** w,
+
   deny /bin/** wl,
   deny /boot/** wl,
   deny /dev/** wl,
@@ -64,7 +70,6 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   deny /usr/bin/top mrwklx,
 
 
-  # For proc we need to be a little more subtle to support cgroups and service discovery
   deny @{PROC}/* w,   # deny write for all files directly in /proc (not in a subdir)
   # deny write to files not in /proc/<number>/** or /proc/sys/**
   deny @{PROC}/{[^1-9],[^1-9][^0-9],[^1-9s][^0-9y][^0-9s],[^1-9][^0-9][^0-9][^0-9]*}/** w,
@@ -75,7 +80,8 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   deny @{PROC}/kmem wklx,
   deny @{PROC}/kcore wklx,
 
-  # We shouldn't need write in here
+  deny mount,
+
   deny /sys/[^f]*/** wklx,
   deny /sys/f[^s]*/** wklx,
   deny /sys/fs/[^c]*/** wklx,
