@@ -4,14 +4,16 @@
 profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   #include <abstractions/base>
 
+  # Allow rules
   network,
   file,
   umount,
 
   /entrypoint.sh rix,
-  /var/log/gremlin-api/** rwix,
   /var/lib/gremlin/** rwix,
   /var/log/gremlin/** rwix,
+  /etc/gremlin/** rwix,
+  /dev/null rw,
 
   # Container runtime
   /run/docker/runtime-runc/moby rwix,
@@ -26,13 +28,6 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   /sys/fs/cgroup r,
   /proc/** rl,
 
-  # General capabilities
-  capability chown,
-  capability dac_override,
-  capability setuid,
-  capability setgid,
-  capability net_bind_service,
-
   # Needed For Gremlin Attacks
   capability sys_boot,
   capability sys_time,
@@ -46,9 +41,7 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   capability dac_read_search,
   capability sys_ptrace,
 
-  # General deny
-  deny /proc/** w,
-
+  # Deny rules
   deny /bin/** wl,
   deny /boot/** wl,
   deny /dev/** wl,
@@ -71,6 +64,7 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   deny /usr/bin/top mrwklx,
 
 
+  # For proc we need to be a little more subtle to support cgroups and service discovery
   deny @{PROC}/* w,   # deny write for all files directly in /proc (not in a subdir)
   # deny write to files not in /proc/<number>/** or /proc/sys/**
   deny @{PROC}/{[^1-9],[^1-9][^0-9],[^1-9s][^0-9y][^0-9s],[^1-9][^0-9][^0-9][^0-9]*}/** w,
@@ -81,8 +75,7 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   deny @{PROC}/kmem wklx,
   deny @{PROC}/kcore wklx,
 
-  deny mount,
-
+  # We shouldn't need write in here
   deny /sys/[^f]*/** wklx,
   deny /sys/f[^s]*/** wklx,
   deny /sys/fs/[^c]*/** wklx,

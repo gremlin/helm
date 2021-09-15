@@ -21,7 +21,7 @@ spec:
       - command:
         - apparmor_parser
         - -R
-        - /profiles/agent_apparmor_profile
+        - /profiles/agent_apparmor.profile
         image: google/apparmor-loader:latest
         imagePullPolicy: IfNotPresent
         name: clean-old-profiles
