@@ -15,9 +15,11 @@ their default values. See values.yaml for all available options.
 |       Parameter                        |           Description                                          |                         Default                                             |
 |----------------------------------------|----------------------------------------------------------------|-----------------------------------------------------------------------------|
 | `image.pullPolicy`                     | Container pull policy                                          | `Always`                                                                    |
+| `image.pullSecret`                     | Pull secret for a private registry                             | `""` (When empty, no authentication is used)                                |
 | `image.repository`                     | Container image to use                                         | `gremlin/gremlin`                                                           |
 | `image.tag`                            | Container image tag to deploy                                  | `latest`                                                                    |
 | `chaoimage.pullPolicy`                 | Container pull policy for the `chao` container                 | `Always`                                                                    |
+| `chaoimage.pullSecret`                 | Pull secret for a private registry for the `chao` container    | `""` (When empty, no authentication is used)                                |
 | `chaoimage.repository`                 | Container image to use for the `chao` container                | `gremlin/chao`                                                              |
 | `chaoimage.tag`                        | Container image tag to deploy for the `chao` container         | `latest`                                                                    |
 | `nodeSelector`                         | Map of node labels for pod assignment                          | `{}`                                                                        |
@@ -57,6 +59,9 @@ their default values. See values.yaml for all available options.
 | `gremlin.hostNetwork`                  | Enable host-level network attacks                              | `false`                                                                     |
 | `gremlin.client.tags`                  | Comma-separated list of custom tags to assign to this client   | `""`                                                                        |
 | `gremlin.installK8sClient`             | Enable kubernetes targeting by installing k8s client           |  true                                                                       |
+| `gremlin.proxy.url`                    | Specifies the http proxy the agent should use to communicate with api.gremlin.com. |  `""` (ignored) |                                        |
+| `ssl.certFile`                         | Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the certificate(s) you wish to add. When set, this chart creates secret (`ssl-cert-file`) with the contents and passes it to both agents. This value is ignored when blank or absent. |  `""` (ignored) |
+| `ssl.certDir`                          | sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent. |  `""` (ignored) | 
 
 Specify each parameter using the `--set[-file] key=value[,key=value]` argument to `helm install`.
 
@@ -163,6 +168,35 @@ kubectl create secret generic gremlin-team-cert \
 helm install gremlin gremlin/gremlin \
     --namespace gremlin \
     --set gremlin.secret.name=gremlin-team-cert
+```
+
+### With an HTTP_PROXY
+
+Gremlin can be configured to communicate with api.gremlin.com through an http_proxy. You can set this proxy with `gremlin.proxy.url`.
+
+```shell
+helm install gremlin gremlin/gremlin \
+    --namespace gremlin \
+    --set      gremlin.secret.managed=true \
+    --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
+    --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
+    --set-file gremlin.secret.certificate=/path/to/gremlin.cert \
+    --set-file gremlin.secret.key=/path/to/gremlin.key \
+    --set      gremlin.proxy.url=http://proxy.net:3128
+```
+
+#### HTTPS_PROXY with custom certificate authority
+
+```shell
+helm install gremlin gremlin/gremlin \
+    --namespace gremlin \
+    --set      gremlin.secret.managed=true \
+    --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
+    --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
+    --set-file gremlin.secret.certificate=/path/to/gremlin.cert \
+    --set-file gremlin.secret.key=/path/to/gremlin.key \
+    --set      gremlin.proxy.url=https://proxy.net:3128 \
+    --set-file ssl.certFile=$HOME/Workspace/proxy/ca.pem
 ```
 
 ## Uninstallation
