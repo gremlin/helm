@@ -4,29 +4,22 @@
 profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   #include <abstractions/base>
 
-  network inet tcp,
-  network inet udp,
-  network inet icmp,
-
-  deny network raw,
-
-  deny network packet,
-
+  network,
   file,
   umount,
 
-  /entrypoint.sh rx,
-  /var/log/gremlin-api/** rwx,
-  /var/lib/gremlin/** rwx,
-  /var/log/gremlin/** rwx,
+  /entrypoint.sh rix,
+  /var/log/gremlin-api/** rwix,
+  /var/lib/gremlin/** rwix,
+  /var/log/gremlin/** rwix,
 
   # Container runtime
-  /run/docker/runtime-runc/moby rwx,
-  /var/run/docker.sock rwx,
-  /run/crio/crio.sock rwx,
-  /run/runc rwx,
-  /run/containers/containers.sock rwx,
-  /run/containerd/runc/k8s.io rwx,
+  /run/docker/runtime-runc/moby rwix,
+  /var/run/docker.sock rwix,
+  /run/crio/crio.sock rwix,
+  /run/runc rwix,
+  /run/containers/containers.sock rwix,
+  /run/containerd/runc/k8s.io rwix,
 
   # Attack capabilities
   /proc/sysrq-trigger w,

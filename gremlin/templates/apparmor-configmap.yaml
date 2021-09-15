@@ -5,9 +5,6 @@ metadata:
   name: {{ .Release.Name }}-apparmor-profile-content
   namespace: {{ .Release.Namespace }}
 data:
-  {{- $files := .Files }}
-  {{- range tuple "agent_apparmor.profile" }}
-  {{ . }}: |-
-        {{ $files.Get . }}
-  {{- end }}
+  agent_apparmor_profile: |-
+    {{ .Files.Get "agent_apparmor.profile" | nindent 4 | trim }}
 {{ end }}

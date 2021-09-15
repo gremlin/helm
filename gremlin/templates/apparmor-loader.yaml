@@ -17,6 +17,29 @@ spec:
       labels:
         daemon: apparmor-loader
     spec:
+      initContainers:
+      - command:
+        - apparmor_parser
+        - -R
+        - /profiles/agent_apparmor_profile
+        image: google/apparmor-loader:latest
+        imagePullPolicy: IfNotPresent
+        name: clean-old-profiles
+        resources: {}
+        securityContext:
+          privileged: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /sys
+          name: sys
+          readOnly: true
+        - mountPath: /etc/apparmor.d
+          name: apparmor-includes
+          readOnly: true
+        - mountPath: /profiles
+          name: profiles
+          readOnly: true
       containers:
       - name: apparmor-loader
         image: google/apparmor-loader:latest
