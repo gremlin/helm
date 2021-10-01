@@ -7,6 +7,7 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   network,
   file,
   umount,
+  mount,
 
   /entrypoint.sh rix,
   /var/lib/gremlin/** rwix,
@@ -29,15 +30,20 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
 
   # Attack capabilities
   /proc/sysrq-trigger w,
-  /sys/fs/cgroup r,
+  /sys/fs/cgroup/** rw,
   /proc/** rl,
+  # In order to join target container network space
+  @{PROC}/[0-9]+/ns/net w,
 
   # Needed For Gremlin Attacks
   capability sys_boot,
   capability sys_time,
+  capability sys_admin, # needed for setns
   capability net_admin,
   capability kill,
   capability setfcap,
+  capability setuid,
+  capability setguid,
   capability audit_write,
   capability mknod,
 
@@ -46,8 +52,6 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   capability sys_ptrace,
 
   # General deny
-  deny /proc/** w,
-
   deny /bin/** wl,
   deny /boot/** wl,
   deny /dev/** wl,
@@ -61,12 +65,10 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   deny /sbin/** wl,
   deny /srv/** wl,
   deny /tmp/** wl,
-  deny /sys/** wl,
   deny /usr/** wl,
 
-  audit /** w,
+  audit /** mwkl,
 
-  deny /bin/sh mrwklx,
   deny /usr/bin/top mrwklx,
 
 
@@ -75,12 +77,10 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   deny @{PROC}/{[^1-9],[^1-9][^0-9],[^1-9s][^0-9y][^0-9s],[^1-9][^0-9][^0-9][^0-9]*}/** w,
   deny @{PROC}/sys/[^k]** w,  # deny /proc/sys except /proc/sys/k* (effectively /proc/sys/kernel)
   deny @{PROC}/sys/kernel/{?,??,[^s][^h][^m]**} w,  # deny everything except shm* in /proc/sys/kernel/
-  deny @{PROC}/sysrq-trigger wklx,
+  deny @{PROC}/sysrq-trigger klx,
   deny @{PROC}/mem wklx,
   deny @{PROC}/kmem wklx,
   deny @{PROC}/kcore wklx,
-
-  deny mount,
 
   deny /sys/[^f]*/** wklx,
   deny /sys/f[^s]*/** wklx,

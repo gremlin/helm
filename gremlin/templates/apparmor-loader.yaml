@@ -19,9 +19,9 @@ spec:
     spec:
       initContainers:
       - command:
-        - apparmor_parser
-        - -R
-        - /profiles/agent_apparmor.profile
+        - sh
+        - -c
+        - apparmor_parser -R /profiles/agent_apparmor.profile || true
         image: google/apparmor-loader:latest
         imagePullPolicy: IfNotPresent
         name: clean-old-profiles
