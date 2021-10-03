@@ -66,7 +66,7 @@ Create a computed value for the intended Gremlin secret type which can either be
 
 {{- define "containerDriverWithDefaultOrError" -}}
 {{- if .Values.gremlin.container.driver -}}
-{{- $valid := list "docker" "docker-runc" "crio-runc" "containerd-runc" -}}
+{{- $valid := list "docker" "docker-runc" "crio-runc" "containerd-runc" "any" -}}
 {{- if has .Values.gremlin.container.driver $valid -}}
 {{- .Values.gremlin.container.driver -}}
 {{- else -}}
@@ -77,20 +77,47 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- end -}}
 {{- end -}}
 
-{{- define "containerRuntime" -}}
-{{- if eq "docker-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- [.Values.containerDrivers.docker-runc] -}}
-{{- else if eq "containerd-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- [.Values.containerDrivers.containerd-runc] -}}
-{{- else if eq "crio-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- [.Values.containerDrivers.crio-runc] -}}
-{{- else if eq "all" (include "containerDriverWithDefaultOrError" .) -}}
-{{- [.Values.containerDrivers.docker-runc, .Values.containerDrivers.containerd-runc, .Values.containerDrivers.crio-runc] -}}
-{{- else -}}
-{{- [.Values.containerDrivers.docker-runc] -}}
+{{- define "containerMounts" -}}
+{{- $selectedDriver := (include "containerDriverWithDefaultOrError" .) -}}
+{{- range $key, $val := .Values.containerDrivers -}}
+{{- /* create a list of values to match against customer selection */ -}}
+{{- /* this is the current driver or all drivers in the case of "any" */ -}}
+{{- /* to prevent docker from apearing twice tho, we remove any from the valid */ -}}
+{{- /* list just for the key "docker" */ -}}
+{{- $validDrivers := (ternary (list $key) (list $key "any") (eq $key "docker")) }}
+{{- if has $selectedDriver $validDrivers -}}
+{{- if $val.runtimeSocket }}
+- name: {{ $val.name }}-sock
+  mountPath: {{ $val.runtimeSocket }}
+  readOnly: true
+{{- end -}}
+{{- if $val.runtimeRunc }}
+- name: {{ $val.name }}-runc
+  mountPath: {{ $val.runtimeRunc }}
+  readOnly: false
+{{- end -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
+{{- define "containerVolumes" -}}
+{{- $selectedDriver := (include "containerDriverWithDefaultOrError" .) -}}
+{{- range $key, $val := .Values.containerDrivers -}}
+{{- $validDrivers := (ternary (list $key) (list $key "any") (eq $key "docker")) }}
+{{- if has $selectedDriver $validDrivers -}}
+{{- if $val.runtimeSocket }}
+- name: {{ $val.name }}-sock
+  hostPath:
+    path: {{ $val.runtimeSocket }}
+{{- end -}}
+{{- if $val.runtimeRunc }}
+- name: {{ $val.name }}-runc
+  hostPath:
+    path: {{ $val.runtimeRunc }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 
 {{- define "pspApiVersion" -}}
 {{- if .Capabilities.APIVersions.Has "policy/v1/PodSecurityPolicy" -}}

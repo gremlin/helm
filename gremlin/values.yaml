@@ -267,3 +267,6 @@ containerDrivers:
     runtimeSocket: "/run/crio/crio.sock"
     runtimeRunc: "/run/runc"
     name: "crio"
+  docker:
+    runtimeSocket: "/var/run/docker.sock"
+    name: "docker"
