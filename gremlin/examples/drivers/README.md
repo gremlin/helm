@@ -7,7 +7,7 @@ In order to preserve the behaviors of previous versions of this chart, none of t
 default. Instead, Gremlin will try to run under the legacy `docker` driver, which has [some limitations][cgroup-driver].
 
 You also have the option of specifying `any` which will mount the locations for all supported drivers and then gremlin
-will attempt to determine the correct one.  This can be a good options if you don't know which driver you have
+will attempt to determine the correct one.  This can be a good option if you don't know which driver you have
 
 ## Requirements
 
