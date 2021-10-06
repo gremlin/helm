@@ -79,6 +79,7 @@ Create a computed value for the intended Gremlin secret type which can either be
 
 {{- define "containerMounts" -}}
 {{- $selectedDriver := (include "containerDriverWithDefaultOrError" .) -}}
+{{- $mountPaths := (dict "docker-runc" (dict "name" "docker" "socket" "/var/run/docker.sock" "runc" "/run/docker/runtime-runc/moby") "docker" (dict "name" "docker" "socket" "/var/run/docker.sock") "crio-runc" (dict "name" "crio" "socket" "/run/crio/crio.sock" "runc" "/run/runc") "containerd-runc" (dict "name" "containerd" "socket" "/run/containerd/containerd.sock" "runc" "/run/containerd/runc/k8s.io")) -}}
 {{- range $key, $val := .Values.containerDrivers -}}
 {{- /* create a list of values to match against customer selection */ -}}
 {{- /* this is the current driver or all drivers in the case of "any" */ -}}
@@ -88,12 +89,12 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- if has $selectedDriver $validDrivers -}}
 {{- if $val.runtimeSocket }}
 - name: {{ $val.name }}-sock
-  mountPath: {{ $val.runtimeSocket }}
+  mountPath: {{ (get $mountPaths $key).socket }}
   readOnly: true
 {{- end -}}
 {{- if $val.runtimeRunc }}
 - name: {{ $val.name }}-runc
-  mountPath: {{ $val.runtimeRunc }}
+  mountPath: {{ (get $mountPaths $key).runc }}
   readOnly: false
 {{- end -}}
 {{- end -}}
