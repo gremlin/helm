@@ -79,6 +79,12 @@ gremlin:
     #   containerd-runc =   Provides full integration with Containerd containers
     #                       Implies host mounts [/run/containers/containers.sock, /run/containerd/runc/k8s.io]
     #
+    #   any             =   Useful when the Cluster's container runtime is not known.
+    #                       Helm will provide file access to all drivers so that Gremlin can choose.
+    #                       Implies host mounts [/var/run/docker.sock, /run/docker/runtime-runc/moby,
+    #                                           /run/crio/crio.sock, /run/runc,
+    #                                           /run/containers/containers.sock, /run/containerd/runc/k8s.io]
+    #
     driver: docker
 
   cgroup:
