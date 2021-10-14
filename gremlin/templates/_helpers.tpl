@@ -66,7 +66,7 @@ Create a computed value for the intended Gremlin secret type which can either be
 
 {{- define "containerDriverWithDefaultOrError" -}}
 {{- if .Values.gremlin.container.driver -}}
-{{- $valid := list "docker" "docker-runc" "crio-runc" "containerd-runc" -}}
+{{- $valid := list "docker" "docker-runc" "crio-runc" "containerd-runc" "any" -}}
 {{- if has .Values.gremlin.container.driver $valid -}}
 {{- .Values.gremlin.container.driver -}}
 {{- else -}}
@@ -77,27 +77,46 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- end -}}
 {{- end -}}
 
-{{- define "runtimeSocket" -}}
-{{- if eq "docker-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- "/var/run/docker.sock" -}}
-{{- else if eq "containerd-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- "/run/containerd/containerd.sock" -}}
-{{- else if eq "crio-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- "/run/crio/crio.sock" -}}
-{{- else -}}
-{{- "/var/run/docker.sock" -}}
+{{- define "containerMounts" -}}
+{{- $selectedDriver := (include "containerDriverWithDefaultOrError" .) -}}
+{{- $mountPaths := (dict "docker-runc" (dict "name" "docker" "socket" "/var/run/docker.sock" "runc" "/run/docker/runtime-runc/moby") "docker" (dict "name" "docker" "socket" "/var/run/docker.sock") "crio-runc" (dict "name" "crio" "socket" "/run/crio/crio.sock" "runc" "/run/runc") "containerd-runc" (dict "name" "containerd" "socket" "/run/containerd/containerd.sock" "runc" "/run/containerd/runc/k8s.io")) -}}
+{{- range $key, $val := .Values.containerDrivers -}}
+{{- /* create a list of values to match against customer selection */ -}}
+{{- /* this is the current driver or all drivers in the case of "any" */ -}}
+{{- /* to prevent docker from apearing twice tho, we remove any from the valid */ -}}
+{{- /* list just for the key "docker" */ -}}
+{{- $validDrivers := (ternary (list $key) (list $key "any") (eq $key "docker")) }}
+{{- if has $selectedDriver $validDrivers -}}
+{{- if $val.runtimeSocket }}
+- name: {{ $val.name }}-sock
+  mountPath: {{ (get $mountPaths $key).socket }}
+  readOnly: true
+{{- end -}}
+{{- if $val.runtimeRunc }}
+- name: {{ $val.name }}-runc
+  mountPath: {{ (get $mountPaths $key).runc }}
+  readOnly: false
+{{- end -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
-{{- define "runtimeRunc" -}}
-{{- if eq "docker-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- "/run/docker/runtime-runc/moby" -}}
-{{- else if eq "containerd-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- "/run/containerd/runc/k8s.io" -}}
-{{- else if eq "crio-runc" (include "containerDriverWithDefaultOrError" .) -}}
-{{- "/run/runc" -}}
-{{- else -}}
-{{- "" -}}
+{{- define "containerVolumes" -}}
+{{- $selectedDriver := (include "containerDriverWithDefaultOrError" .) -}}
+{{- range $key, $val := .Values.containerDrivers -}}
+{{- $validDrivers := (ternary (list $key) (list $key "any") (eq $key "docker")) }}
+{{- if has $selectedDriver $validDrivers -}}
+{{- if $val.runtimeSocket }}
+- name: {{ $val.name }}-sock
+  hostPath:
+    path: {{ $val.runtimeSocket }}
+{{- end -}}
+{{- if $val.runtimeRunc }}
+- name: {{ $val.name }}-runc
+  hostPath:
+    path: {{ $val.runtimeRunc }}
+{{- end -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 

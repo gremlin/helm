@@ -83,6 +83,12 @@ gremlin:
     #   containerd-runc =   Provides full integration with Containerd containers
     #                       Implies host mounts [/run/containers/containers.sock, /run/containerd/runc/k8s.io]
     #
+    #   any             =   Useful when the Cluster's container runtime is not known.
+    #                       Helm will provide file access to all drivers so that Gremlin can choose.
+    #                       Implies host mounts [/var/run/docker.sock, /run/docker/runtime-runc/moby,
+    #                                           /run/crio/crio.sock, /run/runc,
+    #                                           /run/containers/containers.sock, /run/containerd/runc/k8s.io]
+    #
     driver: docker
 
   cgroup:
@@ -257,3 +263,20 @@ ssl:
   # sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a
   # path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent.
   certDir:
+
+containerDrivers:
+  docker-runc:
+    runtimeSocket: "/var/run/docker.sock"
+    runtimeRunc: "/run/docker/runtime-runc/moby"
+    name: "docker"
+  containerd-runc:
+    runtimeSocket: "/run/containerd/containerd.sock"
+    runtimeRunc: "/run/containerd/runc/k8s.io"
+    name: "containerd"
+  crio-runc:
+    runtimeSocket: "/run/crio/crio.sock"
+    runtimeRunc: "/run/runc"
+    name: "crio"
+  docker:
+    runtimeSocket: "/var/run/docker.sock"
+    name: "docker"
