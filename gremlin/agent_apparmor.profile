@@ -14,6 +14,10 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   /var/log/gremlin/** rwix,
   /etc/gremlin/** rwix,
 
+  # /dev/null
+  /dev rix,
+  /dev/null rwlix,
+
   # Container runtime
   /run/docker/runtime-runc/moby rwix,
   /var/run/docker.sock rwix,
@@ -34,18 +38,24 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   /proc/** rl,
   # In order to join target container network space
   @{PROC}/[0-9]+/ns/net w,
+  # In order to assume the root of the target container
+  pivot_root,
 
-  # Needed For Gremlin Attacks
+  # Needed for specific Gremlin Attacks
   capability sys_boot,
   capability sys_time,
   capability sys_admin, # needed for setns
   capability net_admin,
   capability kill,
   capability setfcap,
-  capability setuid,
-  capability setguid,
   capability audit_write,
   capability mknod,
+
+  # Needed to execute attacks
+  capability net_bind_service,
+  capability setuid,
+  capability setgid,
+  capability chown,
 
   # Needed for Gremlin Service Discovery
   capability dac_read_search,
@@ -54,7 +64,6 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   # General deny
   deny /bin/** wl,
   deny /boot/** wl,
-  deny /dev/** wl,
   deny /etc/** wl,
   deny /home/** wl,
   deny /lib/** wl,
@@ -67,7 +76,11 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   deny /tmp/** wl,
   deny /usr/** wl,
 
-  audit /** mwkl,
+  # No write in /dev except /dev/null
+  deny /dev/[^n]*/** wl,
+  deny /dev/n[^u]*/** wl,
+  deny /dev/nu[^l]*/** wl,
+  deny /dev/nul[^l]*/** wl,
 
   deny /usr/bin/top mrwklx,
 
@@ -82,11 +95,13 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   deny @{PROC}/kmem wklx,
   deny @{PROC}/kcore wklx,
 
+  # Everything in /sys/fs that's not cgroups
   deny /sys/[^f]*/** wklx,
   deny /sys/f[^s]*/** wklx,
   deny /sys/fs/[^c]*/** wklx,
   deny /sys/fs/c[^g]*/** wklx,
   deny /sys/fs/cg[^r]*/** wklx,
+
   deny /sys/firmware/** wklx,
   deny /sys/kernel/security/** wklx,
 }
