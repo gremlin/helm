@@ -26,7 +26,7 @@ their default values. See values.yaml for all available options.
 | `tolerations`                          | List of node taints to tolerate                                | `[]`                                                                        |
 | `affinity`                             | Map of node/pod affinities                                     | `{}`                                                                        |                                                                    |
 | `gremlin.apparmor`                     | Apparmor profile to set for the Gremlin Daemon                 | `""` (When empty, no profile is set)                                        |
-| `gremlin.installApparmorProfile`       | Have Gremlin install their own [Apparmor Profile](agent_apparmor.profile)                | `false`
+| `gremlin.installApparmorProfile`       | Have Gremlin install their own [Apparmor Profile](agent_apparmor.profile)                | `false` |
 | `gremlin.container.driver`             | Specifies which container driver with which to run Gremlin. [See example][driverexample] | `docker` | 
 | `gremlin.cgroup.root`                  | Specifies the absolute path for the cgroup controller root on target host systems | `/sys/fs/cgroup` |
 | `gremlin.serviceAccount.create`        | Specifies whether Gremlin's kubernetes service account should be created by this helm chart | `true` | 
