@@ -209,7 +209,7 @@ gremlin:
       # gremlin.podSecurity.seccomp.profile -
       # Describes the name of the seccomp profile to use
       #
-      # NOTE: When this values is `localhost/gremlin`, Gremlin will create it's own custom seccomp profile
+      # NOTE: When this value is `localhost/gremlin`, Gremlin will create its own custom seccomp profile
       profile: localhost/gremlin
       # gremlin.podSecurity.seccomp.root
       # The absolute path pointing to the seccomp profile root on cluster nodes

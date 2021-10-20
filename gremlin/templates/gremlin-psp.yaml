@@ -6,7 +6,7 @@ metadata:
   {{- if or .Values.gremlin.apparmor .Values.gremlin.podSecurity.seccomp.enabled }}
   annotations:
     {{- if .Values.gremlin.podSecurity.seccomp.enabled }}
-    seccomp.security.alpha.kubernetes.io/allowedProfileNames: {{ join "," .Values.gremlin.podSecurity.seccomp.profile | quote }}
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: {{ concat (list .Values.gremlin.podSecurity.seccomp.profile) (list "runtime/default") | join "," | quote }}
     seccomp.security.alpha.kubernetes.io/defaultProfileName: "runtime/default"
     {{- end }}
     {{- if .Values.gremlin.apparmor }}
