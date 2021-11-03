@@ -43,6 +43,10 @@ spec:
       {{- end }}
       hostPID: {{ .Values.gremlin.hostPID }}
       hostNetwork: {{ .Values.gremlin.hostNetwork }}
+      {{- if .Values.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecret }}
+      {{- end }}
       {{- if and .Values.gremlin.podSecurity.seccomp.enabled (eq "localhost/gremlin" .Values.gremlin.podSecurity.seccomp.profile) }}
       initContainers:
         - name: seccomp-init
@@ -107,6 +111,18 @@ spec:
           {{- end }}
           - name: GREMLIN_SERVICE_URL
             value: {{ include "gremlinServiceUrl" . }}
+          {{- if .Values.gremlin.proxy.url }}
+          - name: https_proxy
+            value: {{ .Values.gremlin.proxy.url }}
+          {{- end }}
+          {{- if .Values.ssl.certFile }}
+          - name: SSL_CERT_FILE
+            value: /etc/gremlin/ssl/certfile.pem
+          {{- end }}
+          {{- if .Values.ssl.certDir }}
+          - name: SSL_CERT_DIR
+            value: {{ .Values.ssl.certDir }}
+          {{- end }}
         volumeMounts:
           - name: gremlin-state
             mountPath: /var/lib/gremlin
@@ -117,32 +133,27 @@ spec:
           - name: cgroup-root
             mountPath: /sys/fs/cgroup
             readOnly: true
-          - name: runtime-sock
-            mountPath: {{ include "runtimeSocket" . }}
-            readOnly: true
           - name: shutdown-trigger
             mountPath: /sysrq
-          {{- if include "runtimeRunc" . }}
-          - name: runtime-runc
-            mountPath: {{ include "runtimeRunc" . }}
-            readOnly: false
+          {{- if include "containerMounts" . }}
+          {{- include "containerMounts" . | nindent 10 }}
           {{- end }}
           {{- if (eq (include "gremlin.secretType" .) "certificate") }}
           - name: gremlin-cert
             mountPath: /var/lib/gremlin/cert
             readOnly: true
           {{- end }}
+          {{- if .Values.ssl.certFile }}
+          - name: ssl-cert-file
+            mountPath: /etc/gremlin/ssl
+            readOnly: true
+          {{- end }}
       volumes:
         - name: cgroup-root
           hostPath:
             path: {{ .Values.gremlin.cgroup.root }}
-        - name: runtime-sock
-          hostPath:
-            path: {{ include "runtimeSocket" . }}
-        {{- if include "runtimeRunc" . }}
-        - name: runtime-runc
-          hostPath:
-            path: {{ include "runtimeRunc" . }}
+        {{- if include "containerVolumes" . }}
+        {{- include "containerVolumes" . | nindent 8 }}
         {{- end }}
         # The Gremlin daemon communicates with Gremlin sidecars via its state directory.
         # This should be shared with the Kubernetes host
@@ -169,4 +180,9 @@ spec:
         - name: seccomp-profile
           configMap:
             name: {{ template "gremlin.fullname" . }}-seccomp
+        {{- end }}
+        {{- if .Values.ssl.certFile }}
+        - name: ssl-cert-file
+          secret:
+            secretName: ssl-cert-file
         {{- end }}
