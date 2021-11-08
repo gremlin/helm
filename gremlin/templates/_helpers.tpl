@@ -64,6 +64,12 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- end -}}
 {{- end -}}
 
+{{- define "failOnApparmorInstallerAndPsp" -}}
+{{- if (and .Values.gremlin.installApparmorProfile .Values.gremlin.podSecurity.podSecurityPolicy )}}
+{{- fail "The ApparmorInstaller is currently incompatible with PodSecurityPolicy.  If you need PodSecurityPolicies it's recommeneded you install the apparmor profile through other means and set it via gremlin.apparmor" -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "containerDriverWithDefaultOrError" -}}
 {{- if .Values.gremlin.container.driver -}}
 {{- $valid := list "docker" "docker-runc" "crio-runc" "containerd-runc" "any" -}}
