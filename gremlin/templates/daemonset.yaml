@@ -23,8 +23,10 @@ spec:
         version: v1
       {{- if (or .Values.gremlin.podSecurity.seccomp.enabled (or .Values.gremlin.apparmor .Values.gremlin.installApparmorProfile) ) }}
       annotations:
-        {{- if or .Values.gremlin.apparmor .Values.gremlin.installApparmorProfile}}
-        container.apparmor.security.beta.kubernetes.io/{{ .Chart.Name }}: {{ ternary .Values.gremlin.apparmor "localhost/gremlin-agent" .Values.gremlin.apparmor }}
+        {{- if .Values.gremlin.apparmor }}
+        container.apparmor.security.beta.kubernetes.io/{{ .Chart.Name }}: {{ .Values.gremlin.apparmor }}
+        {{- else if .Values.gremlin.installApparmorProfile }}
+        container.apparmor.security.beta.kubernetes.io/{{ .Chart.Name }}: {{ "localhost/gremlin-agent" }}
         {{- end }}
         {{- if .Values.gremlin.podSecurity.seccomp.enabled }}
         container.seccomp.security.alpha.kubernetes.io/{{ .Chart.Name }}: {{ .Values.gremlin.podSecurity.seccomp.profile }}
