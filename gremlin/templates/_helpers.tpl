@@ -107,6 +107,28 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- end -}}
 {{- end -}}
 
+{{- define "containerMountsPSP" -}}
+{{- $selectedDriver := (include "containerDriverWithDefaultOrError" .) -}}
+{{- $mountPaths := (dict "docker-runc" (dict "name" "docker" "socket" "/var/run/docker.sock" "runc" "/run/docker/runtime-runc/moby") "docker" (dict "name" "docker" "socket" "/var/run/docker.sock") "crio-runc" (dict "name" "crio" "socket" "/run/crio/crio.sock" "runc" "/run/runc") "containerd-runc" (dict "name" "containerd" "socket" "/run/containerd/containerd.sock" "runc" "/run/containerd/runc/k8s.io")) -}}
+{{- range $key, $val := .Values.containerDrivers -}}
+{{- /* create a list of values to match against customer selection */ -}}
+{{- /* this is the current driver or all drivers in the case of "any" */ -}}
+{{- /* to prevent docker from apearing twice tho, we remove any from the valid */ -}}
+{{- /* list just for the key "docker" */ -}}
+{{- $validDrivers := (ternary (list $key) (list $key "any") (eq $key "docker")) }}
+{{- if has $selectedDriver $validDrivers -}}
+{{- if $val.runtimeSocket }}
+- pathPrefix: {{ (get $mountPaths $key).socket }}
+  readOnly: true
+{{- end -}}
+{{- if $val.runtimeRunc }}
+- pathPrefix: {{ (get $mountPaths $key).runc }}
+  readOnly: false
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{- define "containerVolumes" -}}
 {{- $selectedDriver := (include "containerDriverWithDefaultOrError" .) -}}
 {{- range $key, $val := .Values.containerDrivers -}}
