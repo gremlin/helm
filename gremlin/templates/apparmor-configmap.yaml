@@ -1,0 +1,10 @@
+{{ if .Values.gremlin.installApparmorProfile }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-apparmor-profile-content
+  namespace: {{ .Release.Namespace }}
+data:
+  agent_apparmor.profile: |-
+    {{ .Files.Get "agent_apparmor.profile" | nindent 4 | trim }}
+{{ end }}

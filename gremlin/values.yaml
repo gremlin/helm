@@ -46,10 +46,14 @@ gremlin:
   # NOTE: this is disabled by default to maintain behavior of previous versions
   hostPID: false
 
-  # gremlin.hostPID -
+  # gremlin.hostNetwork -
   # This must be true for any Gremlin installation that wishes to carry out network attacks at the host-level
   #   (e.g. impact network traffic to all host processes and containers)
   hostNetwork: false
+
+  # gremlin.installApparmorProfile -
+  # This controls if gremlin installs it's own apparmor profile.  This is only necessary if you're running apparmor
+  installApparmorProfile: false
 
   # gremlin.installK8sClient -
   # Determines if the `chao` deployment should be installed. This deployment launches an agent that enabled Kubernetes

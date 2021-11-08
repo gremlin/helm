@@ -1,0 +1,102 @@
+{{ if .Values.gremlin.installApparmorProfile }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: apparmor-loader
+  # Namespace must match that of the ConfigMap.
+  namespace: {{ .Release.Namespace}}
+  labels:
+    daemon: apparmor-loader
+    helm.sh/chart: {{ include "gremlin.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      daemon: apparmor-loader
+  template:
+    metadata:
+      name: apparmor-loader
+      labels:
+        daemon: apparmor-loader
+        helm.sh/chart: {{ include "gremlin.chart" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        version: v1
+    {{- if .Values.gremlin.podSecurity.seccomp.enabled }}
+      annotations:
+        container.seccomp.security.alpha.kubernetes.io/{{ .Chart.Name }}: {{ .Values.gremlin.podSecurity.seccomp.profile }}
+    {{- end }}
+    spec:
+      {{- if .Values.affinity }}
+      affinity: {{ toYaml .Values.affinity | trimSuffix "\n" | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{ toYaml .Values.nodeSelector | trimSuffix "\n" | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations: {{ toYaml .Values.tolerations | trimSuffix "\n" | nindent 8 }}
+      {{- end }}
+      {{- if .Values.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.image.pullSecret }}
+      {{- end }}
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - apparmor_parser -R /profiles/agent_apparmor.profile || true
+        image: google/apparmor-loader:latest
+        imagePullPolicy: IfNotPresent
+        name: clean-old-profiles
+        resources: {}
+        securityContext:
+          privileged: true
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+        volumeMounts:
+        - mountPath: /sys
+          name: sys
+          readOnly: true
+        - mountPath: /etc/apparmor.d
+          name: apparmor-includes
+          readOnly: true
+        - mountPath: /profiles
+          name: profiles
+          readOnly: true
+      containers:
+      - name: apparmor-loader
+        image: google/apparmor-loader:latest
+        args:
+          # Tell the loader to pull the /profiles directory every 30 seconds.
+          - -poll
+          - 30s
+          - /profiles
+        securityContext:
+          # The loader requires root permissions to actually load the profiles.
+          privileged: true
+        volumeMounts:
+        - name: sys
+          mountPath: /sys
+          readOnly: true
+        - name: apparmor-includes
+          mountPath: /etc/apparmor.d
+          readOnly: true
+        - name: profiles
+          mountPath: /profiles
+          readOnly: true
+      volumes:
+      # The /sys directory must be mounted to interact with the AppArmor module.
+      - name: sys
+        hostPath:
+          path: /sys
+      # The /etc/apparmor.d directory is required for most apparmor include templates.
+      - name: apparmor-includes
+        hostPath:
+          path: /etc/apparmor.d
+      # Map in the profile data.
+      - name: profiles
+        configMap:
+          name: {{ .Release.Name }}-apparmor-profile-content
+{{ end }}
