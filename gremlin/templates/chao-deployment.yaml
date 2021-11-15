@@ -25,6 +25,15 @@ spec:
         app.kubernetes.io/version: "1"
     spec:
       serviceAccountName: chao
+      {{- if .Values.affinity }}
+      affinity: {{ toYaml .Values.affinity | trimSuffix "\n" | indent 8 }}
+      {{- end }}
+      {{- if .Values.nodeSelector }}
+      nodeSelector: {{ toYaml .Values.nodeSelector | trimSuffix "\n" | nindent 8 }}
+      {{- end }}
+      {{- if .Values.tolerations }}
+      tolerations: {{ toYaml .Values.tolerations | trimSuffix "\n" | nindent 8 }}
+      {{- end }}
       {{- if .Values.chaoimage.pullSecret }}
       imagePullSecrets:
       - name: {{ .Values.chaoimage.pullSecret }}
