@@ -253,6 +253,14 @@ gremlin:
     # api.gremlin.com. This value is ignored when blank or absent.
     url:
 
+chao:
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
 ssl:
   # ssl.certFile -
   # Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the
