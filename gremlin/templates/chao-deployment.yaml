@@ -26,7 +26,7 @@ spec:
     spec:
       serviceAccountName: chao
       {{- if .Values.chao.affinity }}
-      affinity: {{ toYaml .Values.chao.affinity | trimSuffix "\n" | indent 8 }}
+      affinity: {{ toYaml .Values.chao.affinity | trimSuffix "\n" | nindent 8 }}
       {{- end }}
       {{- if .Values.chao.nodeSelector }}
       nodeSelector: {{ toYaml .Values.chao.nodeSelector | trimSuffix "\n" | nindent 8 }}
