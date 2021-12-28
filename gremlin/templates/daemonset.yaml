@@ -126,12 +126,14 @@ spec:
             value: {{ .Values.ssl.certDir }}
           {{- end }}
         volumeMounts:
+          {{- if not (include "gkeCOSContainerd" .) }}
           - name: gremlin-state
             mountPath: /var/lib/gremlin
             readOnly: false
           - name: gremlin-logs
             mountPath: /var/log/gremlin
             readOnly: false
+          {{- end }}
           - name: cgroup-root
             mountPath: /sys/fs/cgroup
             readOnly: true

@@ -142,6 +142,18 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- end -}}
 {{- end -}}
 
+{{- /* GKE Container Optimized OS with Containerd cannot */ -}}
+{{- /* mount the state/logs volumes, so detect that here */ -}}
+{{- define "gkeCOSContainerd" -}}
+{{- $output := false }}
+{{- range $index, $node := (lookup "v1" "Node" "" "").items -}}
+  {{- $gkeRuntime := index $node.metadata.labels "cloud.google.com/gke-container-runtime" -}}
+  {{- $gkeOS := index $node.metadata.labels "cloud.google.com/gke-os-distribution" -}}
+  {{- $output = (or $output (and (eq $gkeRuntime "containerd") (eq $gkeOS "cos"))) -}}
+{{- end -}}
+{{ $output }}
+{{- end -}}
+
 {{- define "pspApiVersion" -}}
 {{- if .Capabilities.APIVersions.Has "policy/v1/PodSecurityPolicy" -}}
 {{- "policy/v1" -}}
