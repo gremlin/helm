@@ -76,19 +76,21 @@ spec:
               value: {{ .Values.ssl.certDir }}
           {{- end }}
           volumeMounts:
-        {{- if (eq (include "gremlin.secretType" .) "certificate") }}
+            {{- if (eq (include "gremlin.secretType" .) "certificate") }}
             - name: gremlin-cert
               mountPath: /var/lib/gremlin/cert
               readOnly: true
-        {{- end }}
-        {{- if .Values.ssl.certFile }}
+            {{- end }}
+            {{- if .Values.ssl.certFile }}
             - name: integrations-ssl-cert-file
               mountPath: /etc/gremlin/ssl
               readOnly: true
-        {{- end }}
+            {{- end }}
+            {{- if not (include "gkeCOSContainerd" .) }}
             - name: gremlin-logs
               mountPath: /var/log/gremlin
               readOnly: false
+            {{- end }}
       volumes:
         - name: gremlin-logs
           hostPath:
