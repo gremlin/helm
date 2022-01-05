@@ -87,9 +87,6 @@ spec:
               readOnly: true
             {{- end }}
       volumes:
-        - name: gremlin-logs
-          hostPath:
-            path: /var/log/gremlin
         {{- if (eq (include "gremlin.secretType" .) "certificate") }}
         - name: gremlin-cert
           secret:
