@@ -86,11 +86,6 @@ spec:
               mountPath: /etc/gremlin/ssl
               readOnly: true
             {{- end }}
-            {{- if not (include "gkeCOSContainerd" .) }}
-            - name: gremlin-logs
-              mountPath: /var/log/gremlin
-              readOnly: false
-            {{- end }}
       volumes:
         - name: gremlin-logs
           hostPath:
