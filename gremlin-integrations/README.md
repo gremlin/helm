@@ -41,7 +41,7 @@ Specify each parameter using the `--set[-file] key=value[,key=value]` argument t
 **Example Usage**
 
 ```shell
-$ helm install gremlin gremlin/gremlin-integrations \
+$ helm install gremlin-integrations gremlin/gremlin-integrations \
   --set       gremlin.secret.managed=true \
   --set       gremlin.secret.type=certificate \
   --set       gremlin.secret.teamID=$GREMLIN_TEAM_ID \
@@ -93,9 +93,8 @@ them outside of Helm.
 #### For certificate auth
 
 ```shell
-helm install gremlin gremlin/gremlin-integrations \
+helm install gremlin-integrations gremlin/gremlin-integrations \
     --namespace gremlin \
-    --set      gremlin.secret.managed=true \
     --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
     --set-file gremlin.secret.certificate=/path/to/gremlin.cert \
     --set-file gremlin.secret.key=/path/to/gremlin.key
@@ -104,7 +103,7 @@ helm install gremlin gremlin/gremlin-integrations \
 #### For secret auth
 
 ```shell
-helm install gremlin gremlin/gremlin-integrations \
+helm install gremlin-integrations gremlin/gremlin-integrations \
     --namespace gremlin \
     --set gremlin.secret.managed=true \
     --set gremlin.secret.type=secret \
@@ -131,7 +130,7 @@ kubectl create secret generic gremlin-team-secret \
 Install the Helm chart
 
 ```shell
-helm install gremlin gremlin/gremlin-integrations \
+helm install gremlin-integrations gremlin/gremlin-integrations \
     --namespace gremlin \
     --set gremlin.secret.name=gremlin-team-secret \
     --set gremlin.secret.type=secret # Default is gremlin.secret.type=certificate
@@ -150,7 +149,7 @@ kubectl create secret generic gremlin-team-cert \
 ```
 
 ```shell
-helm install gremlin gremlin/gremlin-integrations \
+helm install gremlin-integrations gremlin/gremlin-integrations \
     --namespace gremlin \
     --set gremlin.secret.name=gremlin-team-cert
 ```
@@ -161,7 +160,7 @@ Gremlin can be configured to communicate with api.gremlin.com through an http_pr
 this proxy with `gremlin.proxy.url`.
 
 ```shell
-helm install gremlin gremlin/gremlin-integrations \
+helm install gremlin-integrations gremlin/gremlin-integrations \
     --namespace gremlin \
     --set      gremlin.secret.managed=true \
     --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
@@ -173,7 +172,7 @@ helm install gremlin gremlin/gremlin-integrations \
 #### HTTPS_PROXY with custom certificate authority
 
 ```shell
-helm install gremlin gremlin/gremlin \
+helm install gremlin-integrations gremlin/gremlin \
     --namespace gremlin \
     --set      gremlin.secret.managed=true \
     --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
@@ -192,5 +191,5 @@ helm delete gremlin-integrations
 To delete the deployment and its history:
 
 ```shell
-helm delete --purge gremlin
+helm delete --purge gremlin-integrations
 ```

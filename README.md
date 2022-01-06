@@ -18,7 +18,7 @@ helm repo add gremlin https://helm.gremlin.com/
 ### Gremlin
 
 ```shell
-helm install gremlin gremlin/gremlin \
+helm install gremlin-integrations gremlin/gremlin \
     --namespace gremlin \
     --set gremlin.secret.managed=true \
     --set gremlin.secret.type=secret \
@@ -35,7 +35,7 @@ documentation [here](https://github.com/gremlin/helm/blob/master/gremlin/README.
 #### Secret Auth
 
 ```shell
-helm install gremlin gremlin/gremlin-integrations \
+helm install gremlin-integrations gremlin/gremlin-integrations \
     --namespace gremlin \
     --set gremlin.secret.managed=true \
     --set gremlin.secret.type=secret \
@@ -46,9 +46,8 @@ helm install gremlin gremlin/gremlin-integrations \
 #### Certificate Auth
 
 ```shell
-helm install gremlin gremlin/gremlin-integrations \
+helm install gremlin-integrations gremlin/gremlin-integrations \
     --namespace gremlin \
-    --set gremlin.secret.managed=true \ 
     --set gremlin.secret.teamID=YOUR-TEAM-ID \
     --set-file gremlin.secret.certificate=PATH_TO_CERTIFICATE \
     --set-file gremlin.secret.key=PATH_TO_PRIVATE_KEY
