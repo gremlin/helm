@@ -61,18 +61,6 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
-{{- /* GKE Container Optimized OS with Containerd cannot */ -}}
-{{- /* mount the state/logs volumes, so detect that here */ -}}
-{{- define "gkeCOSContainerd" -}}
-{{- $output := false }}
-{{- range $index, $node := (lookup "v1" "Node" "" "").items -}}
-  {{- $gkeRuntime := index $node.metadata.labels "cloud.google.com/gke-container-runtime" -}}
-  {{- $gkeOS := index $node.metadata.labels "cloud.google.com/gke-os-distribution" -}}
-  {{- $output = (or $output (and (eq $gkeRuntime "containerd") (eq $gkeOS "cos"))) -}}
-{{- end -}}
-{{ $output }}
-{{- end -}}
-
 {{/*
 Because we've evolved the recommended way to pass the secret name over time, we hide the following order of operations behind this computed value:
 In later versions of this chart, we will remove the use of `.Values.gremlin.client.secretName` and the fallback value of `gremlin-team-cert`
