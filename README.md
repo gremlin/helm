@@ -18,7 +18,7 @@ helm repo add gremlin https://helm.gremlin.com/
 ### Gremlin
 
 ```shell
-helm install gremlin-integrations gremlin/gremlin \
+helm install gremlin gremlin/gremlin \
     --namespace gremlin \
     --set gremlin.secret.managed=true \
     --set gremlin.secret.type=secret \
