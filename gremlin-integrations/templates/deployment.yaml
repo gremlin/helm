@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gremlin-integrations.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gremlin-integrations.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "gremlin-integrations.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "gremlin-integrations.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "gremlin-integrations.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: GREMLIN_TEAM_ID
+          {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
+          {{- if (and (not .Values.gremlin.secret.managed) (default .Values.gremlin.teamID .Values.gremlin.secret.teamID)) }}
+              value: {{ default .Values.gremlin.teamID .Values.gremlin.secret.teamID | quote }}
+          {{- else }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gremlin.secretName" . }}
+                  key: GREMLIN_TEAM_ID
+          {{- end }}
+            - name: GREMLIN_SERVICE_URL
+              value: {{ include "gremlinServiceUrl" .}}
+          {{- if (eq (include "gremlin.secretType" .) "secret") }}
+            - name: GREMLIN_TEAM_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "gremlin.secretName" . }}
+                  key: GREMLIN_TEAM_SECRET
+          {{- else }}
+            - name: GREMLIN_TEAM_CERTIFICATE_OR_FILE
+              value: file:///var/lib/gremlin/cert/gremlin.cert
+            - name: GREMLIN_TEAM_PRIVATE_KEY_OR_FILE
+              value: file:///var/lib/gremlin/cert/gremlin.key
+          {{- end }}
+          {{- if .Values.gremlin.allowList }}
+            - name: GREMLIN_INTEGRATION_AGENT_ALLOW_LIST
+              value: {{ .Values.gremlin.allowList }}
+          {{- end }}
+          {{- if .Values.gremlin.proxy.url }}
+            - name: https_proxy
+              value: {{ .Values.gremlin.proxy.url }}
+            - name: no_proxy
+              value: $(KUBERNETES_SERVICE_HOST):$(KUBERNETES_SERVICE_PORT)
+          {{- end }}
+          {{- if .Values.ssl.certFile }}
+            - name: SSL_CERT_FILE
+              value: /etc/gremlin/ssl/certfile.pem
+          {{- end }}
+          {{- if .Values.ssl.certDir }}
+            - name: SSL_CERT_DIR
+              value: {{ .Values.ssl.certDir }}
+          {{- end }}
+          volumeMounts:
+            {{- if (eq (include "gremlin.secretType" .) "certificate") }}
+            - name: gremlin-cert
+              mountPath: /var/lib/gremlin/cert
+              readOnly: true
+            {{- end }}
+            {{- if .Values.ssl.certFile }}
+            - name: integrations-ssl-cert-file
+              mountPath: /etc/gremlin/ssl
+              readOnly: true
+            {{- end }}
+      volumes:
+        {{- if (eq (include "gremlin.secretType" .) "certificate") }}
+        - name: gremlin-cert
+          secret:
+            secretName: {{ include "gremlin.secretName" . }}
+        {{- end }}
+        {{- if .Values.ssl.certFile }}
+        - name: integrations-ssl-cert-file
+          secret:
+            secretName: integrations-ssl-cert-file
+        {{ end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
