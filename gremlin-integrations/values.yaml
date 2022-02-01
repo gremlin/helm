@@ -1,0 +1,78 @@
+# Default values for gremlin-integrations.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: gremlin/gremlin-integrations
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: latest
+
+imagePullSecrets: [ ]
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: { }
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: "gremlin-integrations"
+
+podAnnotations: { }
+
+podSecurityContext: { }
+# fsGroup: 2000
+
+securityContext: { }
+
+resources: { }
+nodeSelector: { }
+
+tolerations: [ ]
+
+affinity: { }
+
+ssl:
+  # ssl.certFile -
+  # Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the
+  # certificate(s) you wish to add. When set, this chart creates secret (`ssl-cert-file`) with the contents and passes
+  # it to both agents. This value is ignored when blank or absent.
+  certFile:
+  # ssl.certDir -
+  # sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a
+  # path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent.
+  certDir:
+
+gremlin:
+  secret:
+    # Gremlin supports both `certificate` and `secret` types
+    # To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections
+    type: certificate
+    managed: false
+    # team identifier (e.g. 11111111-1111-1111-1111-111111111111)
+    teamID:
+
+    ## Certificate auth requires: `certificate` and `key`
+    # team certificate (e.g. -----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----)
+    certificate:
+    # team private key (e.g. -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----)
+    key:
+
+    ## Secret auth requires: `teamSecret`
+    # team secret (e.g. 00000000-0000-0000-0000-000000000000)
+    teamSecret:
+  allowList: ""
+  proxy:
+    # gremlin.proxy.url -
+    # Specifies the http proxy that the Gremlin Agent and Gremlin Kubernetes agent should use to communicate with
+    # api.gremlin.com. This value is ignored when blank or absent.
+    url:
+  client:
+    certCreateSecret:
+
+
