@@ -89,7 +89,7 @@ gremlin:
     #                                           /run/crio/crio.sock, /run/runc,
     #                                           /run/containers/containers.sock, /run/containerd/runc/k8s.io]
     #
-    driver: docker
+    driver: containerd-runc
 
   cgroup:
     # gremlin.cgroup.root -
