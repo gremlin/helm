@@ -25,6 +25,13 @@ affinity: {}
 
 gremlin:
 
+  # gremlin.updateStrategy -
+  # The rollout strategy Kubernetes will use when updating the Gremlin daemonset
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
   # gremlin.apparmor -
   # Gremlin assumes apparmor is not enabled by default and so it will not specify any apparmor profile to use
   # You may need to provide a specific profile if your environment requires it.
@@ -254,6 +261,14 @@ gremlin:
     url:
 
 chao:
+
+  # chao.updateStrategy -
+  # The rollout strategy Kubernetes will use when updating the Chao deployment
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
 
   nodeSelector: {}
 
