@@ -1,5 +1,5 @@
 name: gremlin
-version: 0.5.0
+version: 0.5.0-alpha
 description: The Gremlin Inc client application
 appVersion: "2.16.2"
 apiVersion: v1
