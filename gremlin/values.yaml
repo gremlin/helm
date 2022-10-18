@@ -126,6 +126,9 @@ gremlin:
       - SYS_PTRACE  # Required by container drivers: docker-runc, crio-runc, containerd-runc
                     #   to determine if Gremlin is in the host's pid namespace
 
+      - SYS_RESOURCE # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                     #  to support gremlin resource attack integration with cgroupv2
+
       - SETFCAP     # Required by container drivers: docker-runc, crio-runc, containerd-runc
                     #   to set capabilities on Gremlin attack sidecars
 
