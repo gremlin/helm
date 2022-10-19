@@ -134,7 +134,7 @@ spec:
             readOnly: false
           - name: cgroup-root
             mountPath: /sys/fs/cgroup
-            readOnly: true
+            readOnly: false
           - name: shutdown-trigger
             mountPath: /sysrq
           {{- if include "containerMounts" . }}
