@@ -1,7 +1,7 @@
 name: gremlin
 version: 0.5.0-alpha
 description: The Gremlin Inc client application
-appVersion: "2.25.2"
+appVersion: "2.26.0"
 apiVersion: v1
 home: https://www.gremlin.com
 maintainers:
