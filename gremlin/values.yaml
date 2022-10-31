@@ -43,7 +43,7 @@ gremlin:
   collect:
     # gremlin.collect.processes -
     # Specifies whether Gremlin should collect process information
-    processes: false
+    processes: true
 
   # gremlin.hostPID -
   # This must be true for Gremlin container drivers: `docker-runc`, `crio-runc` and `containerd-runc`. It is also
