@@ -38,8 +38,6 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   /proc/** rl,
   # In order to join target container network space
   @{PROC}/[0-9]+/ns/net w,
-  # In order to assume the root of the target container
-  pivot_root,
 
   # Needed for specific Gremlin Attacks
   capability sys_boot,
@@ -50,6 +48,7 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   capability setfcap,
   capability audit_write,
   capability mknod,
+  capability sys_chroot,
 
   # Needed to execute attacks
   capability net_bind_service,
