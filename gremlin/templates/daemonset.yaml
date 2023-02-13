@@ -79,6 +79,9 @@ spec:
         securityContext:
           capabilities:
             add: {{ toYaml .Values.gremlin.podSecurity.capabilities | nindent 14 }}
+          {{- if .Values.gremlin.podSecurity.seLinuxOptions }}
+          seLinuxOptions: {{ toYaml .Values.gremlin.podSecurity.seLinuxOptions | nindent 12 }}
+          {{- end }}
         env:
           - name: GREMLIN_TEAM_ID
             {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}

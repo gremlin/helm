@@ -149,6 +149,10 @@ gremlin:
                     #   Not actively used by Gremlin but requested by sidecars
                     #   This capability will be removed in a later release
 
+    # gremlin.podSecurity.seLinuxOptions -
+    # Specifies SELinux options to apply to the Gremlin Daemonset container securityContext
+    seLinuxOptions:
+
     # gremlin.podSecurity.readOnlyRootFilesystem -
     # Forces the Gremlin Daemonset containers to run with a read-only root filesystem
     readOnlyRootFilesystem: false
