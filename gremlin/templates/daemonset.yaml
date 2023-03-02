@@ -79,7 +79,7 @@ spec:
         securityContext:
           capabilities:
             add: {{ toYaml .Values.gremlin.podSecurity.capabilities | nindent 14 }}
-          {{- if .Values.gremlin.podSecurity.seLinuxOptions }}
+          {{- if .Values.gremlin.podSecurity.useSELinuxOptions }}
           seLinuxOptions: {{ toYaml .Values.gremlin.podSecurity.seLinuxOptions | nindent 12 }}
           {{- end }}
         env:
