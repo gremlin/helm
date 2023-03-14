@@ -149,6 +149,15 @@ gremlin:
                     #   Not actively used by Gremlin but requested by sidecars
                     #   This capability will be removed in a later release
 
+    # gremlin.podSecurity.seLinuxOptions -
+    # Specifies SELinux options to apply to the Gremlin Daemonset container securityContext. 
+    #
+    # WARNING: This option should be enabled with caution as it will relabel paths on the host filesystem according
+    # to gremlin.podSecurity.seLinuxOptions, which includes container runtime socket files and container state directories.
+    # Gremlin recommends users instead install a custom SELinux policy that provides integration with the labels already
+    # defined on the target system so that paths do not need to be relabeled. See https://github.com/gremlin/selinux-policies
+    seLinuxOptions:
+
     # gremlin.podSecurity.readOnlyRootFilesystem -
     # Forces the Gremlin Daemonset containers to run with a read-only root filesystem
     readOnlyRootFilesystem: false
