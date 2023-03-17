@@ -150,7 +150,7 @@ gremlin:
                     #   This capability will be removed in a later release
 
     # gremlin.podSecurity.seLinuxOptions -
-    # Specifies SELinux options to apply to the Gremlin Daemonset container securityContext. 
+    # Specifies SELinux options to apply to the Gremlin Daemonset container securityContext.
     #
     # WARNING: This option should be enabled with caution as it will relabel paths on the host filesystem according
     # to gremlin.podSecurity.seLinuxOptions, which includes container runtime socket files and container state directories.
