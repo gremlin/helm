@@ -110,6 +110,7 @@ gremlin:
     #   Gremlin's requirements (see gremlin.podSecurity.podSecurityPolicy and
     #   gremlin.podSecurity.securityContextConstraints)
     create: true
+    annotations: {}
 
   podSecurity:
 
@@ -246,6 +247,7 @@ gremlin:
   secret:
     # Gremlin supports both `certificate` and `secret` types
     # To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections
+    name: gremlin-secret
     type: certificate
     managed: false
     # team identifier (e.g. 11111111-1111-1111-1111-111111111111)
@@ -258,6 +260,14 @@ gremlin:
     certificate:
     # team private key (e.g. -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----)
     key:
+
+    # Used to define the value of the gremlin-cert volume except the name
+    # This volume should always contain two files named
+    # - gremlin.cert
+    # - gremlin.key
+    # containing the team certificate and private key used to auth the agents
+    # to the gremlin API
+    certVolume: {}
 
     ## Secret auth requires: `teamSecret`
     # team secret (e.g. 00000000-0000-0000-0000-000000000000)
@@ -284,6 +294,9 @@ chao:
   tolerations: []
 
   affinity: {}
+
+  serviceAccount:
+    annotations: {}
 
 ssl:
   # ssl.certFile -

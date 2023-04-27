@@ -177,8 +177,12 @@ spec:
             path: /proc/sysrq-trigger
         {{- if (eq (include "gremlin.secretType" .) "certificate") }}
         - name: gremlin-cert
+        {{- if .Values.gremlin.secret.certVolume }}
+{{ .Values.gremlin.secret.certVolume | toYaml | indent 10}}
+          {{- else }}
           secret:
-            secretName: {{ include "gremlin.secretName" . }}
+            secretName: gremlin-secret
+          {{- end }}
         {{- end }}
         {{- if and .Values.gremlin.podSecurity.seccomp.enabled (eq "localhost/gremlin" .Values.gremlin.podSecurity.seccomp.profile) }}
         - name: seccomp-root

@@ -116,8 +116,12 @@ spec:
 {{- end }}
       volumes:
       - name: gremlin-cert
+        {{- if .Values.gremlin.secret.certVolume }}
+{{ .Values.gremlin.secret.certVolume | toYaml | indent 8 }}
+        {{- else }}
         secret:
-          secretName: {{ include "gremlin.secretName" . }}
+          secretName: gremlin-secret
+        {{- end }}
 {{- if .Values.ssl.certFile }}
       - name: ssl-cert-file
         secret:
