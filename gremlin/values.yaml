@@ -273,8 +273,6 @@ gremlin:
 
 chao:
 
-  skipRbacCreation: false
-
   # chao.updateStrategy -
   # The rollout strategy Kubernetes will use when updating the Chao deployment
   updateStrategy:
