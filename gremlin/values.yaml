@@ -25,7 +25,7 @@ affinity: {}
 
 gremlin:
 
-  skipRbacCreation: false
+  skipRbacApply: false
 
   # gremlin.updateStrategy -
   # The rollout strategy Kubernetes will use when updating the Gremlin daemonset
