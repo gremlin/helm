@@ -25,7 +25,9 @@ affinity: {}
 
 gremlin:
 
-  skipRbacApply: false
+  # gremlin.applyRbac -
+  # Default true, empty value to exclude from chao-deployment
+  applyRbac: true
 
   # gremlin.updateStrategy -
   # The rollout strategy Kubernetes will use when updating the Gremlin daemonset
