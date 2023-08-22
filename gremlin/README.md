@@ -25,9 +25,11 @@ their default values. See values.yaml for all available options.
 | `nodeSelector`                         | Map of node labels for pod assignment for the `gremlin` container | `{}`                                                                        |
 | `tolerations`                          | List of node taints to tolerate for the `gremlin` container    | `[]`                                                                        |
 | `affinity`                             | Map of node/pod affinities for the `gremlin` container         | `{}`                                                                        |
+| `chao.podLabels`                       | Kubernetes labels applied to the chao deployment and it's Pods | `{}`                                                                        |
 | `chao.nodeSelector`                    | Map of node labels for pod assignment for the `chao` container | `{}`                                                                        |
 | `chao.tolerations`                     | List of node taints to tolerate for the `chao` container       | `[]`                                                                        |
 | `chao.affinity`                        | Map of node/pod affinities for the `chao` container            | `{}`                                                                        |
+| `gremlin.podLabels`           | Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods| `{}`                                                                        |
 | `gremlin.apparmor`                     | Apparmor profile to set for the Gremlin Daemon                 | `""` (When empty, no profile is set)                                        |
 | `gremlin.installApparmorProfile`       | Have Gremlin install their own [Apparmor Profile](agent_apparmor.profile) (NOTE: `gremlin.apparmor` overrides this) | `false` |
 | `gremlin.container.driver`             | Specifies which container driver with which to run Gremlin. [See example][driverexample] | `docker` | 

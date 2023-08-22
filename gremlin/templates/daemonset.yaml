@@ -9,6 +9,9 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     version: v1
+    {{- if .Values.gremlin.podLabels }}
+    {{- toYaml .Values.gremlin.podLabels | nindent 4 }}
+    {{- end }}
 spec:
   selector:
     matchLabels:
@@ -25,6 +28,9 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/managed-by: {{ .Release.Service }}
         version: v1
+        {{- if .Values.gremlin.podLabels }}
+        {{- toYaml .Values.gremlin.podLabels | nindent 8 }}
+        {{- end }}
       {{- if (or .Values.gremlin.podSecurity.seccomp.enabled (or .Values.gremlin.apparmor .Values.gremlin.installApparmorProfile) ) }}
       annotations:
         {{- if .Values.gremlin.apparmor }}
