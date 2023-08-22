@@ -7,6 +7,9 @@ metadata:
     app.kubernetes.io/name: chao
     helm.sh/chart: {{ include "gremlin.chart" . }}
     app.kubernetes.io/version: "1"
+    {{- if .Values.chao.podLabels }}
+    {{- toYaml .Values.chao.podLabels | nindent 4 }}
+    {{- end }}
   name: chao
   namespace: {{ .Release.Namespace }}
 spec:
@@ -27,6 +30,9 @@ spec:
         app.kubernetes.io/name: chao
         helm.sh/chart: {{ include "gremlin.chart" . }}
         app.kubernetes.io/version: "1"
+        {{- if .Values.chao.podLabels }}
+        {{- toYaml .Values.chao.podLabels | nindent 8 }}
+        {{- end }}
     spec:
       serviceAccountName: chao
       {{- if .Values.chao.affinity }}
