@@ -32,6 +32,10 @@ gremlin:
     rollingUpdate:
       maxUnavailable: 1
 
+  # gremlin.podLabels -
+  # Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods
+  podLabels: {}
+
   # gremlin.apparmor -
   # Gremlin assumes apparmor is not enabled by default and so it will not specify any apparmor profile to use
   # You may need to provide a specific profile if your environment requires it.
@@ -284,6 +288,8 @@ chao:
   tolerations: []
 
   affinity: {}
+
+  podLabels: {}
 
 ssl:
   # ssl.certFile -
