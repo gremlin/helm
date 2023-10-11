@@ -126,32 +126,33 @@ gremlin:
     #   Daemonset as well as any pod security resource that governs it. Capabilities that are required for specific
     #   attacks can be removed from this list if running such attacks are not desired.
     capabilities:
-      - KILL        # Required to run Process Killer attacks
-      - NET_ADMIN   # Required to run network attacks
-      - SYS_BOOT    # Required to run Shutdown attacks
-      - SYS_TIME    # Required to run Time Travel attacks
+      - KILL            # Required to run Process Killer attacks
+      - NET_ADMIN       # Required to run network attacks
+      - SYS_BOOT        # Required to run Shutdown attacks
+      - SYS_TIME        # Required to run Time Travel attacks
+      - DAC_READ_SEARCH # Required to run Certificate Expiry attacks, and dependency discovery features
 
-      - SYS_ADMIN   # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                    #   to run attacks against running containers
+      - SYS_ADMIN       # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                        #   to run attacks against running containers
 
-      - SYS_PTRACE  # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                    #   to determine if Gremlin is in the host's pid namespace
+      - SYS_PTRACE      # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                        #   to determine if Gremlin is in the host's pid namespace
 
-      - SETFCAP     # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                    #   to set capabilities on Gremlin attack sidecars
+      - SETFCAP         # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                        #   to set capabilities on Gremlin attack sidecars
 
-      - AUDIT_WRITE # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                    #   to write to the Kernel's audit log
+      - AUDIT_WRITE     # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                        #   to write to the Kernel's audit log
 
-      - MKNOD       # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                    #   to create new devices for Gremlin attack sidecars
+      - MKNOD           # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                        #   to create new devices for Gremlin attack sidecars
 
-      - SYS_CHROOT  # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                    #   to create and enter new namespaces for Gremlin attack sidecars
+      - SYS_CHROOT      # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                        #   to create and enter new namespaces for Gremlin attack sidecars
 
-      - NET_RAW     # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                    #   Not actively used by Gremlin but requested by sidecars
-                    #   This capability will be removed in a later release
+      - NET_RAW         # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                        #   Not actively used by Gremlin but requested by sidecars
+                        #   This capability will be removed in a later release
 
     # gremlin.podSecurity.seLinuxOptions -
     # Specifies SELinux options to apply to the Gremlin Daemonset container securityContext.
