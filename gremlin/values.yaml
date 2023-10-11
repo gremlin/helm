@@ -130,7 +130,7 @@ gremlin:
       - NET_ADMIN       # Required to run network attacks
       - SYS_BOOT        # Required to run Shutdown attacks
       - SYS_TIME        # Required to run Time Travel attacks
-      - DAC_READ_SEARCH # Required to run Certificate Expiry attacks
+      - DAC_READ_SEARCH # Required to run Certificate Expiry attacks, and dependency discovery features
 
       - SYS_ADMIN       # Required by container drivers: docker-runc, crio-runc, containerd-runc
                         #   to run attacks against running containers
