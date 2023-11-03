@@ -56,7 +56,7 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   capability setgid,
   capability chown,
 
-  # Needed for Gremlin Service Discovery
+  # Needed for Gremlin Service Discovery and executing a certificate expiry experiment
   capability dac_read_search,
   capability sys_ptrace,
 
