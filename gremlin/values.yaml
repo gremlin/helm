@@ -114,6 +114,8 @@ gremlin:
     #   Gremlin's requirements (see gremlin.podSecurity.podSecurityPolicy and
     #   gremlin.podSecurity.securityContextConstraints)
     create: true
+    # Cloud IAM role to use to resolve any remote secrets
+    iamRole:
 
   podSecurity:
 
