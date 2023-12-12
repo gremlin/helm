@@ -66,11 +66,6 @@ gremlin:
   # This controls if gremlin installs it's own apparmor profile.  This is only necessary if you're running apparmor
   installApparmorProfile: false
 
-  # gremlin.installK8sClient -
-  # Determines if the `chao` deployment should be installed. This deployment launches an agent that enabled Kubernetes
-  #   targeting for Gremlin attacks
-  installK8sClient: true
-
   client:
     # gremlin.client.tags -
     # A string of comma separated key=value pairs that are used to decorate the Gremlin agent with tags.
@@ -116,6 +111,8 @@ gremlin:
     create: true
     # Cloud IAM role to use to resolve any remote secrets
     iamRole:
+    # Annotations to add to the service account
+    annotations: { }
 
   podSecurity:
 
@@ -276,6 +273,10 @@ gremlin:
     # api.gremlin.com. This value is ignored when blank or absent.
     url:
 
+  env:
+    # Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset.
+    add: []
+
 chao:
 
   # chao.updateStrategy -
@@ -293,6 +294,15 @@ chao:
   affinity: {}
 
   podLabels: {}
+
+  serviceAccount:
+    # Determines if the `chao` deployment should be installed. This deployment launches an agent that enabled Kubernetes
+    #   targeting for Gremlin attacks
+    create: true
+    # Cloud IAM role to use to resolve any remote secrets
+    iamRole:
+    # Annotations to add to the service account
+    annotations: { }
 
 ssl:
   # ssl.certFile -
