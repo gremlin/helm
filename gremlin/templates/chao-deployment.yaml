@@ -1,4 +1,4 @@
-{{ if .Values.gremlin.installK8sClient }}
+{{ if .Values.chao.create }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:

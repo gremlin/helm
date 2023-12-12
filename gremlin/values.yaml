@@ -279,6 +279,11 @@ gremlin:
 
 chao:
 
+  # chao.create
+  # Determines if the `chao` deployment should be installed. This deployment launches an agent that enabled Kubernetes
+  #   targeting for Gremlin attacks
+  create: true
+
   # chao.updateStrategy -
   # The rollout strategy Kubernetes will use when updating the Chao deployment
   updateStrategy:
