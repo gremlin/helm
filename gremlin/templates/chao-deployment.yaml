@@ -1,4 +1,4 @@
-{{ if .Values.gremlin.installK8sClient }}
+{{ if .Values.chao.create }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -96,14 +96,25 @@ spec:
             - name: SSL_CERT_DIR
               value: {{ .Values.ssl.certDir }}
 {{- end }}
+            {{- with .Values.chao.extraEnv }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
           args:
             - "-api_url"
             - "{{ include "gremlinServiceUrl" . }}/kubernetes"
             {{- if (eq (include "gremlin.secretType" .) "certificate") }}
             - "-cert_path"
+            {{- if (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
             - "/var/lib/gremlin/cert/gremlin.cert"
+            {{- else }}
+            - {{ .Values.gremlin.secret.certificate | quote }}
+            {{- end }}
             - "-key_path"
+            {{- if (hasPrefix "-----BEGIN" .Values.gremlin.secret.key) }}
             - "/var/lib/gremlin/cert/gremlin.key"
+            {{- else }}
+            - {{ .Values.gremlin.secret.key | quote }}
+            {{- end }}
             {{- end }}
           imagePullPolicy: {{ .Values.chaoimage.pullPolicy }}
           name: chao

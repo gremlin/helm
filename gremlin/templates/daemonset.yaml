@@ -108,9 +108,17 @@ spec:
                 key: GREMLIN_TEAM_SECRET
           {{- else }}
           - name: GREMLIN_TEAM_CERTIFICATE_OR_FILE
+            {{- if (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
             value: file:///var/lib/gremlin/cert/gremlin.cert
+            {{- else }}
+            value: {{ .Values.gremlin.secret.certificate }}
+            {{- end }}
           - name: GREMLIN_TEAM_PRIVATE_KEY_OR_FILE
+            {{- if (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
             value: file:///var/lib/gremlin/cert/gremlin.key
+            {{- else }}
+            value: {{ .Values.gremlin.secret.key }}
+            {{- end }}
           {{- end }}
           - name: GREMLIN_IDENTIFIER
             valueFrom:
@@ -135,6 +143,9 @@ spec:
           {{- if .Values.ssl.certDir }}
           - name: SSL_CERT_DIR
             value: {{ .Values.ssl.certDir }}
+          {{- end }}
+          {{- with .Values.gremlin.extraEnv }}
+            {{- toYaml . | nindent 10 }}
           {{- end }}
         volumeMounts:
           - name: gremlin-state
