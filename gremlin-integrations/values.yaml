@@ -75,6 +75,5 @@ gremlin:
   client:
     certCreateSecret:
 
-  env:
-    # Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset.
-    add: []
+  # Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset.
+  extraEnv: []

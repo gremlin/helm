@@ -271,9 +271,8 @@ gremlin:
     # api.gremlin.com. This value is ignored when blank or absent.
     url:
 
-  env:
-    # Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset.
-    add: []
+  # Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset.
+  extraEnv: []
 
 chao:
 
