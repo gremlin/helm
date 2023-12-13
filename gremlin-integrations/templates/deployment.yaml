@@ -53,9 +53,17 @@ spec:
                   key: GREMLIN_TEAM_SECRET
           {{- else }}
             - name: GREMLIN_TEAM_CERTIFICATE_OR_FILE
+              {{- if (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
               value: file:///var/lib/gremlin/cert/gremlin.cert
+              {{- else }}
+              value: {{ .Values.gremlin.secret.certificate }}
+              {{- end }}
             - name: GREMLIN_TEAM_PRIVATE_KEY_OR_FILE
+              {{- if (hasPrefix "-----BEGIN" .Values.gremlin.secret.key) }}
               value: file:///var/lib/gremlin/cert/gremlin.key
+              {{- else }}
+              value: {{ .Values.gremlin.secret.key }}
+              {{- end }}
           {{- end }}
           {{- if .Values.gremlin.allowList }}
             - name: GREMLIN_INTEGRATION_AGENT_ALLOW_LIST

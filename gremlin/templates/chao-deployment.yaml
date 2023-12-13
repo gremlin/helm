@@ -104,9 +104,17 @@ spec:
             - "{{ include "gremlinServiceUrl" . }}/kubernetes"
             {{- if (eq (include "gremlin.secretType" .) "certificate") }}
             - "-cert_path"
+            {{- if (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
             - "/var/lib/gremlin/cert/gremlin.cert"
+            {{- else }}
+            - {{ .Values.gremlin.secret.certificate | quote }}
+            {{- end }}
             - "-key_path"
+            {{- if (hasPrefix "-----BEGIN" .Values.gremlin.secret.key) }}
             - "/var/lib/gremlin/cert/gremlin.key"
+            {{- else }}
+            - {{ .Values.gremlin.secret.key | quote }}
+            {{- end }}
             {{- end }}
           imagePullPolicy: {{ .Values.chaoimage.pullPolicy }}
           name: chao

@@ -63,13 +63,13 @@ Create the name of the service account to use
 
 {{/*
 Because we've evolved the recommended way to pass the secret name over time, we hide the following order of operations behind this computed value:
-In later versions of this chart, we will remove the use of `.Values.gremlin.client.secretName` and the fallback value of `gremlin-team-cert`
+In later versions of this chart, we will remove the use of the fallback value of `gremlin-team-cert`
 */}}
 {{- define "gremlin.secretName" -}}
 {{- if .Values.gremlin.secret.managed -}}
-{{- default .Values.gremlin.client.secretName .Values.gremlin.secret.name | default "gremlin-integrations-secret" -}}
+{{- default .Values.gremlin.secret.name "gremlin-integrations-secret" -}}
 {{- else -}}
-{{- default .Values.gremlin.client.secretName .Values.gremlin.secret.name | default "gremlin-integrations-team-cert" -}}
+{{- default .Values.gremlin.secret.name "gremlin-integrations-team-cert" -}}
 {{- end -}}
 {{- end -}}
 
@@ -88,9 +88,7 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- if .Values.gremlin.secret.type -}}
 {{- .Values.gremlin.secret.type -}}
 {{- else -}}
-{{- if .Values.gremlin.client.certCreateSecret -}}
-{{- "certificate" -}}
-{{- else if .Values.gremlin.secret.managed -}}
+{{- if .Values.gremlin.secret.managed -}}
 {{- if .Values.gremlin.secret.teamSecret -}}
 {{- "secret" -}}
 {{- else -}}

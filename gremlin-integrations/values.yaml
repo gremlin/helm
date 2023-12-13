@@ -72,8 +72,7 @@ gremlin:
     # Specifies the http proxy that the Gremlin Agent and Gremlin Kubernetes agent should use to communicate with
     # api.gremlin.com. This value is ignored when blank or absent.
     url:
-  client:
-    certCreateSecret:
 
-  # Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset.
+  # gremlin.extraEnv
+  # Specify any arbitrary environment variables to pass to the Gremlin Integrations Agent deployment
   extraEnv: []
