@@ -96,6 +96,9 @@ spec:
             - name: SSL_CERT_DIR
               value: {{ .Values.ssl.certDir }}
 {{- end }}
+            {{- if .Values.chao.extraEnv }}
+              {{- .Values.chao.extraEnv | nindent 12 }}
+            {{- end }}
           args:
             - "-api_url"
             - "{{ include "gremlinServiceUrl" . }}/kubernetes"

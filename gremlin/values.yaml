@@ -304,6 +304,8 @@ chao:
     # Annotations to add to the service account
     annotations: { }
 
+  extraEnv: []
+
 ssl:
   # ssl.certFile -
   # Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the
