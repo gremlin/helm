@@ -136,8 +136,8 @@ spec:
           - name: SSL_CERT_DIR
             value: {{ .Values.ssl.certDir }}
           {{- end }}
-          {{- if .Values.gremlin.extraEnv }}
-            {{- .Values.gremlin.extraEnv | nindent 10 }}
+          {{- with .Values.gremlin.extraEnv }}
+            {{- toYaml . | nindent 10 }}
           {{- end }}
         volumeMounts:
           - name: gremlin-state

@@ -30,6 +30,7 @@ their default values. See values.yaml for all available options.
 | `chao.tolerations`                     | List of node taints to tolerate for the `chao` container       | `[]`                                                                        |
 | `chao.affinity`                        | Map of node/pod affinities for the `chao` container            | `{}`                                                                        |
 | `chao.create`                          | Enable kubernetes targeting by installing k8s client           |  true                                                                       |
+| `chao.extraEnv`                        | Specify any arbitrary environment variables to pass to the Chao deployment. | `[]`                                                           |
 | `gremlin.podLabels`           | Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods| `{}`                                                                        |
 | `gremlin.apparmor`                     | Apparmor profile to set for the Gremlin Daemon                 | `""` (When empty, no profile is set)                                        |
 | `gremlin.installApparmorProfile`       | Have Gremlin install their own [Apparmor Profile](agent_apparmor.profile) (NOTE: `gremlin.apparmor` overrides this) | `false` |
@@ -61,11 +62,12 @@ their default values. See values.yaml for all available options.
 | `gremlin.secret.certificate`           | Contents of the certificate. Required if using managed secrets of `type=certificate`  | `""`                                                 |
 | `gremlin.secret.key`                   | Contents of the private key. Required if using managed secrets of `type=certificate`  | `""`                                                 |
 | `gremlin.secret.teamSecret`            | Gremlin's team secret. Required if using managed secrets of `type=secret`  | `""`                                                            |
-| `gremlin.resources`                    | Set resource requests and limits                               | `{}`
+| `gremlin.resources`                    | Set resource requests and limits                               | `{}`                                                                        |
 | `gremlin.hostPID`                      | Enable host-level process killing                              | `false`                                                                     |
 | `gremlin.hostNetwork`                  | Enable host-level network attacks                              | `false`                                                                     |
 | `gremlin.client.tags`                  | Comma-separated list of custom tags to assign to this client   | `""`                                                                        |
-| `gremlin.proxy.url`                    | Specifies the http proxy the agent should use to communicate with api.gremlin.com. |  `""` (ignored) |                                        |
+| `gremlin.proxy.url`                    | Specifies the http proxy the agent should use to communicate with api.gremlin.com. |  `""` (ignored) |                                       |
+| `gremlin.extraEnv`                     | Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset. | `[]`                                                   |
 | `ssl.certFile`                         | Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the certificate(s) you wish to add. When set, this chart creates secret (`ssl-cert-file`) with the contents and passes it to both agents. This value is ignored when blank or absent. |  `""` (ignored) |
 | `ssl.certDir`                          | sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent. |  `""` (ignored) | 
 
