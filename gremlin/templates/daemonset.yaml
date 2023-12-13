@@ -136,7 +136,9 @@ spec:
           - name: SSL_CERT_DIR
             value: {{ .Values.ssl.certDir }}
           {{- end }}
-          {{- .Values.gremlin.extraEnv | nindent 10 }}
+          {{- if .Values.gremlin.extraEnv }}
+            {{- .Values.gremlin.extraEnv | nindent 10 }}
+          {{- end }}
         volumeMounts:
           - name: gremlin-state
             mountPath: /var/lib/gremlin
