@@ -32,6 +32,10 @@ gremlin:
     rollingUpdate:
       maxUnavailable: 1
 
+  # gremlin.priorityClassName -
+  # The name of the priority class to use for the Gremlin daemonset
+  priorityClassName: ""
+
   # gremlin.podLabels -
   # Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods
   podLabels: {}
@@ -289,6 +293,10 @@ chao:
     rollingUpdate:
       maxUnavailable: 25%
       maxSurge: 25%
+
+  # chao.priorityClassName -
+  # The name of the priority class to use for the Chao deployment
+  priorityClassName: ""
 
   nodeSelector: {}
 

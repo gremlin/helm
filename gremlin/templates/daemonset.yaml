@@ -210,3 +210,6 @@ spec:
           secret:
             secretName: ssl-cert-file
         {{- end }}
+{{- if .Values.gremlin.priorityClassName }}
+    priorityClassName: {{ .Values.gremlin.priorityClassName }}
+{{- end }}
