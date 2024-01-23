@@ -66,7 +66,7 @@ their default values. See values.yaml for all available options.
 | `gremlin.resources`                    | Set resource requests and limits                               | `{}`                                                                        |
 | `gremlin.hostPID`                      | Enable host-level process killing                              | `false`                                                                     |
 | `gremlin.hostNetwork`                  | Enable host-level network attacks                              | `false`                                                                     |
-| `gremlin.priorityClassName`            | The priority class to use for the agent DaemonSet              | `false`                                                                     |
+| `gremlin.priorityClassName`            | The priority class to use for the agent DaemonSet              | `""`                                                                     |
 | `gremlin.client.tags`                  | Comma-separated list of custom tags to assign to this client   | `""`                                                                        |
 | `gremlin.proxy.url`                    | Specifies the http proxy the agent should use to communicate with api.gremlin.com. |  `""` (ignored) |                                       |
 | `gremlin.extraEnv`                     | Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset. | `[]`                                                   |
