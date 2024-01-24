@@ -141,7 +141,7 @@ spec:
           secretName: ssl-cert-file
 {{ end }}
 {{- if .Values.chao.priorityClassName }}
-    priorityClassName: {{ .Values.chao.priorityClassName }}
+      priorityClassName: {{ .Values.chao.priorityClassName }}
 {{- end }}
 ---
 {{ end }}
