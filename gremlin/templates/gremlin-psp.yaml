@@ -32,8 +32,6 @@ spec:
       readOnly: false
     - pathPrefix: /var/log/gremlin
       readOnly: false
-    - pathPrefix: /proc/sysrq-trigger
-      readOnly: false
     - pathPrefix: {{ .Values.gremlin.cgroup.root }}
       readOnly: true
     {{- if include "containerMountsPSP" . }}
