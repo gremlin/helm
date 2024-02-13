@@ -39,7 +39,7 @@ In later versions of this chart, we will remove the use of the fallback value of
 {{- if .Values.gremlin.secret.managed -}}
 {{- default .Values.gremlin.secret.name "gremlin-secret" -}}
 {{- else -}}
-{{- .Values.gremlin.secret.name "gremlin-team-cert" -}}
+{{- default .Values.gremlin.secret.name "gremlin-team-cert" -}}
 {{- end -}}
 {{- end -}}
 
