@@ -258,25 +258,25 @@ gremlin:
     type: certificate
     managed: false
     # team identifier (e.g. 11111111-1111-1111-1111-111111111111)
-    teamID:
+    teamID: ""
     # string uniquely identifying this kubernetes cluster in Gremlin (e.g. my-cluster)
-    clusterID:
+    clusterID: ""
 
     ## Certificate auth requires: `certificate` and `key`
     # team certificate (e.g. -----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----)
-    certificate:
+    certificate: ""
     # team private key (e.g. -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----)
-    key:
+    key: ""
 
     ## Secret auth requires: `teamSecret`
     # team secret (e.g. 00000000-0000-0000-0000-000000000000)
-    teamSecret:
+    teamSecret: ""
 
   proxy:
     # gremlin.proxy.url -
     # Specifies the http proxy that the Gremlin Agent and Gremlin Kubernetes agent should use to communicate with
     # api.gremlin.com. This value is ignored when blank or absent.
-    url:
+    url: ""
 
   # gremlin.extraEnv -
   # Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset.
