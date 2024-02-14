@@ -108,13 +108,15 @@ spec:
                 key: GREMLIN_TEAM_SECRET
           {{- else }}
           - name: GREMLIN_TEAM_CERTIFICATE_OR_FILE
-            {{- if (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
+            {{- /* If managed outside of this chart, or if the value is a literal, reference the secret as a file */}}
+            {{- if or (not .Values.gremlin.secret.managed)  (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
             value: file:///var/lib/gremlin/cert/gremlin.cert
             {{- else }}
             value: {{ .Values.gremlin.secret.certificate }}
             {{- end }}
           - name: GREMLIN_TEAM_PRIVATE_KEY_OR_FILE
-            {{- if (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
+            {{- /* If managed outside of this chart, or if the value is a literal, reference the secret as a file */}}
+            {{- if or (not .Values.gremlin.secret.managed) (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
             value: file:///var/lib/gremlin/cert/gremlin.key
             {{- else }}
             value: {{ .Values.gremlin.secret.key }}
