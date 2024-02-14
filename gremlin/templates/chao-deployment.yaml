@@ -104,13 +104,15 @@ spec:
             - "{{ include "gremlinServiceUrl" . }}/kubernetes"
             {{- if (eq (include "gremlin.secretType" .) "certificate") }}
             - "-cert_path"
-            {{- if (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
+            {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
+            {{- if or (not .Values.gremlin.secret.managed) (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
             - "/var/lib/gremlin/cert/gremlin.cert"
             {{- else }}
             - {{ .Values.gremlin.secret.certificate | quote }}
             {{- end }}
             - "-key_path"
-            {{- if (hasPrefix "-----BEGIN" .Values.gremlin.secret.key) }}
+            {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
+            {{- if or (not .Values.gremlin.secret.managed) (hasPrefix "-----BEGIN" .Values.gremlin.secret.key) }}
             - "/var/lib/gremlin/cert/gremlin.key"
             {{- else }}
             - {{ .Values.gremlin.secret.key | quote }}
