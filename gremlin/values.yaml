@@ -83,26 +83,39 @@ gremlin:
   container:
     # gremlin.container.driver -
     # Specifies which container driver with which to run Gremlin. Possible values and their meanings:
-    #   docker          =   Provides legacy integration with Docker containers
-    #                       Implies host mounts [/var/run/docker.sock]
-    #                       Does not support the systemd cgroup driver
+    #   docker           =   Provides legacy integration with Docker containers
+    #                        Implies host mounts [/var/run/docker.sock]
+    #                        Does not support the systemd cgroup driver
     #
-    #   docker-runc     =   Provides full integration with Docker containers
-    #                       Implies host mounts [/var/run/docker.sock, /run/docker/runtime-runc/moby]
+    #   docker-runc      =   Provides full integration with Docker containers
+    #                        Implies host mounts [/var/run/docker.sock, /run/docker/runtime-runc/moby]
     #
-    #   crio-runc       =   Provides full integration with Cri-O containers
-    #                       Implies host mounts [/run/crio/crio.sock, /run/runc]
+    #   crio-runc        =   Provides full integration with Cri-O containers
+    #                        Implies host mounts [/run/crio/crio.sock, /run/runc]
     #
-    #   containerd-runc =   Provides full integration with Containerd containers
-    #                       Implies host mounts [/run/containers/containers.sock, /run/containerd/runc/k8s.io]
+    #   containerd-runc  =   Provides full integration with Containerd containers
+    #                        Implies host mounts [/run/containers/containers.sock, /run/containerd/runc/k8s.io]
     #
-    #   any             =   Useful when the Cluster's container runtime is not known.
-    #                       Helm will provide file access to all drivers so that Gremlin can choose.
-    #                       Implies host mounts [/var/run/docker.sock, /run/docker/runtime-runc/moby,
-    #                                           /run/crio/crio.sock, /run/runc,
-    #                                           /run/containers/containers.sock, /run/containerd/runc/k8s.io]
+    #   any              =   Useful when the Cluster's container runtime is not known.
+    #                        Helm will provide file access to all drivers so that Gremlin can choose.
+    #                        Implies host mounts [/var/run/docker.sock, /run/docker/runtime-runc/moby,
+    #                                             /run/crio/crio.sock, /run/runc,
+    #                                             /run/containers/containers.sock, /run/containerd/runc/k8s.io]
     #
-    driver: any
+    #   docker-linux     =   Provides full integration with Docker containers without runc
+    #                        Implies host mounts [/var/run/docker.sock]
+    #
+    #   containerd-linux =   Provides full integration with Containerd containers without runc
+    #                        Implies host mounts [/run/containers/containers.sock]
+    #
+    #   crio-linux       =   Provides full integration with Cri-O containers without runc
+    #                        Implies host mounts [/run/crio/crio.sock]
+    #
+    #   linux            =   Useful when the Cluster's container runtime is not known.
+    #                        Helm will provide file access to all linux drivers so that Gremlin can choose.
+    #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock,
+    #                                             /run/containers/containers.sock]
+    driver: linux
 
   cgroup:
     # gremlin.cgroup.root -
@@ -347,3 +360,12 @@ containerDrivers:
   docker:
     runtimeSocket: "/var/run/docker.sock"
     name: "docker"
+  docker-linux:
+    runtimeSocket: "/var/run/docker.sock"
+    name: "docker"
+  containerd-linux:
+    runtimeSocket: "/run/containerd/containerd.sock"
+    name: "containerd"
+  crio-linux:
+    runtimeSocket: "/run/crio/crio.sock"
+    name: "crio"
