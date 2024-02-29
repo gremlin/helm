@@ -158,6 +158,9 @@ gremlin:
                         #   Not actively used by Gremlin but requested by sidecars
                         #   This capability will be removed in a later release
 
+      - SYS_RESOURCE    # Required by container drivers: docker-runc, crio-runc, containerd-runc
+                        #   to run Process Exhaustion experiments
+
     # gremlin.podSecurity.seLinuxOptions -
     # Specifies SELinux options to apply to the Gremlin Daemonset container securityContext.
     #
