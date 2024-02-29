@@ -135,6 +135,7 @@ gremlin:
       - SYS_BOOT        # Required to run Shutdown attacks
       - SYS_TIME        # Required to run Time Travel attacks
       - DAC_READ_SEARCH # Required to run Certificate Expiry attacks, and dependency discovery features
+      - SYS_RESOURCE    # Required to run Process Exhaustion attacks
 
       - SYS_ADMIN       # Required by container drivers: docker-runc, crio-runc, containerd-runc
                         #   to run attacks against running containers
@@ -157,9 +158,6 @@ gremlin:
       - NET_RAW         # Required by container drivers: docker-runc, crio-runc, containerd-runc
                         #   Not actively used by Gremlin but requested by sidecars
                         #   This capability will be removed in a later release
-
-      - SYS_RESOURCE    # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                        #   to run Process Exhaustion experiments
 
     # gremlin.podSecurity.seLinuxOptions -
     # Specifies SELinux options to apply to the Gremlin Daemonset container securityContext.
