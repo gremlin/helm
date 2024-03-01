@@ -58,4 +58,4 @@ documentation [here](https://github.com/gremlin/helm/blob/master/gremlin-integra
 
 ## Reporting Issues
 
-Please report all issues via github issues [here](https://support-site.gremlin.com/).
+Please report all issues [here](https://support-site.gremlin.com/).
