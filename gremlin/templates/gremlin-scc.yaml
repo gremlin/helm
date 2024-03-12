@@ -17,7 +17,6 @@ allowPrivilegeEscalation: {{ .Values.gremlin.podSecurity.allowPrivilegeEscalatio
 allowPrivilegedContainer: {{ .Values.gremlin.podSecurity.privileged }}
 allowedCapabilities: {{ toYaml .Values.gremlin.podSecurity.capabilities | nindent 2 }}
 defaultAddCapabilities: null
-fsGroup: {{ toYaml .Values.gremlin.podSecurity.fsGroup | nindent 2 }}
 groups: []
 priority: null
 readOnlyRootFilesystem: {{ .Values.gremlin.podSecurity.readOnlyRootFilesystem }}
@@ -29,6 +28,5 @@ seccompProfiles:
   {{- if .Values.gremlin.podSecurity.seccomp.enabled }}
   - {{ .Values.gremlin.podSecurity.seccomp.profile | quote }}
   {{- end }}
-supplementalGroups: {{ toYaml .Values.gremlin.podSecurity.supplementalGroups | nindent 2 }}
 volumes: {{ toYaml .Values.gremlin.podSecurity.volumes | nindent 2 }}
 {{ end }}

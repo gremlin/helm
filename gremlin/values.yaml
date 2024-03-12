@@ -230,7 +230,9 @@ gremlin:
       seLinuxContext:
         type: MustRunAs
         seLinuxOptions:
-          type: gremlin.process
+          #  gremlin.podSecurity.securityContextConstraints.seLinuxContext.type -
+          #  Specifies the SELinux process label gremlin should run under. OpenShift uses the CRI-O container runtime, which deploys any container with hostPID=true as `spc_t`. Any other value is ignored.
+          type: spc_t
           level: s0-s0:c0.c1023
       # gremlin.podSecurity.securityContextConstraints.runAsUser -
       # Specifies the Linux user the Gremlin Daemonset containers should run as
