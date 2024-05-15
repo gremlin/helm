@@ -57,17 +57,15 @@ gremlin:
     dns: true
 
   # gremlin.hostPID -
-  # This must be true for Gremlin container drivers: `docker-runc`, `crio-runc` and `containerd-runc`. It is also
-  #   required for any Gremlin installation that wishes to carry out Process Killer attacks at the host-level
-  #   (e.g. any root-owned process)
+  # This must be true for all Gremlin container drivers exept for the legacy `docker` driver. It is also required
+  #   for any Gremlin installation that wishes to carry out Process Killer or attacks at the host-level
   #
-  # NOTE: this is disabled by default to maintain behavior of previous versions
-  hostPID: false
+  hostPID: true
 
   # gremlin.hostNetwork -
-  # This must be true for any Gremlin installation that wishes to carry out network attacks at the host-level
-  #   (e.g. impact network traffic to all host processes and containers)
-  hostNetwork: false
+  # This must be true for any Gremlin installation that wishes to carry out network attacks at the host-level. It
+  #   is also required for Gremlin's dependency discovery features.
+  hostNetwork: true
 
   # gremlin.installApparmorProfile -
   # This controls if gremlin installs it's own apparmor profile.  This is only necessary if you're running apparmor

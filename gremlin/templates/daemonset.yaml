@@ -163,8 +163,6 @@ spec:
           - name: cgroup-root
             mountPath: /sys/fs/cgroup
             readOnly: false
-          - name: shutdown-trigger
-            mountPath: /sysrq
           {{- if include "containerMounts" . }}
           {{- include "containerMounts" . | nindent 10 }}
           {{- end }}
@@ -195,9 +193,6 @@ spec:
         - name: gremlin-logs
           hostPath:
             path: /var/log/gremlin
-        - name: shutdown-trigger
-          hostPath:
-            path: /proc/sysrq-trigger
         {{- if (eq (include "gremlin.secretType" .) "certificate") }}
         - name: gremlin-cert
           secret:

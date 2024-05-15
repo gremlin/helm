@@ -1,5 +1,5 @@
 name: gremlin
-version: 0.16.0
+version: 0.17.0
 description: The Gremlin Inc client application
 apiVersion: v1
 home: https://www.gremlin.com
@@ -7,4 +7,4 @@ maintainers:
 - name: Gremlin Development
   email: dev@gremlin.com
 annotations:
-  minimumAppVersion: 2.29.0
+  minimumAppVersion: 2.44.0
