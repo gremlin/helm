@@ -84,6 +84,7 @@ spec:
         resources: {{ toYaml .Values.gremlin.resources | nindent 10 }}
         {{- end }}
         securityContext:
+          privileged: {{ .Values.gremlin.podSecurity.privileged }}
           allowPrivilegeEscalation: {{ .Values.gremlin.podSecurity.allowPrivilegeEscalation }}
           capabilities:
             add: {{ toYaml .Values.gremlin.podSecurity.capabilities | nindent 14 }}
