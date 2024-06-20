@@ -64,7 +64,7 @@ Create a computed value for the intended Gremlin secret type which can either be
 
 {{- define "containerDriverWithDefaultOrError" -}}
 {{- if .Values.gremlin.container.driver -}}
-{{- $valid := list "docker" "docker-runc" "crio-runc" "containerd-runc" "any" "docker-linux" "containerd-linux" "crio-linux" "linux" -}}
+{{- $valid := list "docker" "any" "docker-linux" "containerd-linux" "crio-linux" "linux" -}}
 {{- if has .Values.gremlin.container.driver $valid -}}
 {{- .Values.gremlin.container.driver -}}
 {{- else -}}
@@ -77,7 +77,7 @@ Create a computed value for the intended Gremlin secret type which can either be
 
 {{- define "containerMounts" -}}
 {{- $selectedDriver := (include "containerDriverWithDefaultOrError" .) -}}
-{{- $mountPaths := (dict "docker-runc" (dict "name" "docker" "socket" "/var/run/docker.sock" "runc" "/run/docker/runtime-runc/moby") "docker" (dict "name" "docker" "socket" "/var/run/docker.sock") "crio-runc" (dict "name" "crio" "socket" "/run/crio/crio.sock" "runc" "/run/runc") "containerd-runc" (dict "name" "containerd" "socket" "/run/containerd/containerd.sock" "runc" "/run/containerd/runc/k8s.io") "docker-linux" (dict "name" "docker" "socket" "/var/run/docker.sock") "containerd-linux" (dict "name" "containerd" "socket" "/run/containerd/containerd.sock") "crio-linux" (dict "name" "crio" "socket" "/run/crio/crio.sock")) -}}
+{{- $mountPaths := (dict "docker" (dict "name" "docker" "socket" "/var/run/docker.sock") "docker-linux" (dict "name" "docker" "socket" "/var/run/docker.sock") "containerd-linux" (dict "name" "containerd" "socket" "/run/containerd/containerd.sock") "crio-linux" (dict "name" "crio" "socket" "/run/crio/crio.sock")) -}}
 {{- range $key, $val := .Values.containerDrivers -}}
 {{- /* create a list of values to match against customer selection */ -}}
 {{- /* this is the current driver or all drivers in the case of "any" */ -}}
@@ -93,18 +93,13 @@ Create a computed value for the intended Gremlin secret type which can either be
   mountPath: {{ (get $mountPaths $key).socket }}
   readOnly: true
 {{- end -}}
-{{- if $val.runtimeRunc }}
-- name: {{ $val.name }}-runc
-  mountPath: {{ (get $mountPaths $key).runc }}
-  readOnly: false
-{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
 
 {{- define "containerMountsPSP" -}}
 {{- $selectedDriver := (include "containerDriverWithDefaultOrError" .) -}}
-{{- $mountPaths := (dict "docker-runc" (dict "name" "docker" "socket" "/var/run/docker.sock" "runc" "/run/docker/runtime-runc/moby") "docker" (dict "name" "docker" "socket" "/var/run/docker.sock") "crio-runc" (dict "name" "crio" "socket" "/run/crio/crio.sock" "runc" "/run/runc") "containerd-runc" (dict "name" "containerd" "socket" "/run/containerd/containerd.sock" "runc" "/run/containerd/runc/k8s.io") "docker-linux" (dict "name" "docker" "socket" "/var/run/docker.sock") "containerd-linux" (dict "name" "containerd" "socket" "/run/containerd/containerd.sock") "crio-linux" (dict "name" "crio" "socket" "/run/crio/crio.sock")) -}}
+{{- $mountPaths := (dict "docker" (dict "name" "docker" "socket" "/var/run/docker.sock") "docker-linux" (dict "name" "docker" "socket" "/var/run/docker.sock") "containerd-linux" (dict "name" "containerd" "socket" "/run/containerd/containerd.sock") "crio-linux" (dict "name" "crio" "socket" "/run/crio/crio.sock")) -}}
 {{- range $key, $val := .Values.containerDrivers -}}
 {{- /* create a list of values to match against customer selection */ -}}
 {{- /* this is the current driver or all drivers in the case of "any" */ -}}
@@ -118,10 +113,6 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- if $val.runtimeSocket }}
 - pathPrefix: {{ (get $mountPaths $key).socket }}
   readOnly: true
-{{- end -}}
-{{- if $val.runtimeRunc }}
-- pathPrefix: {{ (get $mountPaths $key).runc }}
-  readOnly: false
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -139,11 +130,6 @@ Create a computed value for the intended Gremlin secret type which can either be
 - name: {{ $val.name }}-sock
   hostPath:
     path: {{ $val.runtimeSocket }}
-{{- end -}}
-{{- if $val.runtimeRunc }}
-- name: {{ $val.name }}-runc
-  hostPath:
-    path: {{ $val.runtimeRunc }}
 {{- end -}}
 {{- end -}}
 {{- end -}}
