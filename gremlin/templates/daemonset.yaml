@@ -133,8 +133,6 @@ spec:
             value: {{ .Values.gremlin.client.tags }}
           - name: GREMLIN_DOCKER_IMAGE
             value: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          - name: GREMLIN_COLLECT_PROCESSES
-            value: {{ .Values.gremlin.collect.processes | quote }}
           - name: GREMLIN_COLLECT_DNS
             value: {{ .Values.gremlin.collect.dns | quote }}
           - name: GREMLIN_SERVICE_URL
