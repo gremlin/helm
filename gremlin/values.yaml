@@ -340,7 +340,7 @@ chao:
 
   # chao.annotations -
   # Specify any arbitrary annotations to pass to the Chao deployment.
-  extraAnnotations: { }
+  annotations: { }
 
 ssl:
   # ssl.certFile -
