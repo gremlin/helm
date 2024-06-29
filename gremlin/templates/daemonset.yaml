@@ -43,6 +43,8 @@ spec:
         {{- if .Values.gremlin.podSecurity.securityContextConstraints.create }}
         openshift.io/required-scc: "gremlin"
         {{- end }}
+        {{- if .Values.gremlin.extraAnnotations }}
+        {{- end }}
     spec:
       serviceAccountName: gremlin
       {{- if .Values.affinity }}

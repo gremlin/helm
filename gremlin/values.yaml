@@ -25,6 +25,10 @@ affinity: {}
 
 gremlin:
 
+  # gremlin.annotations -
+  # Specify any arbitrary annotations to pass to the Gremlin Agent daemonset.
+  extraAnnotations: {}
+
   # gremlin.updateStrategy -
   # The rollout strategy Kubernetes will use when updating the Gremlin daemonset
   updateStrategy:
@@ -333,6 +337,10 @@ chao:
   # chao.extraEnv -
   # Specify any arbitrary environment variables to pass to the Chao deployment.
   extraEnv: []
+
+  # chao.annotations -
+  # Specify any arbitrary annotations to pass to the Chao deployment.
+  annotations: { }
 
 ssl:
   # ssl.certFile -
