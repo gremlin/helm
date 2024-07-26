@@ -19,12 +19,9 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   /dev/null rwlix,
 
   # Container runtime
-  /run/docker/runtime-runc/moby rwix,
   /var/run/docker.sock rwix,
   /run/crio/crio.sock rwix,
-  /run/runc rwix,
   /run/containers/containers.sock rwix,
-  /run/containerd/runc/k8s.io rwix,
 
   # We need access to Pid 1's real pid to resolve the container driver
   # we're just taking a read perm here to accomlish this
