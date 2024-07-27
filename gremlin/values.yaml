@@ -53,9 +53,6 @@ gremlin:
   apparmor:
 
   collect:
-    # gremlin.collect.processes -
-    # Specifies whether Gremlin should collect process information
-    processes: false
     # gremlin.collect.dns -
     # Specifies whether Gremlin should collect DNS call information
     dns: true
