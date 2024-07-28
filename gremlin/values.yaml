@@ -163,9 +163,9 @@ gremlin:
       - SYS_CHROOT      # Required by container drivers: docker-runc, crio-runc, containerd-runc
                         #   to create and enter new namespaces for Gremlin attack sidecars
 
-      - NET_RAW         # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                        #   Not actively used by Gremlin but requested by sidecars
-                        #   This capability will be removed in a later release
+      - NET_RAW         # Required when gremlin.collect.dns=true, provides Gremlin the ability to
+                        #   look at DNS traffic for dependency discovery. 
+                        #   See https://www.gremlin.com/blog/how-dependency-discovery-works-in-gremlin
 
     # gremlin.podSecurity.seLinuxOptions -
     # Specifies SELinux options to apply to the Gremlin Daemonset container securityContext.
