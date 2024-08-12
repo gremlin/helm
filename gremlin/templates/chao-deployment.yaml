@@ -102,22 +102,26 @@ spec:
           args:
             - "-api_url"
             - "{{ include "gremlinServiceUrl" . }}/kubernetes"
-            {{- if (eq (include "gremlin.secretType" .) "certificate") }}
+{{- if (eq (include "gremlin.secretType" .) "certificate") }}
             - "-cert_path"
             {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
-            {{- if or (not .Values.gremlin.secret.managed) (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
+  {{- if or (not .Values.gremlin.secret.managed) (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
             - "/var/lib/gremlin/cert/gremlin.cert"
-            {{- else }}
+  {{- else }}
             - {{ .Values.gremlin.secret.certificate | quote }}
-            {{- end }}
+  {{- end }}
             - "-key_path"
-            {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
-            {{- if or (not .Values.gremlin.secret.managed) (hasPrefix "-----BEGIN" .Values.gremlin.secret.key) }}
+  {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
+  {{- if or (not .Values.gremlin.secret.managed) (hasPrefix "-----BEGIN" .Values.gremlin.secret.key) }}
             - "/var/lib/gremlin/cert/gremlin.key"
-            {{- else }}
+  {{- else }}
             - {{ .Values.gremlin.secret.key | quote }}
-            {{- end }}
-            {{- end }}
+  {{- end }}
+{{- end }}
+{{- if .Values.chao.clientId }}
+            - "-client_id"
+            - {{ .Value.chao.clientId }}
+{{- end }}
           imagePullPolicy: {{ .Values.chaoimage.pullPolicy }}
           name: chao
 {{- if (or ((eq (include "gremlin.secretType" .) "certificate")) .Values.ssl.certFile) }}
