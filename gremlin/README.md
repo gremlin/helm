@@ -25,6 +25,7 @@ their default values. See values.yaml for all available options.
 | `nodeSelector`                         | Map of node labels for pod assignment for the `gremlin` container | `{}`                                                                        |
 | `tolerations`                          | List of node taints to tolerate for the `gremlin` container    | `[]`                                                                        |
 | `affinity`                             | Map of node/pod affinities for the `gremlin` container         | `{}`                                                                        |
+| `chao.clientId`                        | An identifier for this specific client.  Leaving this blank will generate a random one | `""`                                                                          |
 | `chao.podLabels`                       | Kubernetes labels applied to the chao deployment and it's Pods | `{}`                                                                        |
 | `chao.priorityClassName`               | The name of the priority class to use for the Chao deployment  | `""`                                                                        |
 | `chao.nodeSelector`                    | Map of node labels for pod assignment for the `chao` container | `{}`                                                                        |

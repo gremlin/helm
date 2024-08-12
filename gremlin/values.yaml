@@ -312,6 +312,10 @@ chao:
   # The name of the priority class to use for the Chao deployment
   priorityClassName: ""
 
+  # chao.clientId -
+  # the client identifier used to communicate with the control plane
+  clientId: ""
+
   nodeSelector: {}
 
   tolerations: []
