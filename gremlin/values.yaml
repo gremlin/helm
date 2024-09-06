@@ -331,6 +331,10 @@ chao:
   # Specify any arbitrary environment variables to pass to the Chao deployment.
   extraEnv: []
 
+  # chao.namespaces
+  # list of namespaces for Gremlin to watch for attacking
+  namespaces: []
+
 ssl:
   # ssl.certFile -
   # Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the
