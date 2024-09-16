@@ -118,6 +118,10 @@ spec:
             - {{ .Values.gremlin.secret.key | quote }}
             {{- end }}
             {{- end }}
+            {{- if .Values.chao.namespaces }}
+            - "-namespaces"
+            - "{{ join "," .Values.chao.namespaces }}"
+            {{- end}}
           imagePullPolicy: {{ .Values.chaoimage.pullPolicy }}
           name: chao
 {{- if (or ((eq (include "gremlin.secretType" .) "certificate")) .Values.ssl.certFile) }}

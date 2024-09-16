@@ -32,6 +32,7 @@ their default values. See values.yaml for all available options.
 | `chao.affinity`                        | Map of node/pod affinities for the `chao` container            | `{}`                                                                        |
 | `chao.create`                          | Enable kubernetes targeting by installing k8s client           |  true                                                                       |
 | `chao.extraEnv`                        | Specify any arbitrary environment variables to pass to the Chao deployment. | `[]`                                                           |
+| `chao.namespaces`                      | List of namespaces for Gremlin to watch for attacking          | `[]`
 | `gremlin.podLabels`           | Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods| `{}`                                                                        |
 | `gremlin.apparmor`                     | Apparmor profile to set for the Gremlin Daemon                 | `""` (When empty, no profile is set)                                        |
 | `gremlin.installApparmorProfile`       | Have Gremlin install their own [Apparmor Profile](agent_apparmor.profile) (NOTE: `gremlin.apparmor` overrides this) | `false` |
