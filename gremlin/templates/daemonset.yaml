@@ -186,7 +186,6 @@ spec:
         {{- include "containerVolumes" . | nindent 8 }}
         {{- end }}
         # The Gremlin daemon communicates with Gremlin sidecars via its state directory.
-        # This should be shared with the Kubernetes host
         - name: gremlin-state
           emptyDir:
             medium: Memory
