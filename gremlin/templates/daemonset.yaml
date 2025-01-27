@@ -156,6 +156,9 @@ spec:
           - name: gremlin-state
             mountPath: /var/lib/gremlin
             readOnly: false
+          - name: gremlin-executions
+            mountPath: /var/lib/gremlin/executions
+            readOnly: false
           - name: gremlin-logs
             mountPath: /var/log/gremlin
             readOnly: false
@@ -183,10 +186,12 @@ spec:
         {{- include "containerVolumes" . | nindent 8 }}
         {{- end }}
         # The Gremlin daemon communicates with Gremlin sidecars via its state directory.
-        # This should be shared with the Kubernetes host
         - name: gremlin-state
+          emptyDir:
+            medium: Memory
+        - name: gremlin-executions
           hostPath:
-            path: /var/lib/gremlin
+            path: /var/lib/gremlin/executions
         # The Gremlin daemon forwards logs from the Gremlin sidecars to the Gremlin control plane
         # These logs should be shared with the host
         - name: gremlin-logs
