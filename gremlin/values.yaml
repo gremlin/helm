@@ -49,9 +49,6 @@ gremlin:
   apparmor:
 
   collect:
-    # gremlin.collect.processes -
-    # Specifies whether Gremlin should collect process information
-    processes: false
     # gremlin.collect.dns -
     # Specifies whether Gremlin should collect DNS call information
     dns: true
@@ -297,6 +294,10 @@ chao:
   # chao.extraEnv -
   # Specify any arbitrary environment variables to pass to the Chao deployment.
   extraEnv: []
+
+  # chao.namespaces
+  # list of namespaces for Gremlin to watch for attacking
+  namespaces: []
 
 ssl:
   # ssl.certFile -
