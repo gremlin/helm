@@ -57,8 +57,8 @@ gremlin:
     dns: true
 
   # gremlin.hostPID -
-  # This must be true for all Gremlin container drivers exept for the legacy `docker` driver. It is also required
-  #   for any Gremlin installation that wishes to carry out Process Killer or attacks at the host-level
+  # This must be true for all Gremlin container drivers. It is also required for any Gremlin
+  #   installation that wishes to carry out Process Killer or attacks at the host-level
   #
   hostPID: true
 
@@ -310,9 +310,6 @@ ssl:
   certDir:
 
 containerDrivers:
-  docker:
-    runtimeSocket: "/var/run/docker.sock"
-    name: "docker"
   docker-linux:
     runtimeSocket: "/var/run/docker.sock"
     name: "docker"
