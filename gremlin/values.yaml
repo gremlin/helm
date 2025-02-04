@@ -125,7 +125,7 @@ gremlin:
       - NET_ADMIN       # Required to run network attacks
       - SYS_BOOT        # Required to run Shutdown attacks
       - SYS_TIME        # Required to run Time Travel attacks
-      - DAC_READ_SEARCH # Required to run Certificate Expiry attacks with CIDR address arguments, and to discovery dependencies
+      - DAC_READ_SEARCH # Required to run Certificate Expiry attacks with CIDR address arguments, and to discover dependencies
       - SYS_RESOURCE    # Required to run Process Exhaustion attacks against containers
       - SYS_ADMIN       # Required to apply impact within container namespaces
       - SYS_PTRACE      # Required to to identify charactistics of container processes (such as associated network)
