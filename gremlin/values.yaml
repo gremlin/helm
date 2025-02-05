@@ -54,8 +54,8 @@ gremlin:
     dns: true
 
   # gremlin.hostPID -
-  # This must be true for all Gremlin container drivers exept for the legacy `docker` driver. It is also required
-  #   for any Gremlin installation that wishes to carry out Process Killer or attacks at the host-level
+  # This must be true for all Gremlin container drivers. It is also required for any Gremlin
+  #   installation that wishes to carry out Process Killer or attacks at the host-level
   #
   hostPID: true
 
@@ -78,38 +78,21 @@ gremlin:
   container:
     # gremlin.container.driver -
     # Specifies which container driver with which to run Gremlin. Possible values and their meanings:
-    #   docker           =   Provides legacy integration with Docker containers
-    #                        Implies host mounts [/var/run/docker.sock]
-    #                        Does not support the systemd cgroup driver
-    #
-    #   docker-runc      =   Provides full integration with Docker containers
-    #                        Implies host mounts [/var/run/docker.sock, /run/docker/runtime-runc/moby]
-    #
-    #   crio-runc        =   Provides full integration with Cri-O containers
-    #                        Implies host mounts [/run/crio/crio.sock, /run/runc]
-    #
-    #   containerd-runc  =   Provides full integration with Containerd containers
-    #                        Implies host mounts [/run/containers/containers.sock, /run/containerd/runc/k8s.io]
-    #
     #   any              =   Useful when the Cluster's container runtime is not known.
     #                        Helm will provide file access to all drivers so that Gremlin can choose.
-    #                        Implies host mounts [/var/run/docker.sock, /run/docker/runtime-runc/moby,
-    #                                             /run/crio/crio.sock, /run/runc,
-    #                                             /run/containers/containers.sock, /run/containerd/runc/k8s.io]
+    #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock, /run/containers/containers.sock]
     #
-    #   docker-linux     =   Provides full integration with Docker containers without runc
+    #   docker-linux     =   Provides full integration with Docker containers
     #                        Implies host mounts [/var/run/docker.sock]
     #
-    #   containerd-linux =   Provides full integration with Containerd containers without runc
+    #   containerd-linux =   Provides full integration with Containerd containers
     #                        Implies host mounts [/run/containers/containers.sock]
     #
-    #   crio-linux       =   Provides full integration with Cri-O containers without runc
+    #   crio-linux       =   Provides full integration with Cri-O containers
     #                        Implies host mounts [/run/crio/crio.sock]
     #
-    #   linux            =   Useful when the Cluster's container runtime is not known.
-    #                        Helm will provide file access to all linux drivers so that Gremlin can choose.
-    #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock,
-    #                                             /run/containers/containers.sock]
+    #   linux            =   Alias for `any`
+    #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock, /run/containers/containers.sock]
     driver: linux
 
   cgroup:
@@ -142,30 +125,11 @@ gremlin:
       - NET_ADMIN       # Required to run network attacks
       - SYS_BOOT        # Required to run Shutdown attacks
       - SYS_TIME        # Required to run Time Travel attacks
-      - DAC_READ_SEARCH # Required to run Certificate Expiry attacks, and dependency discovery features
+      - DAC_READ_SEARCH # Required to run Certificate Expiry attacks with CIDR address arguments, and to discover dependencies
       - SYS_RESOURCE    # Required to run Process Exhaustion attacks against containers
-
-      - SYS_ADMIN       # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                        #   to run attacks against running containers
-
-      - SYS_PTRACE      # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                        #   to determine if Gremlin is in the host's pid namespace
-
-      - SETFCAP         # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                        #   to set capabilities on Gremlin attack sidecars
-
-      - AUDIT_WRITE     # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                        #   to write to the Kernel's audit log
-
-      - MKNOD           # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                        #   to create new devices for Gremlin attack sidecars
-
-      - SYS_CHROOT      # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                        #   to create and enter new namespaces for Gremlin attack sidecars
-
-      - NET_RAW         # Required by container drivers: docker-runc, crio-runc, containerd-runc
-                        #   Not actively used by Gremlin but requested by sidecars
-                        #   This capability will be removed in a later release
+      - SYS_ADMIN       # Required to apply impact within container namespaces
+      - SYS_PTRACE      # Required to to identify charactistics of container processes (such as associated network)
+      - NET_RAW         # Required to discover dependencies
 
     # gremlin.podSecurity.seLinuxOptions -
     # Specifies SELinux options to apply to the Gremlin Daemonset container securityContext.
@@ -349,21 +313,6 @@ ssl:
   certDir:
 
 containerDrivers:
-  docker-runc:
-    runtimeSocket: "/var/run/docker.sock"
-    runtimeRunc: "/run/docker/runtime-runc/moby"
-    name: "docker"
-  containerd-runc:
-    runtimeSocket: "/run/containerd/containerd.sock"
-    runtimeRunc: "/run/containerd/runc/k8s.io"
-    name: "containerd"
-  crio-runc:
-    runtimeSocket: "/run/crio/crio.sock"
-    runtimeRunc: "/run/runc"
-    name: "crio"
-  docker:
-    runtimeSocket: "/var/run/docker.sock"
-    name: "docker"
   docker-linux:
     runtimeSocket: "/var/run/docker.sock"
     name: "docker"
