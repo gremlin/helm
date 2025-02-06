@@ -79,7 +79,7 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[2].valueFrom.secretKeyRef.name
           value: "gremlin-secret"
-  - it: should mount the certificate volumes when a certificate is specified
+  - it: should mount the gremlin-team-cert volume when a certificate is used and secret is not managed
     set:
       gremlin.secret.managed: false
       gremlin.secret.type: certificate
@@ -105,7 +105,7 @@ tests:
             name: gremlin-cert
             secret:
               secretName: gremlin-team-cert
-  - it: should mount the certificate volumes when a certificate is specified
+  - it: should mount the certificate volumes when the secret is managed and a certificate is specified
     set:
       gremlin.secret.managed: true
       gremlin.secret.type: certificate
