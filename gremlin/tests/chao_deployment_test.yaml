@@ -133,7 +133,7 @@ tests:
             name: gremlin-cert
             secret:
               secretName: gremlin-secret
-  - it: should set the secret name to gremlin-secret when not managed and no custom secret name is set
+  - it: should set the secret name to gremlin-team-cert when not managed and no custom secret name is set
     asserts:
       - equal:
           path: spec.template.spec.volumes[0].secret.secretName
