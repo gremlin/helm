@@ -78,15 +78,12 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- define "containerMounts" -}}
 {{- $selectedDriver := (include "containerDriverWithDefaultOrError" .) -}}
 {{- $mountPaths := (dict "docker-linux" (dict "name" "docker" "socket" "/var/run/docker.sock") "containerd-linux" (dict "name" "containerd" "socket" "/run/containerd/containerd.sock") "crio-linux" (dict "name" "crio" "socket" "/run/crio/crio.sock")) -}}
-{{- range $key, $val := .Values.containerDrivers -}}
-{{- /* create a list of values to match against customer selection */ -}}
-{{- /* this is the current driver or all drivers in the case of "any" */ -}}
-{{- $validDrivers := (ternary (list $key) (list $key "any") (or (hasSuffix "linux" $key))) }}
-{{- if hasSuffix "-linux" $key -}}
+{{- $validDrivers := keys .Values.containerDrivers -}}
 {{- $validDrivers = append $validDrivers "linux" -}}
-{{- end -}}
+{{- $validDrivers = append $validDrivers "any" -}}
 {{- if has $selectedDriver $validDrivers -}}
-{{- if $val.runtimeSocket }}
+{{- range $key, $val := .Values.containerDrivers -}}
+{{- if and (or (eq $key $selectedDriver) (or (eq $selectedDriver "linux") (eq $selectedDriver "any"))) ($val.runtimeSocket) }}
 - name: {{ $val.name }}-sock
   mountPath: {{ (get $mountPaths $key).socket }}
   readOnly: true
@@ -98,15 +95,12 @@ Create a computed value for the intended Gremlin secret type which can either be
 {{- define "containerMountsPSP" -}}
 {{- $selectedDriver := (include "containerDriverWithDefaultOrError" .) -}}
 {{- $mountPaths := (dict "docker-linux" (dict "name" "docker" "socket" "/var/run/docker.sock") "containerd-linux" (dict "name" "containerd" "socket" "/run/containerd/containerd.sock") "crio-linux" (dict "name" "crio" "socket" "/run/crio/crio.sock")) -}}
-{{- range $key, $val := .Values.containerDrivers -}}
-{{- /* create a list of values to match against customer selection */ -}}
-{{- /* this is the current driver or all drivers in the case of "any" */ -}}
-{{- $validDrivers := (ternary (list $key) (list $key "any") (or (hasSuffix "linux" $key))) }}
-{{- if hasSuffix "-linux" $key -}}
+{{- $validDrivers := keys .Values.containerDrivers -}}
 {{- $validDrivers = append $validDrivers "linux" -}}
-{{- end -}}
+{{- $validDrivers = append $validDrivers "any" -}}
 {{- if has $selectedDriver $validDrivers -}}
-{{- if $val.runtimeSocket }}
+{{- range $key, $val := .Values.containerDrivers -}}
+{{- if and (or (eq $key $selectedDriver) (or (eq $selectedDriver "linux") (eq $selectedDriver "any"))) ($val.runtimeSocket) }}
 - pathPrefix: {{ (get $mountPaths $key).socket }}
   readOnly: true
 {{- end -}}
@@ -116,13 +110,12 @@ Create a computed value for the intended Gremlin secret type which can either be
 
 {{- define "containerVolumes" -}}
 {{- $selectedDriver := (include "containerDriverWithDefaultOrError" .) -}}
-{{- range $key, $val := .Values.containerDrivers -}}
-{{- $validDrivers := (ternary (list $key) (list $key "any") (or (hasSuffix "linux" $key))) }}
-{{- if hasSuffix "-linux" $key -}}
+{{- $validDrivers := keys .Values.containerDrivers -}}
 {{- $validDrivers = append $validDrivers "linux" -}}
-{{- end -}}
+{{- $validDrivers = append $validDrivers "any" -}}
 {{- if has $selectedDriver $validDrivers -}}
-{{- if $val.runtimeSocket }}
+{{- range $key, $val := .Values.containerDrivers -}}
+{{- if and (or (eq $key $selectedDriver) (or (eq $selectedDriver "linux") (eq $selectedDriver "any"))) ($val.runtimeSocket) }}
 - name: {{ $val.name }}-sock
   hostPath:
     path: {{ $val.runtimeSocket }}
