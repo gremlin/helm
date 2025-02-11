@@ -161,7 +161,8 @@ gremlin:
     volumes:
       - configMap   # Required when the Gremlin Daemonset installs a seccomp profile (see gremlin.podSecurity.seccomp)
       - secret      # Required to store and load secret information like certificates that authenticate Gremlin
-      - hostPath    # Required by Gremlin to store attack logs (/var/log/gremlin) and attack state (/var/lib/gremlin)
+      - hostPath    # Required by Gremlin to store attack logs (/var/log/gremlin) and attack state (/var/lib/gremlin/executions)
+      - emptyDir    # Required by Gremlin to store transient files, such as `/var/lib/gremlin/.credentials`
 
     podSecurityPolicy:
       # gremlin.podSecurity.podSecurityPolicy.create -
