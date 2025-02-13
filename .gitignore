@@ -1,2 +1,4 @@
 .idea/
 .iml
+
+**/tests/__snapshot__/

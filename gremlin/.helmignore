@@ -20,3 +20,6 @@
 .idea/
 *.tmproj
 .vscode/
+
+# Helm unit tests which shouldn't be included in the package
+tests/

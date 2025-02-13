@@ -1,0 +1,155 @@
+suite: test deployment
+templates:
+  - chao-deployment.yaml
+tests:
+  - it: should create a deployment
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: metadata.name
+          pattern: "chao"
+  - it: should allow specifying a custom registry and tag
+    set:
+      chaoimage.tag: "0.0.1"
+      chaoimage.repository: "docker.io/my/custom/repository"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "docker.io/my/custom/repository:0.0.1"
+  - it: should allow specifying a custom pull secret
+    set:
+      chaoimage.pullSecret: "my-pull-secret"
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets[0].name
+          value: "my-pull-secret"
+  - it: should specify a team ID in the environment when not managed by a secret
+    set:
+      gremlin.secret.managed: false
+      gremlin.teamID: "01719721-1be8-4315-b197-211be83315a4"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: "GREMLIN_TEAM_ID"
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: "01719721-1be8-4315-b197-211be83315a4"
+  - it: should populate the team ID from the managed secret when managed secret is set
+    set:
+      gremlin.secret.managed: true
+      gremlin.secret.teamID: "01719721-1be8-4315-b197-211be83315a4"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: "GREMLIN_TEAM_ID"
+      - equal:
+          path: spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef.name
+          value: "gremlin-secret"
+  - it: should specify a cluster ID in the environment when not managed by a secret
+    set:
+      gremlin.secret.managed: false
+      gremlin.clusterID: "my-cluster"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[1].name
+          value: "GREMLIN_CLUSTER_ID"
+      - equal:
+          path: spec.template.spec.containers[0].env[1].value
+          value: "my-cluster"
+  - it: should populate the cluster ID from the managed secret when managed secret is set
+    set:
+      gremlin.secret.managed: true
+      gremlin.secret.clusterID: "my-cluster"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[1].name
+          value: "GREMLIN_CLUSTER_ID"
+      - equal:
+          path: spec.template.spec.containers[0].env[1].valueFrom.secretKeyRef.name
+          value: "gremlin-secret"
+  - it: should set GREMLIN_TEAM_SECRET when secret type is set to secret and secret is managed
+    set:
+      gremlin.secret.managed: true
+      gremlin.secret.type: secret
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[2].name
+          value: "GREMLIN_TEAM_SECRET"
+      - equal:
+          path: spec.template.spec.containers[0].env[2].valueFrom.secretKeyRef.name
+          value: "gremlin-secret"
+  - it: should mount the gremlin-team-cert volume when a certificate is used and secret is not managed
+    set:
+      gremlin.secret.managed: false
+      gremlin.secret.type: certificate
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - -api_url
+            - https://api.gremlin.com/v1/kubernetes
+            - -cert_path
+            - /var/lib/gremlin/cert/gremlin.cert
+            - -key_path
+            - /var/lib/gremlin/cert/gremlin.key
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0]
+          value:
+            name: gremlin-cert
+            mountPath: /var/lib/gremlin/cert
+            readOnly: true
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: gremlin-cert
+            secret:
+              secretName: gremlin-team-cert
+  - it: should mount the certificate volumes when the secret is managed and a certificate is specified
+    set:
+      gremlin.secret.managed: true
+      gremlin.secret.type: certificate
+      gremlin.secret.certificate: "-----BEGIN CERTIFICATE-----\ndummy-cert\n-----END CERTIFICATE-----"
+      gremlin.secret.key: "-----BEGIN PRIVATE KEY-----\ndummy-key\n-----END PRIVATE KEY-----"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args
+          value:
+            - -api_url
+            - https://api.gremlin.com/v1/kubernetes
+            - -cert_path
+            - /var/lib/gremlin/cert/gremlin.cert
+            - -key_path
+            - /var/lib/gremlin/cert/gremlin.key
+      - equal:
+          path: spec.template.spec.containers[0].volumeMounts[0]
+          value:
+            name: gremlin-cert
+            mountPath: /var/lib/gremlin/cert
+            readOnly: true
+      - equal:
+          path: spec.template.spec.volumes[0]
+          value:
+            name: gremlin-cert
+            secret:
+              secretName: gremlin-secret
+  - it: should set the secret name to gremlin-team-cert when not managed and no custom secret name is set
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].secret.secretName
+          value: "gremlin-team-cert"
+  - it: should set the secret name to the gremlin-secret when managed and no custom secret name is set
+    set:
+      gremlin.secret.managed: true
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].secret.secretName
+          value: "gremlin-secret"
+  - it: should set the secret name to the custom secret name when set
+    set:
+      gremlin.secret.managed: true
+      gremlin.secret.name: "my-custom-secret"
+    asserts:
+      - equal:
+          path: spec.template.spec.volumes[0].secret.secretName
+          value: "my-custom-secret"

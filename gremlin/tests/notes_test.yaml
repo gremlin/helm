@@ -1,0 +1,11 @@
+suite: test deployment
+templates:
+  - NOTES.txt
+tests:
+  - it: should fail if a managed secret is used and no key or certificate is passed
+    set:
+      gremlin.secret.managed: true
+      gremlin.secret.type: certificate
+    asserts:
+      - failedTemplate:
+          errorPattern: "When using a managed certificate, both the certificate and key must be provided."
