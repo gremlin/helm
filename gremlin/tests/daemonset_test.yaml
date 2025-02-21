@@ -1,0 +1,243 @@
+suite: test daemonset
+templates:
+  - daemonset.yaml
+tests:
+  - it: should create a deployment
+    asserts:
+      - isKind:
+          of: DaemonSet
+      - matchRegex:
+          path: metadata.name
+          pattern: gremlin
+  - it: should allow specifying a custom registry and tag
+    set:
+      image.tag: "0.0.1"
+      image.repository: docker.io/my/custom/repository
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/my/custom/repository:0.0.1
+  - it: should allow specifying a custom pull secret
+    set:
+      image.pullSecret: "my-pull-secret"
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+          - name: my-pull-secret
+  - it: should specify a team ID in the environment when not managed by a secret
+    set:
+      gremlin.secret.managed: false
+      gremlin.teamID: 01719721-1be8-4315-b197-211be83315a4
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TEAM_ID
+            value: 01719721-1be8-4315-b197-211be83315a4
+  - it: should populate the team ID from the managed secret when managed secret is set
+    set:
+      gremlin.secret.managed: true
+      gremlin.secret.teamID: 01719721-1be8-4315-b197-211be83315a4
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TEAM_ID
+            valueFrom:
+              secretKeyRef:
+                key: GREMLIN_TEAM_ID
+                name: gremlin-secret
+  - it: should set GREMLIN_TEAM_SECRET when secret type is set to secret and secret is managed
+    set:
+      gremlin.secret.managed: true
+      gremlin.secret.type: secret
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TEAM_SECRET
+            valueFrom:
+              secretKeyRef:
+                key: GREMLIN_TEAM_SECRET
+                name: gremlin-secret
+  - it: should mount the gremlin-team-cert volume when a certificate is used and secret is not managed
+    set:
+      gremlin.secret.managed: false
+      gremlin.secret.type: certificate
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gremlin-cert
+            mountPath: /var/lib/gremlin/cert
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-cert
+            secret:
+              secretName: gremlin-team-cert
+  - it: should mount the certificate volumes when the secret is managed and a certificate is specified
+    set:
+      gremlin.secret.managed: true
+      gremlin.secret.type: certificate
+      gremlin.secret.certificate: "-----BEGIN CERTIFICATE-----\ndummy-cert\n-----END CERTIFICATE-----"
+      gremlin.secret.key: "-----BEGIN PRIVATE KEY-----\ndummy-key\n-----END PRIVATE KEY-----"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gremlin-cert
+            mountPath: /var/lib/gremlin/cert
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-cert
+            secret:
+              secretName: gremlin-secret
+  - it: should set the secret name to gremlin-team-cert when not managed and no custom secret name is set
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-cert
+            secret:
+              secretName: gremlin-team-cert
+  - it: should set the secret name to the gremlin-secret when managed and no custom secret name is set
+    set:
+      gremlin.secret.managed: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-cert
+            secret:
+              secretName: gremlin-secret
+  - it: should set the secret name to the custom secret name when set
+    set:
+      gremlin.secret.managed: true
+      gremlin.secret.name: "my-custom-secret"
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-cert
+            secret:
+              secretName: my-custom-secret
+
+  - it: should mount all container sockets when driver is `any`
+    set:
+      gremlin.container.driver: any
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: crio-sock
+            hostPath:
+              path: /run/crio/crio.sock
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: containerd-sock
+            hostPath:
+              path: /run/containerd/containerd.sock
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: docker-sock
+            hostPath:
+              path: /var/run/docker.sock
+
+  - it: should mount all container sockets when driver is `linux`
+    set:
+      gremlin.container.driver: linux
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: crio-sock
+            hostPath:
+              path: /run/crio/crio.sock
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: containerd-sock
+            hostPath:
+              path: /run/containerd/containerd.sock
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: docker-sock
+            hostPath:
+              path: /var/run/docker.sock
+
+  - it: should mount containerd sockets when driver is `containerd-linux`
+    set:
+      gremlin.container.driver: containerd-linux
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: containerd-sock
+            hostPath:
+              path: /run/containerd/containerd.sock
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: crio-sock
+            hostPath:
+              path: /run/crio/crio.sock
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: docker-sock
+            hostPath:
+              path: /var/run/docker.sock
+
+  - it: should mount containerd sockets when driver is `crio-linux`
+    set:
+      gremlin.container.driver: crio-linux
+    asserts:
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: containerd-sock
+            hostPath:
+              path: /run/containerd/containerd.sock
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: crio-sock
+            hostPath:
+              path: /run/crio/crio.sock
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: docker-sock
+            hostPath:
+              path: /var/run/docker.sock
+
+  - it: should mount containerd sockets when driver is `docker-linux`
+    set:
+      gremlin.container.driver: docker-linux
+    asserts:
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: containerd-sock
+            hostPath:
+              path: /run/containerd/containerd.sock
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: crio-sock
+            hostPath:
+              path: /run/crio/crio.sock
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: docker-sock
+            hostPath:
+              path: /var/run/docker.sock
