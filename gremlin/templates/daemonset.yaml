@@ -54,6 +54,7 @@ spec:
       {{- if .Values.tolerations }}
       tolerations: {{ toYaml .Values.tolerations | trimSuffix "\n" | nindent 8 }}
       {{- end }}
+      dnsPolicy: {{ .Values.gremlin.dnsPolicy }}
       hostPID: {{ .Values.gremlin.hostPID }}
       hostNetwork: {{ .Values.gremlin.hostNetwork }}
       {{- if .Values.image.pullSecret }}
