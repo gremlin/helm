@@ -4,8 +4,10 @@ templates:
 tests:
   - it: should fail if a managed secret is used and no key or certificate is passed
     set:
-      gremlin.secret.managed: true
-      gremlin.secret.type: certificate
+      gremlin:
+        secret:
+          type: certificate
+          managed: true
     asserts:
       - failedTemplate:
           errorPattern: "When using a managed certificate, both the certificate and key must be provided."

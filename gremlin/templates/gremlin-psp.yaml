@@ -18,6 +18,7 @@ spec:
   privileged: {{ .Values.gremlin.podSecurity.privileged }}
   allowPrivilegeEscalation: {{ .Values.gremlin.podSecurity.allowPrivilegeEscalation }}
   readOnlyRootFilesystem: {{ .Values.gremlin.podSecurity.readOnlyRootFilesystem }}
+  dnsPolicy: {{ .Values.gremlin.dnsPolicy }}
   hostNetwork: {{ .Values.gremlin.hostNetwork }}
   hostIPC: false
   hostPID: {{ .Values.gremlin.hostPID }}

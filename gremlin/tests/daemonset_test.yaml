@@ -2,7 +2,7 @@ suite: test daemonset
 templates:
   - daemonset.yaml
 tests:
-  - it: should create a deployment
+  - it: should create a daemonset
     asserts:
       - isKind:
           of: DaemonSet

@@ -59,13 +59,22 @@ gremlin:
   #
   hostPID: true
 
+  # gremlin.dnsPolicy -
+  # A Kubernetes DNS policy that determines how the Gremlin Daemonset should resolve DNS queries.
+  #  Possible values are:
+  #   ClusterFirstWithHostNet - The default. This will use the cluster DNS service first, but will also
+  #                             use the host's DNS configuration as a fallback. Use this to resolve
+  #                             hostnames of Kubernetes services defined in the cluster.
+  #   ClusterFirst - Uses only the cluster DNS service.
+  dnsPolicy: ClusterFirstWithHostNet
+
   # gremlin.hostNetwork -
   # This must be true for any Gremlin installation that wishes to carry out network attacks at the host-level. It
   #   is also required for Gremlin's dependency discovery features.
   hostNetwork: true
 
   # gremlin.installApparmorProfile -
-  # This controls if gremlin installs it's own apparmor profile.  This is only necessary if you're running apparmor
+  # This controls if gremlin installs its own apparmor profile.  This is only necessary if you're running apparmor
   installApparmorProfile: false
 
   client:

@@ -65,6 +65,7 @@ their default values. See values.yaml for all available options.
 | `gremlin.secret.key`                   | Contents of the private key. Required if using managed secrets of `type=certificate`  | `""`                                                                                        |
 | `gremlin.secret.teamSecret`            | Gremlin's team secret. Required if using managed secrets of `type=secret`  | `""`                                                                                        |
 | `gremlin.resources`                    | Set resource requests and limits                               | `{}`                                                                                        |
+| `gremlin.dnsPolicy`                    | The DNS policy to use for the Gremlin DaemonSet                | `ClusterFirstWithHostNet`                                                                   |
 | `gremlin.hostPID`                      | Enable host-level process killing                              | `true`                                                                                      |
 | `gremlin.hostNetwork`                  | Enable host-level network attacks                              | `true`                                                                                      |
 | `gremlin.priorityClassName`            | The priority class to use for the agent DaemonSet              | `""`                                                                                        |

@@ -8,7 +8,7 @@ Compile all warnings into a single message, and call fail.
 {{- $message := join "\n" $messages -}}
 
 {{- if $message -}}
-{{-   printf "%s\n" $message | fail -}}
+{{- printf "%s" $message | fail -}}
 {{- else -}}
 {{- printf "Validation succeeded." -}}
 {{- end -}}
