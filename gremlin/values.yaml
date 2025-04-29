@@ -272,9 +272,9 @@ gremlin:
   # gremlin.features
   features:
 
-    # gremlin.features.discoverDestinationApi.enabled
-    # Enable Gremlin to discover the destination service endpoint if available
-    discoverDestinationApi:
+    # gremlin.features.discoverDestinationService.enabled
+    # Enable discovery of a destination service in a service mesh to resolve hostnames
+    discoverDestinationService:
       enabled: false
 
 chao:
