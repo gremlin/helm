@@ -269,6 +269,14 @@ gremlin:
   # Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset.
   extraEnv: []
 
+  # gremlin.features
+  features:
+
+    # gremlin.features.discoverDestinationService.enabled
+    # Enable discovery of a destination service in a service mesh to resolve hostnames
+    discoverDestinationService:
+      enabled: false
+
 chao:
 
   # chao.create
