@@ -1,14 +1,22 @@
-suite: test daemonset
+suite: Test daemonset
 templates:
   - daemonset.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
 tests:
   - it: should create a daemonset
     asserts:
       - isKind:
           of: DaemonSet
-      - matchRegex:
+      - equal:
           path: metadata.name
-          pattern: gremlin
+          value: my-release-gremlin
+      - equal:
+          path: metadata.namespace
+          value: my-namespace
   - it: should allow specifying a custom registry and tag
     set:
       image.tag: "0.0.1"
@@ -24,7 +32,7 @@ tests:
       - equal:
           path: spec.template.spec.imagePullSecrets
           value:
-          - name: my-pull-secret
+            - name: my-pull-secret
   - it: should specify a team ID in the environment when not managed by a secret
     set:
       gremlin.secret.managed: false
