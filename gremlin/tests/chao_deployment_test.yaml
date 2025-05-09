@@ -1,14 +1,24 @@
-suite: test deployment
+suite: Test Chao deployment
 templates:
   - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
 tests:
   - it: should create a deployment
+    set:
+      chao.create: true
     asserts:
       - isKind:
           of: Deployment
-      - matchRegex:
+      - equal:
           path: metadata.name
-          pattern: "chao"
+          value: chao
+      - equal:
+          path: metadata.namespace
+          value: my-namespace
   - it: should allow specifying a custom registry and tag
     set:
       chaoimage.tag: "0.0.1"

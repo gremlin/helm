@@ -1,4 +1,4 @@
-suite: test deployment
+suite: Test chart validation
 templates:
   - NOTES.txt
 tests:
