@@ -273,7 +273,10 @@ gremlin:
   features:
 
     # gremlin.features.discoverDestinationService.enabled
-    # Enable discovery of a destination service in a service mesh to resolve hostnames
+    # Give gremlin permissions to discover any supported destination services such has linkerd-dst, and Kubernetes EndpointSlices
+    #   The ClusterRole associated with Gremlin's service account receives the following access
+    #     - Services: get
+    #     - discover.k8s.io/EndpointSlices: watch
     discoverDestinationService:
       enabled: false
 
