@@ -276,7 +276,7 @@ gremlin:
     # Give gremlin permissions to discover any supported destination services such has linkerd-dst, and Kubernetes EndpointSlices
     #   The ClusterRole associated with Gremlin's service account receives the following access
     #     - Services: get
-    #     - discover.k8s.io/EndpointSlices: watch
+    #     - discover.k8s.io/EndpointSlices: watch, list
     discoverDestinationService:
       enabled: false
 
