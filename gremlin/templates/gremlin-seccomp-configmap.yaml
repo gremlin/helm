@@ -6,11 +6,7 @@ metadata:
   name: {{ template "gremlin.fullname" . }}-seccomp
   namespace: {{ .Release.Namespace }}
   labels:
-    helm.sh/chart: {{ include "gremlin.chart" . }}
-    app.kubernetes.io/name: {{ include "gremlin.fullname" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/version: "1"
+    {{- include "gremlin.labels" . | nindent 4 }}
 data:
   # The following profile extends Docker's default seccomp profile, adding `keyctl` and `pivot_root` to the list of
   # allowed syscalls.

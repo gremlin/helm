@@ -4,6 +4,8 @@ kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-apparmor-profile-content
   namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "gremlin.labels" . | nindent 4 }}
 data:
   agent_apparmor.profile: |-
     {{ .Files.Get "agent_apparmor.profile" | nindent 4 | trim }}

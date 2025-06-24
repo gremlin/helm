@@ -3,11 +3,13 @@
 kind: SecurityContextConstraints
 apiVersion: security.openshift.io/v1
 metadata:
+  name: gremlin
+  labels:
+    {{- include "gremlin.labels" . | nindent 4 }}
   annotations:
     kubernetes.io/description: 'This SCC provides as many restrictions from the `restricted` SCC as possible while
     allowing host mounts, any UID by a pod, and forces the process to run as the gremlin.process SELinux type. This is
     intended to be used solely by  Gremlin. WARNING: this SCC allows host file system access as root Grant with caution.'
-  name: gremlin
 allowHostDirVolumePlugin: {{ .Values.gremlin.podSecurity.securityContextConstraints.allowHostDirVolumePlugin }}
 allowHostIPC: false
 allowHostNetwork: {{ .Values.gremlin.hostNetwork }}

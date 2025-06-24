@@ -4,18 +4,16 @@ metadata:
   name: {{ include "gremlin.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/name: {{ include "gremlin.name" . }}
-    helm.sh/chart: {{ include "gremlin.chart" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    version: v1
+    {{- include "gremlin.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent
     {{- if .Values.gremlin.podLabels }}
     {{- toYaml .Values.gremlin.podLabels | nindent 4 }}
     {{- end }}
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "gremlin.name" . }}
+      {{ include "gremlin.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: agent
   {{- if .Values.gremlin.updateStrategy }}
   updateStrategy:
     {{- toYaml .Values.gremlin.updateStrategy | nindent 4 }}
@@ -23,11 +21,8 @@ spec:
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: {{ include "gremlin.name" . }}
-        helm.sh/chart: {{ include "gremlin.chart" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        version: v1
+        {{ include "gremlin.labels" . | nindent 8 }}
+        app.kubernetes.io/component: agent
         {{- if .Values.gremlin.podLabels }}
         {{- toYaml .Values.gremlin.podLabels | nindent 8 }}
         {{- end }}
