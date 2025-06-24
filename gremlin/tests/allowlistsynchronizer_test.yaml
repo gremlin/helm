@@ -1,0 +1,32 @@
+suite: Test Chao deployment
+templates:
+  - allowlistsynchronizer.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 2
+  upgrade: true
+tests:
+  - it: should not create an AllowlistSynchronizer custom resource if autopilot is not explicitly enabled
+    asserts:
+      - hasDocuments:
+          count: 0
+  - it: should create an AllowlistSynchronizer custom resource
+    set:
+      autopilot:
+        enabled: true
+    asserts:
+      - isKind:
+          of: AllowlistSynchronizer
+      - equal:
+          path: metadata.name
+          value: my-release-gremlin-allowlist-synchronizer
+  - it: should set the allowlist paths correctly
+    set:
+      autopilot:
+        enabled: true
+        allowlistVersion: "v1.2.3"
+    asserts:
+      - equal:
+          path: spec.allowlistPaths[0]
+          value: Gremlin/agent/v1.2.3
