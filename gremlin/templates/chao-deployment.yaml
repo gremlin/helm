@@ -2,16 +2,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: chao
+  namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/instance: chao
-    app.kubernetes.io/name: chao
-    helm.sh/chart: {{ include "gremlin.chart" . }}
-    app.kubernetes.io/version: "1"
+    {{- include "gremlin.labels" . | nindent 4 }}
+    app.kubernetes.io/component: chao
     {{- if .Values.chao.podLabels }}
     {{- toYaml .Values.chao.podLabels | nindent 4 }}
     {{- end }}
-  name: chao
-  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   {{- if .Values.chao.updateStrategy }}
@@ -20,16 +18,13 @@ spec:
   {{- end }}
   selector:
     matchLabels:
-      app.kubernetes.io/instance: chao
-      app.kubernetes.io/name: chao
-      app.kubernetes.io/version: "1"
+      {{ include "gremlin.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: chao
   template:
     metadata:
       labels:
-        app.kubernetes.io/instance: chao
-        app.kubernetes.io/name: chao
-        helm.sh/chart: {{ include "gremlin.chart" . }}
-        app.kubernetes.io/version: "1"
+        {{ include "gremlin.labels" . | nindent 8 }}
+        app.kubernetes.io/component: chao
         {{- if .Values.chao.podLabels }}
         {{- toYaml .Values.chao.podLabels | nindent 8 }}
         {{- end }}

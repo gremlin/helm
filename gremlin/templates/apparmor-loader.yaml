@@ -6,24 +6,19 @@ metadata:
   # Namespace must match that of the ConfigMap.
   namespace: {{ .Release.Namespace}}
   labels:
-    daemon: apparmor-loader
-    helm.sh/chart: {{ include "gremlin.chart" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    version: v1
+    {{- include "gremlin.labels" . | nindent 4 }}
+    app.kubernetes.io/component: apparmor-loader
 spec:
   selector:
     matchLabels:
-      daemon: apparmor-loader
+      {{- include "gremlin.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: apparmor-loader
   template:
     metadata:
       name: apparmor-loader
       labels:
-        daemon: apparmor-loader
-        helm.sh/chart: {{ include "gremlin.chart" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        version: v1
+        {{- include "gremlin.labels" . | nindent 8 }}
+        app.kubernetes.io/component: apparmor-loader
     {{- if .Values.gremlin.podSecurity.seccomp.enabled }}
       annotations:
         container.seccomp.security.alpha.kubernetes.io/{{ .Chart.Name }}: {{ .Values.gremlin.podSecurity.seccomp.profile }}

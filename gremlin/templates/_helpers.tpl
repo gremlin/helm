@@ -32,6 +32,26 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
+Common labels
+*/}}
+{{- define "gremlin.labels" -}}
+helm.sh/chart: {{ include "gremlin.chart" . }}
+{{ include "gremlin.selectorLabels" . }}
+{{- if .Chart.AppVersion }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+{{- end }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- end }}
+
+{{/*
+Selector labels
+*/}}
+{{- define "gremlin.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "gremlin.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}
+
+{{/*
 Because we've evolved the recommended way to pass the secret name over time, we hide the following order of operations behind this computed value:
 In later versions of this chart, we will remove the use of the fallback value of `gremlin-team-cert`
 */}}

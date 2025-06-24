@@ -6,7 +6,19 @@ release:
   namespace: my-namespace
   revision: 1
   upgrade: true
+chart:
+  version: 1.0.0
 tests:
+  - it: should set the correct default labels and annotations
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/component: chao
+            app.kubernetes.io/instance: my-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: gremlin
+            helm.sh/chart: gremlin-1.0.0
   - it: should create a deployment
     set:
       chao.create: true
@@ -19,6 +31,24 @@ tests:
       - equal:
           path: metadata.namespace
           value: my-namespace
+  - it: should set the correct labels on the pods
+    asserts:
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/component: chao
+            app.kubernetes.io/instance: my-release
+            app.kubernetes.io/managed-by: Helm
+            app.kubernetes.io/name: gremlin
+            helm.sh/chart: gremlin-1.0.0
+  - it: should match the correct labels on the pods
+    asserts:
+      - isSubset:
+          path: spec.selector.matchLabels
+          content:
+            app.kubernetes.io/component: chao
+            app.kubernetes.io/instance: my-release
+            app.kubernetes.io/name: gremlin
   - it: should allow specifying a custom registry and tag
     set:
       chaoimage.tag: "0.0.1"
