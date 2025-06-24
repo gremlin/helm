@@ -23,8 +23,17 @@ tolerations: []
 
 affinity: {}
 
-gremlin:
+autopilot:
+  # autopilot.create -
+  # Determines if the Gremlin Autopilot deployment should be installed. This deployment launches an agent that
+  #   automatically applies Gremlin attacks to Kubernetes pods
+  create: false
 
+  # autopilot.allowlistVersion -
+  # The version of the Gremlin allowlist to use. Do not change this value unless told to do so by Gremlin support.
+  allowlistVersion: "v1.0.0"
+
+gremlin:
   # gremlin.updateStrategy -
   # The rollout strategy Kubernetes will use when updating the Gremlin daemonset
   updateStrategy:
@@ -117,10 +126,9 @@ gremlin:
     #   gremlin.podSecurity.securityContextConstraints)
     create: true
     # Annotations to add to the service account
-    annotations: { }
+    annotations: {}
 
   podSecurity:
-
     # gremlin.podSecurity.allowPrivilegeEscalation -
     # Allows Gremlin containers privilege escalation powers
     allowPrivilegeEscalation: false
@@ -130,15 +138,24 @@ gremlin:
     #   Daemonset as well as any pod security resource that governs it. Capabilities that are required for specific
     #   attacks can be removed from this list if running such attacks are not desired.
     capabilities:
-      - KILL            # Required to run Process Killer attacks
-      - NET_ADMIN       # Required to run network attacks
-      - SYS_BOOT        # Required to run Shutdown attacks
-      - SYS_TIME        # Required to run Time Travel attacks
-      - DAC_READ_SEARCH # Required to run Certificate Expiry attacks with CIDR address arguments, and to discover dependencies
-      - SYS_RESOURCE    # Required to run Process Exhaustion attacks against containers
-      - SYS_ADMIN       # Required to apply impact within container namespaces
-      - SYS_PTRACE      # Required to to identify charactistics of container processes (such as associated network)
-      - NET_RAW         # Required to discover dependencies
+      # Required to run Process Killer attacks
+      - KILL
+      # Required to run network attacks
+      - NET_ADMIN
+      # Required to run Shutdown attacks
+      - SYS_BOOT
+      # Required to run Time Travel attacks
+      - SYS_TIME
+      # Required to run Certificate Expiry attacks with CIDR address arguments, and to discover dependencies
+      - DAC_READ_SEARCH
+      # Required to run Process Exhaustion attacks against containers
+      - SYS_RESOURCE
+      # Required to apply impact within container namespaces
+      - SYS_ADMIN
+      # Required to to identify charactistics of container processes (such as associated network)
+      - SYS_PTRACE
+      # Required to discover dependencies
+      - NET_RAW
 
     # gremlin.podSecurity.seLinuxOptions -
     # Specifies SELinux options to apply to the Gremlin Daemonset container securityContext.
@@ -168,10 +185,14 @@ gremlin:
     # gremlin.podSecurity.volumes -
     # Specifies the volume types the Gremlin Daemonset is allowed to use
     volumes:
-      - configMap   # Required when the Gremlin Daemonset installs a seccomp profile (see gremlin.podSecurity.seccomp)
-      - secret      # Required to store and load secret information like certificates that authenticate Gremlin
-      - hostPath    # Required by Gremlin to store attack logs (/var/log/gremlin) and attack state (/var/lib/gremlin/executions)
-      - emptyDir    # Required by Gremlin to store transient files, such as `/var/lib/gremlin/.credentials`
+      # Required when the Gremlin Daemonset installs a seccomp profile (see gremlin.podSecurity.seccomp)
+      - configMap
+      # Required to store and load secret information like certificates that authenticate Gremlin
+      - secret
+      # Required by Gremlin to store attack logs (/var/log/gremlin) and attack state (/var/lib/gremlin/executions)
+      - hostPath
+      # Required by Gremlin to store transient files, such as `/var/lib/gremlin/.credentials`
+      - emptyDir
 
     podSecurityPolicy:
       # gremlin.podSecurity.podSecurityPolicy.create -
@@ -271,7 +292,6 @@ gremlin:
 
   # gremlin.features
   features:
-
     # gremlin.features.discoverDestinationService.enabled
     # Give gremlin permissions to discover any supported destination services such has linkerd-dst, and Kubernetes EndpointSlices
     #   The ClusterRole associated with Gremlin's service account receives the following access
@@ -281,7 +301,6 @@ gremlin:
       enabled: false
 
 chao:
-
   # chao.create
   # Determines if the `chao` deployment should be installed. This deployment launches an agent that enabled Kubernetes
   #   targeting for Gremlin attacks
@@ -312,7 +331,7 @@ chao:
     #   targeting for Gremlin attacks
     create: true
     # Annotations to add to the service account
-    annotations: { }
+    annotations: {}
 
   # chao.extraEnv -
   # Specify any arbitrary environment variables to pass to the Chao deployment.
