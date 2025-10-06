@@ -57,7 +57,7 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   capability sys_ptrace,
 
   # Needed for Gremlin Process Exhaustion
-  capability sys_resource
+  capability sys_resource,
 
   # General deny
   deny /bin/** wl,
