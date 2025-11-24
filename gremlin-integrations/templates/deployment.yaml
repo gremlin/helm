@@ -32,10 +32,8 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-
           resources:
 {{- toYaml .Values.gremlin.resources | nindent 12 }}
-
           env:
             - name: GREMLIN_TEAM_ID
           {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
