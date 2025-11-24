@@ -30,7 +30,6 @@ podSecurityContext: { }
 
 securityContext: { }
 
-resources: { }
 nodeSelector: { }
 
 tolerations: [ ]
@@ -49,6 +48,13 @@ ssl:
   certDir:
 
 gremlin:
+  # gremlin.resources -
+  # Set resource requests and limits
+  # See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
+  #
+  # NOTE: This resource specification affects the Gremlin agent which is used for host attacks. This resource
+  # Attacks targeting other Kubernetes pods will use the resource specification of their target.
+  resources: {}
   secret:
     # Gremlin supports both `certificate` and `secret` types
     # To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections
