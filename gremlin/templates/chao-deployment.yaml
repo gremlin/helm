@@ -48,6 +48,8 @@ spec:
       imagePullSecrets:
       - name: {{ .Values.chaoimage.pullSecret }}
       {{- end }}
+      securityContext:
+        readOnlyRootFilesystem: true
       containers:
         - image: {{ .Values.chaoimage.repository }}:{{ .Values.chaoimage.tag }}
         {{- if .Values.resources }}
