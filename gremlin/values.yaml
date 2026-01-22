@@ -280,6 +280,16 @@ gremlin:
     discoverDestinationService:
       enabled: false
 
+    # gremlin.features.pushCIDRTags.enabled
+    # Tell Gremlin to push tag values that describe CIDR values associated with the host on which Gremlin is installed.
+    #   When enabled, this helm chart does nothing, as the default behavior is to push these tags.
+    #   When disabled, this helm chart passes `GREMLIN_PUSH_POD_CIDR_TAGS=false` and `GREMLIN_PUSH_ZONE_CIDR_TAGS=false` to
+    #   the environment of the gremlind Daemonset.
+    #
+    # See: https://www.gremlin.com/docs/getting-started-network-tags#the-zone-tag
+    pushCIDRTags:
+      enabled: true
+
 chao:
 
   # chao.create

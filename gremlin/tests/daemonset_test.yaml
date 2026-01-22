@@ -249,3 +249,29 @@ tests:
             name: docker-sock
             hostPath:
               path: /var/run/docker.sock
+  - it: should not explicitly set environment variables by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_PUSH_POD_CIDR_TAGS
+            value: "false"
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_PUSH_ZONE_CIDR_TAGS
+            value: "false"
+  - it: should explicitly set environment variables when features.pushCIDRTags.enabled=false
+    set:
+      gremlin.features.pushCIDRTags.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_PUSH_POD_CIDR_TAGS
+            value: "false"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_PUSH_ZONE_CIDR_TAGS
+            value: "false"
