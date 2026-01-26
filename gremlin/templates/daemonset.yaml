@@ -136,6 +136,12 @@ spec:
             value: {{ .Values.gremlin.collect.dns | quote }}
           - name: GREMLIN_SERVICE_URL
             value: {{ include "gremlinServiceUrl" . }}
+          {{- if not .Values.gremlin.features.pushCIDRTags.enabled }}
+          - name: GREMLIN_PUSH_POD_CIDR_TAGS
+            value: "false"
+          - name: GREMLIN_PUSH_ZONE_CIDR_TAGS
+            value: "false"
+          {{- end }}
           {{- if .Values.gremlin.proxy.url }}
           - name: https_proxy
             value: {{ .Values.gremlin.proxy.url }}
