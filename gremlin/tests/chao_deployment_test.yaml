@@ -163,3 +163,212 @@ tests:
       - equal:
           path: spec.template.spec.volumes[0].secret.secretName
           value: "my-custom-secret"
+
+  # chao.tls.identity tests
+
+  - it: should not include TLS identity args when tls identity is not enabled
+    set:
+      chao.create: true
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls_identity_cert"
+
+  - it: should set TLS identity args to ARN values when remoteSecret is configured
+    set:
+      chao.create: true
+      chao.tls.identity.enabled: true
+      chao.tls.identity.remoteSecret.cert: "arn:aws:secretsmanager:us-east-1:123456789:secret:cert"
+      chao.tls.identity.remoteSecret.key: "arn:aws:secretsmanager:us-east-1:123456789:secret:key"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls_identity_cert"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "arn:aws:secretsmanager:us-east-1:123456789:secret:cert"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls_identity_key"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "arn:aws:secretsmanager:us-east-1:123456789:secret:key"
+
+  - it: should not mount TLS identity volumes when remoteSecret is configured
+    set:
+      chao.create: true
+      chao.tls.identity.enabled: true
+      chao.tls.identity.remoteSecret.cert: "arn:aws:secretsmanager:us-east-1:123456789:secret:cert"
+      chao.tls.identity.remoteSecret.key: "arn:aws:secretsmanager:us-east-1:123456789:secret:key"
+    asserts:
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: chao-tls-identity
+          any: true
+
+  - it: should set TLS identity args to file paths when createSecret is configured
+    set:
+      chao.create: true
+      chao.tls.identity.enabled: true
+      chao.tls.identity.createSecret.name: chao-tls-identity
+      chao.tls.identity.createSecret.cert: |
+        -----BEGIN CERTIFICATE-----
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        11111111111111111111111111111111111111111111111111==
+        -----END CERTIFICATE-----
+      chao.tls.identity.createSecret.key:
+        -----BEGIN PRIVATE KEY-----
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        11111111111111111111111111111111111111111111111111==
+        -----END PRIVATE KEY-----
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls_identity_cert"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "/var/lib/gremlin/tls/identity/cert"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls_identity_key"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "/var/lib/gremlin/tls/identity/key"
+
+  - it: should mount TLS identity volume when createSecret is configured
+    set:
+      chao.create: true
+      chao.tls.identity.enabled: true
+      chao.tls.identity.createSecret.name: chao-tls-identity
+      chao.tls.identity.createSecret.cert: |
+        -----BEGIN CERTIFICATE-----
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        11111111111111111111111111111111111111111111111111==
+        -----END CERTIFICATE-----
+      chao.tls.identity.createSecret.key:
+        -----BEGIN PRIVATE KEY-----
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        11111111111111111111111111111111111111111111111111==
+        -----END PRIVATE KEY-----
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: chao-tls-identity
+            mountPath: /var/lib/gremlin/tls/identity
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: chao-tls-identity
+            secret:
+              secretName: chao-tls-identity
+
+  - it: should set TLS identity args to file paths when existingSecret is configured
+    set:
+      chao.create: true
+      chao.tls.identity.enabled: true
+      chao.tls.identity.existingSecret.name: my-existing-secret
+      chao.tls.identity.existingSecret.cert: tls.crt
+      chao.tls.identity.existingSecret.key: tls.key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls_identity_cert"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "/var/lib/gremlin/tls/identity/tls.crt"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls_identity_key"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "/var/lib/gremlin/tls/identity/tls.key"
+
+  - it: should set TLS identity args to file paths when existingSecret is customized 
+    set:
+      chao.create: true
+      chao.tls.identity.enabled: true
+      chao.tls.identity.existingSecret.name: my-existing-secret
+      chao.tls.identity.existingSecret.cert: custom.crt
+      chao.tls.identity.existingSecret.key: custom.key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls_identity_cert"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "/var/lib/gremlin/tls/identity/custom.crt"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-tls_identity_key"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "/var/lib/gremlin/tls/identity/custom.key"
+
+  - it: should mount TLS identity volume from existingSecret when configured
+    set:
+      chao.create: true
+      chao.tls.identity.enabled: true
+      chao.tls.identity.existingSecret.name: my-existing-secret
+      chao.tls.identity.existingSecret.cert: tls.crt
+      chao.tls.identity.existingSecret.key: tls.key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: chao-tls-identity
+            mountPath: /var/lib/gremlin/tls/identity
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: chao-tls-identity
+            secret:
+              secretName: my-existing-secret
+
+  - it: should fail when multiple TLS identity strategies are configured for chao
+    set:
+      chao.create: true
+      chao.tls.identity.enabled: true
+      chao.tls.identity.remoteSecret.cert: "arn:aws:secretsmanager:us-east-1:123456789:secret:cert"
+      chao.tls.identity.remoteSecret.key: "arn:aws:secretsmanager:us-east-1:123456789:secret:key"
+      chao.tls.identity.createSecret.name: chao-tls-identity
+      chao.tls.identity.createSecret.cert: "dummy-cert"
+      chao.tls.identity.createSecret.key: "dummy-key"
+    asserts:
+      - failedTemplate:
+          errorMessage: "chao.tls.identity: only one of remoteSecret, createSecret, or existingSecret should be fully configured"

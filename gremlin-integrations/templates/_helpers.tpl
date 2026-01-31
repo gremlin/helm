@@ -113,3 +113,88 @@ Create chart name and version as used by the chart label.
 {{- define "gremlin.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{/*
+gremlinTlsIdentityValidate fails if more than one identity strategy is fully configured for gremlin
+*/}}
+{{- define "gremlinTlsIdentityValidate" -}}
+{{- $remoteSecret := and .Values.gremlin.tls.identity.remoteSecret.cert .Values.gremlin.tls.identity.remoteSecret.key -}}
+{{- $createSecret := and .Values.gremlin.tls.identity.createSecret.name .Values.gremlin.tls.identity.createSecret.cert .Values.gremlin.tls.identity.createSecret.key -}}
+{{- $existingSecret := and .Values.gremlin.tls.identity.existingSecret.name .Values.gremlin.tls.identity.existingSecret.cert .Values.gremlin.tls.identity.existingSecret.key -}}
+{{- $count := 0 -}}
+{{- if $remoteSecret }}{{- $count = add $count 1 -}}{{- end -}}
+{{- if $createSecret }}{{- $count = add $count 1 -}}{{- end -}}
+{{- if $existingSecret }}{{- $count = add $count 1 -}}{{- end -}}
+{{- if gt (int $count) 1 -}}
+{{- fail "gremlin.tls.identity: only one of remoteSecret, createSecret, or existingSecret should be fully configured" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+gremlinTlsIdentityEnv returns the environment variables needed to configure TLS client identity
+When remoteSecret is configured
+  - sets GREMLIN_TLS_IDENTITY_CERTIFICATE and GREMLIN_TLS_IDENTITY_PRIVATE_KEY to their respective `cert` and `key` values
+When createSecret or existingSecret are configured
+  - sets GREMLIN_TLS_IDENTITY_CERTIFICATE and GREMLIN_TLS_IDENTITY_PRIVATE_KEY to their respective file paths, mounted by gremlinTlsIdentityVolumeMounts
+*/}}
+{{- define "gremlinTlsIdentityEnv" -}}
+{{- if .Values.gremlin.tls.identity.enabled -}}
+{{- include "gremlinTlsIdentityValidate" . -}}
+{{- if and .Values.gremlin.tls.identity.remoteSecret.cert .Values.gremlin.tls.identity.remoteSecret.key -}}
+- name: GREMLIN_TLS_IDENTITY_CERTIFICATE
+  value: {{ .Values.gremlin.tls.identity.remoteSecret.cert | quote }}
+- name: GREMLIN_TLS_IDENTITY_PRIVATE_KEY
+  value: {{ .Values.gremlin.tls.identity.remoteSecret.key | quote }}
+{{- else if and .Values.gremlin.tls.identity.createSecret.name .Values.gremlin.tls.identity.createSecret.cert .Values.gremlin.tls.identity.createSecret.key -}}
+- name: GREMLIN_TLS_IDENTITY_CERTIFICATE
+  value: /var/lib/gremlin/tls/identity/cert
+- name: GREMLIN_TLS_IDENTITY_PRIVATE_KEY
+  value: /var/lib/gremlin/tls/identity/key
+{{- else if .Values.gremlin.tls.identity.existingSecret.name -}}
+- name: GREMLIN_TLS_IDENTITY_CERTIFICATE
+  value: /var/lib/gremlin/tls/identity/{{ .Values.gremlin.tls.identity.existingSecret.cert }}
+- name: GREMLIN_TLS_IDENTITY_PRIVATE_KEY
+  value: /var/lib/gremlin/tls/identity/{{ .Values.gremlin.tls.identity.existingSecret.key }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+gremlinTlsIdentityVolumeMounts returns the mounts needed to access TLS client identity files
+When createSecret or existingSecret are configured
+  - mounts to designated secret files under /var/lib/gremlin/tls/identity
+*/}}
+{{- define "gremlinTlsIdentityVolumeMounts" -}}
+{{- if .Values.gremlin.tls.identity.enabled -}}
+{{- include "gremlinTlsIdentityValidate" . -}}
+{{- if and .Values.gremlin.tls.identity.createSecret.name .Values.gremlin.tls.identity.createSecret.cert .Values.gremlin.tls.identity.createSecret.key -}}
+- name: gremlin-tls-identity
+  mountPath: /var/lib/gremlin/tls/identity
+  readOnly: true
+{{- else if .Values.gremlin.tls.identity.existingSecret.name -}}
+- name: gremlin-tls-identity
+  mountPath: /var/lib/gremlin/tls/identity
+  readOnly: true
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+gremlinTlsIdentityVolumes returns the volumes that contain TLS client identity files
+When createSecret or existingSecret are configured
+  - defines the volume associated with the designated secret
+*/}}
+{{- define "gremlinTlsIdentityVolumes" -}}
+{{- if .Values.gremlin.tls.identity.enabled -}}
+{{- include "gremlinTlsIdentityValidate" . -}}
+{{- if and .Values.gremlin.tls.identity.createSecret.name .Values.gremlin.tls.identity.createSecret.cert .Values.gremlin.tls.identity.createSecret.key -}}
+- name: gremlin-tls-identity
+  secret:
+    secretName: {{ .Values.gremlin.tls.identity.createSecret.name }}
+{{- else if .Values.gremlin.tls.identity.existingSecret.name -}}
+- name: gremlin-tls-identity
+  secret:
+    secretName: {{ .Values.gremlin.tls.identity.existingSecret.name }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
