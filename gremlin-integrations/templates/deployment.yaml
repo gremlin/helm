@@ -68,6 +68,8 @@ spec:
               value: {{ .Values.gremlin.secret.key }}
               {{- end }}
           {{- end }}
+            - name: GREMLIN_CLIENT_TAGS
+              value: {{ .Values.gremlin.client.tags }}
           {{- if .Values.gremlin.allowList }}
             - name: GREMLIN_INTEGRATION_AGENT_ALLOW_LIST
               value: {{ .Values.gremlin.allowList }}
