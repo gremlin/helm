@@ -82,3 +82,10 @@ gremlin:
   # gremlin.extraEnv
   # Specify any arbitrary environment variables to pass to the Gremlin Integrations Agent deployment
   extraEnv: []
+
+  client:
+    # gremlin.client.tags -
+    # A string of comma separated key=value pairs that are used to decorate the Gremlin agent with tags.
+    #
+    # NOTE: This value's commas must be escaped. See https://github.com/gremlin/helm/issues/8
+    tags: ""
