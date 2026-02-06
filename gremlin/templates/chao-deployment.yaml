@@ -124,6 +124,9 @@ spec:
             - "-namespaces"
             - "{{ join "," .Values.chao.namespaces }}"
             {{- end}}
+            {{- if include "chaoTlsIdentityArgs" . }}
+            {{- include "chaoTlsIdentityArgs" . | nindent 12 }}
+            {{- end }}
           imagePullPolicy: {{ .Values.chaoimage.pullPolicy }}
           name: chao
 {{- if (or ((eq (include "gremlin.secretType" .) "certificate")) .Values.ssl.certFile) }}
@@ -139,6 +142,9 @@ spec:
             mountPath: /etc/gremlin/ssl
             readOnly: true
 {{- end }}
+{{- if include "chaoTlsIdentityVolumeMounts" . }}
+          {{- include "chaoTlsIdentityVolumeMounts" . | nindent 10 }}
+{{- end }}
       volumes:
       - name: gremlin-cert
         secret:
@@ -148,6 +154,9 @@ spec:
         secret:
           secretName: ssl-cert-file
 {{ end }}
+{{- if include "chaoTlsIdentityVolumes" . }}
+      {{- include "chaoTlsIdentityVolumes" . | nindent 6 }}
+{{- end }}
 {{- if .Values.chao.priorityClassName }}
       priorityClassName: {{ .Values.chao.priorityClassName }}
 {{- end }}

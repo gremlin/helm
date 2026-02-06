@@ -79,6 +79,59 @@ gremlin:
     # api.gremlin.com. This value is ignored when blank or absent.
     url:
 
+  # gremlin.tls -
+  # A collection of TLS configurations specific to the Gremlin Integrations Deployment.
+  tls:
+    # gremlin.tls.identity -
+    # Configuration items for configuring the TLS identity of the Gremlin HTTP client for mTLS.
+    # Identity values are made up of
+    #   - `cert` portion, containing the leaf certificate for the client (plus any intermediate certificates)
+    #   - `key` portion, containing the private key for the client
+    #
+    # These values can be supplied in three different strategies:
+    #   - `remoteSecret`: a collection of ARN values for AWS Secrets Manager
+    #   - `createSecret`: content supplied directly to this chart for which a new Kubernetes secret will be created
+    #   - `existingSecret`: a reference to an existing Kubernetes secret (e.g. created from cert-manager)
+    #
+    # Only one of the above strategies should be fully configured. A strategy is not used until all of its fields are configured.
+    identity:
+      # gremlin.tls.identity.enabled -
+      # Decides whether the Gremlin Integrations Deployment should be configured for a TLS identity
+      enabled: false
+      # gremlin.tls.identity.remoteSecret -
+      # The remoteSecret strategy accepts `cert` and `key` strings in the form of ARN values for AWS Secrets Manager
+      remoteSecret:
+        # gremlin.tls.identity.remoteSecret.cert -
+        # The ARN for the identity certificate
+        cert: ""
+        # gremlin.tls.identity.remoteSecret.key -
+        # The ARN for the identity private key
+        key: ""
+      # gremlin.tls.identity.createSecret -
+      # The createSecret strategy accepts PEM encoded certificate and private key content to create a new Kubernetes secret
+      createSecret:
+        # gremlin.tls.identity.createSecret.name -
+        # The name of the new secret
+        name: "gremlin-tls-identity"
+        # gremlin.tls.identity.createSecret.cert -
+        # The PEM-encoded certificate (expected to be a multi-line string)
+        cert: ""
+        # gremlin.tls.identity.createSecret.key -
+        # The PEM-encoded private key (expected to be a multi-line string)
+        key: ""
+      # gremlin.tls.identity.existingSecret -
+      # The existingSecret strategy accepts a reference to an existing Kubernetes secret
+      existingSecret:
+        # gremlin.tls.identity.existingSecret.name -
+        # The name of the existing secret
+        name: ""
+        # gremlin.tls.identity.existingSecret.cert -
+        # The name of the key inside the existing secret that maps to the certificate value
+        cert: "tls.crt"
+        # gremlin.tls.identity.existingSecret.key -
+        # The name of the key inside the existing secret that maps to the private key value
+        key: "tls.key"
+
   # gremlin.extraEnv
   # Specify any arbitrary environment variables to pass to the Gremlin Integrations Agent deployment
   extraEnv: []

@@ -154,6 +154,9 @@ spec:
           - name: SSL_CERT_DIR
             value: {{ .Values.ssl.certDir }}
           {{- end }}
+          {{- if include "gremlinTlsIdentityEnv" . }}
+          {{- include "gremlinTlsIdentityEnv" . | nindent 10 }}
+          {{- end }}
           {{- with .Values.gremlin.extraEnv }}
             {{- toYaml . | nindent 10 }}
           {{- end }}
@@ -182,6 +185,9 @@ spec:
           - name: ssl-cert-file
             mountPath: /etc/gremlin/ssl
             readOnly: true
+          {{- end }}
+          {{- if include "gremlinTlsIdentityVolumeMounts" . }}
+          {{- include "gremlinTlsIdentityVolumeMounts" . | nindent 10 }}
           {{- end }}
       volumes:
         - name: cgroup-root
@@ -219,6 +225,9 @@ spec:
         - name: ssl-cert-file
           secret:
             secretName: ssl-cert-file
+        {{- end }}
+        {{- if include "gremlinTlsIdentityVolumes" . }}
+        {{- include "gremlinTlsIdentityVolumes" . | nindent 8 }}
         {{- end }}
 {{- if .Values.gremlin.priorityClassName }}
       priorityClassName: {{ .Values.gremlin.priorityClassName }}

@@ -88,6 +88,9 @@ spec:
             - name: SSL_CERT_DIR
               value: {{ .Values.ssl.certDir }}
           {{- end }}
+          {{- if include "gremlinTlsIdentityEnv" . }}
+          {{- include "gremlinTlsIdentityEnv" . | nindent 12 }}
+          {{- end }}
           {{- with .Values.gremlin.extraEnv }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -102,6 +105,9 @@ spec:
               mountPath: /etc/gremlin/ssl
               readOnly: true
             {{- end }}
+            {{- if include "gremlinTlsIdentityVolumeMounts" . }}
+            {{- include "gremlinTlsIdentityVolumeMounts" . | nindent 12 }}
+            {{- end }}
       volumes:
         {{- if (eq (include "gremlin.secretType" .) "certificate") }}
         - name: gremlin-cert
@@ -113,6 +119,9 @@ spec:
           secret:
             secretName: integrations-ssl-cert-file
         {{ end }}
+        {{- if include "gremlinTlsIdentityVolumes" . }}
+        {{- include "gremlinTlsIdentityVolumes" . | nindent 8 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
