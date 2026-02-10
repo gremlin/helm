@@ -129,7 +129,7 @@ spec:
             {{- end }}
           imagePullPolicy: {{ .Values.chaoimage.pullPolicy }}
           name: chao
-{{- if (or ((eq (include "gremlin.secretType" .) "certificate")) .Values.ssl.certFile) }}
+{{- if (or ((eq (include "gremlin.secretType" .) "certificate")) .Values.ssl.certFile (include "chaoTlsIdentityVolumeMounts" .)) }}
           volumeMounts:
 {{- end }}
 {{- if (eq (include "gremlin.secretType" .) "certificate") }}
