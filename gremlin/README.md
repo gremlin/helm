@@ -30,6 +30,7 @@ their default values. See values.yaml for all available options.
 | `chao.nodeSelector`                    | Map of node labels for pod assignment for the `chao` container | `{}`                                                                                        |
 | `chao.tolerations`                     | List of node taints to tolerate for the `chao` container       | `[]`                                                                                        |
 | `chao.affinity`                        | Map of node/pod affinities for the `chao` container            | `{}`                                                                                        |
+| `chao.serviceAccount.annotations`      | Annotations to add to the Chao service account                                                | `{}` |
 | `chao.create`                          | Enable kubernetes targeting by installing k8s client           | true                                                                                        |
 | `chao.extraEnv`                        | Specify any arbitrary environment variables to pass to the Chao deployment. | `[]`                                                                                        |
 | `chao.namespaces`                      | List of namespaces for Gremlin to watch for attacking          | `[]`                                                                                        
@@ -45,6 +46,7 @@ their default values. See values.yaml for all available options.
 | `gremlin.podSecurity.readOnlyRootFilesystem` | Forces the Gremlin Daemonset containers to run with a read-only root filesystem | `false`                                                                                     |
 | `gremlin.podSecurity.supplementalGroups.rule` | Specifies the Linux groups the Gremlin Daemonset containers should run as | `RunAsAny`                                                                                  |
 | `gremlin.podSecurity.fsGroup.rule`     | Specifies the Linux groups applied to mounted volumes          | `RunAsAny`                                                                                  |
+| `gremlin.secret.certVolume`            | Used to define the value of the gremlin-cert volume except the name. This volume should always contain two files named `gremlin.cert` and `gremlin.key` containing the team certificate and private key used to auth the agents to the gremlin API | `{}` |
 | `gremlin.podSecurity.volumes`          | Specifies the volume types the Gremlin Daemonset is allowed to use | `[configMap, secret, hostPath]`                                                             |
 | `gremlin.podSecurity.podSecurityPolicy.create` | When true, Gremlin creates and uses a custom PodSecurityPolicy, granting all behaviors Gremlin needs | `false`                                                                                     |
 | `gremlin.podSecurity.podSecurityPolicy.seLinux` | Sets the SecurityContext for the PSP used by the Gremlin Daemonset | `{ rule: MustRunAs, seLinuxOptions: { type: gremlin.process } }`                            |
