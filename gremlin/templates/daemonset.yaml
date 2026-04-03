@@ -91,6 +91,7 @@ spec:
             add: {{ toYaml .Values.gremlin.podSecurity.capabilities | nindent 14 }}
           {{- if .Values.gremlin.podSecurity.seLinuxOptions }}
           seLinuxOptions: {{ toYaml .Values.gremlin.podSecurity.seLinuxOptions | nindent 12 }}
+          readOnlyRootFilesystem: {{ .Values.gremlin.podSecurity.readOnlyRootFilesystem }}
           {{- end }}
         env:
           - name: GREMLIN_TEAM_ID

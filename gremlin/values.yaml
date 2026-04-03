@@ -153,6 +153,7 @@ gremlin:
 
     # gremlin.podSecurity.readOnlyRootFilesystem -
     # Forces the Gremlin Daemonset containers to run with a read-only root filesystem
+    # NOTE: When true, Disk and IO experiments against the host will fail unless they target an external volume
     readOnlyRootFilesystem: false
 
     # gremlin.podSecurity.supplementalGroups -
