@@ -1,0 +1,21 @@
+suite: Test other daemonset options
+templates:
+  - daemonset.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+tests:
+  - it: should set readOnlyRootFilesystem to false when blank
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: false
+  - it: should set readOnlyRootFilesystem when true
+    set:
+      gremlin.podSecurity.readOnlyRootFilesystem: true
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
