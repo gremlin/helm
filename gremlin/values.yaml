@@ -28,9 +28,15 @@ gremlin:
   hostPID: false
   hostNetwork: false
   installK8sClient: true
+  podLabels: {}
+  podAnnotations: {}
   client:
     tags: ""
   secret: {}
+
+chao:
+  podLabels: {}
+  podAnnotations: {}
     # Gremlin supports both `certificate` and `secret` types
     # # By default, Gremlin will not manage secret values
     # # To manage secrets with helm, uncomment the following

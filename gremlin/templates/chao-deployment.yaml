@@ -21,6 +21,13 @@ spec:
         app.kubernetes.io/instance: chao
         app.kubernetes.io/name: chao
         app.kubernetes.io/version: "1"
+        {{- with .Values.chao.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.chao.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
     spec:
       serviceAccountName: chao
       containers:
