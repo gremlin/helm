@@ -33,6 +33,10 @@ spec:
         {{- if .Values.chao.podLabels }}
         {{- toYaml .Values.chao.podLabels | nindent 8 }}
         {{- end }}
+      {{- if .Values.chao.podAnnotations }}
+      annotations:
+        {{- toYaml .Values.chao.podAnnotations | nindent 8 }}
+      {{- end }}
     spec:
       serviceAccountName: chao
       {{- if .Values.chao.affinity }}

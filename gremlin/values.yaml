@@ -40,6 +40,10 @@ gremlin:
   # Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods
   podLabels: {}
 
+  # gremlin.podAnnotations -
+  # Additional annotations applied to the Gremlin Agent's DaemonSet pods
+  podAnnotations: {}
+
   # gremlin.apparmor -
   # Gremlin assumes apparmor is not enabled by default and so it will not specify any apparmor profile to use
   # You may need to provide a specific profile if your environment requires it.
@@ -76,7 +80,6 @@ gremlin:
   # gremlin.installApparmorProfile -
   # This controls if gremlin installs its own apparmor profile.  This is only necessary if you're running apparmor
   installApparmorProfile: false
-
   client:
     # gremlin.client.tags -
     # A string of comma separated key=value pairs that are used to decorate the Gremlin agent with tags.
@@ -370,6 +373,10 @@ chao:
   affinity: {}
 
   podLabels: {}
+
+  # chao.podAnnotations -
+  # Additional annotations applied to Chao pods
+  podAnnotations: {}
 
   serviceAccount:
     # Determines if the `chao` deployment should be installed. This deployment launches an agent that enabled Kubernetes
