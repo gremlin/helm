@@ -55,9 +55,10 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   # Needed for Gremlin Service Discovery and executing a certificate expiry experiment
   capability dac_read_search,
   capability sys_ptrace,
+  capability net_raw,
 
   # Needed for Gremlin Process Exhaustion
-  capability sys_resource
+  capability sys_resource,
 
   # General deny
   deny /bin/** wl,

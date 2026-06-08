@@ -6,7 +6,10 @@ jobs:
   unittest:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - uses: d3adb5/helm-unittest-action@v2
         with:
           helm-version: v3.17.0
+          unittest-version: v1.0.3
+          install-mode: if-not-present

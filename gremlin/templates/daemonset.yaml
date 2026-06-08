@@ -97,6 +97,7 @@ spec:
           {{- if .Values.gremlin.podSecurity.seLinuxOptions }}
           seLinuxOptions: {{ toYaml .Values.gremlin.podSecurity.seLinuxOptions | nindent 12 }}
           {{- end }}
+          readOnlyRootFilesystem: {{ .Values.gremlin.podSecurity.readOnlyRootFilesystem }}
         env:
           - name: GREMLIN_TEAM_ID
             {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
@@ -141,6 +142,12 @@ spec:
             value: {{ .Values.gremlin.collect.dns | quote }}
           - name: GREMLIN_SERVICE_URL
             value: {{ include "gremlinServiceUrl" . }}
+          {{- if not .Values.gremlin.features.pushCIDRTags.enabled }}
+          - name: GREMLIN_PUSH_POD_CIDR_TAGS
+            value: "false"
+          - name: GREMLIN_PUSH_ZONE_CIDR_TAGS
+            value: "false"
+          {{- end }}
           {{- if .Values.gremlin.proxy.url }}
           - name: https_proxy
             value: {{ .Values.gremlin.proxy.url }}
@@ -152,6 +159,9 @@ spec:
           {{- if .Values.ssl.certDir }}
           - name: SSL_CERT_DIR
             value: {{ .Values.ssl.certDir }}
+          {{- end }}
+          {{- if include "gremlinTlsIdentityEnv" . }}
+          {{- include "gremlinTlsIdentityEnv" . | nindent 10 }}
           {{- end }}
           {{- with .Values.gremlin.extraEnv }}
             {{- toYaml . | nindent 10 }}
@@ -181,6 +191,9 @@ spec:
           - name: ssl-cert-file
             mountPath: /etc/gremlin/ssl
             readOnly: true
+          {{- end }}
+          {{- if include "gremlinTlsIdentityVolumeMounts" . }}
+          {{- include "gremlinTlsIdentityVolumeMounts" . | nindent 10 }}
           {{- end }}
       volumes:
         - name: cgroup-root
@@ -218,6 +231,9 @@ spec:
         - name: ssl-cert-file
           secret:
             secretName: ssl-cert-file
+        {{- end }}
+        {{- if include "gremlinTlsIdentityVolumes" . }}
+        {{- include "gremlinTlsIdentityVolumes" . | nindent 8 }}
         {{- end }}
 {{- if .Values.gremlin.priorityClassName }}
       priorityClassName: {{ .Values.gremlin.priorityClassName }}
