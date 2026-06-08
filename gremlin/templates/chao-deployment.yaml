@@ -1,15 +1,23 @@
-{{ if .Values.gremlin.installK8sClient }}
+{{ if .Values.chao.create }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
     app.kubernetes.io/instance: chao
     app.kubernetes.io/name: chao
+    helm.sh/chart: {{ include "gremlin.chart" . }}
     app.kubernetes.io/version: "1"
+    {{- if .Values.chao.podLabels }}
+    {{- toYaml .Values.chao.podLabels | nindent 4 }}
+    {{- end }}
   name: chao
   namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
+  {{- if .Values.chao.updateStrategy }}
+  strategy:
+    {{- toYaml .Values.chao.updateStrategy | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/instance: chao
@@ -20,18 +28,36 @@ spec:
       labels:
         app.kubernetes.io/instance: chao
         app.kubernetes.io/name: chao
+        helm.sh/chart: {{ include "gremlin.chart" . }}
         app.kubernetes.io/version: "1"
-        {{- with .Values.chao.podLabels }}
-        {{- toYaml . | nindent 8 }}
+        {{- if .Values.chao.podLabels }}
+        {{- toYaml .Values.chao.podLabels | nindent 8 }}
         {{- end }}
-      {{- with .Values.chao.podAnnotations }}
+      {{- if .Values.chao.podAnnotations }}
       annotations:
-        {{- toYaml . | nindent 8 }}
+        {{- toYaml .Values.chao.podAnnotations | nindent 8 }}
       {{- end }}
     spec:
       serviceAccountName: chao
+      {{- if .Values.chao.affinity }}
+      affinity: {{ toYaml .Values.chao.affinity | trimSuffix "\n" | nindent 8 }}
+      {{- end }}
+      {{- if .Values.chao.nodeSelector }}
+      nodeSelector: {{ toYaml .Values.chao.nodeSelector | trimSuffix "\n" | nindent 8 }}
+      {{- end }}
+      {{- if .Values.chao.tolerations }}
+      tolerations: {{ toYaml .Values.chao.tolerations | trimSuffix "\n" | nindent 8 }}
+      {{- end }}
+      {{- if .Values.chaoimage.pullSecret }}
+      imagePullSecrets:
+      - name: {{ .Values.chaoimage.pullSecret }}
+      {{- end }}
       containers:
         - image: {{ .Values.chaoimage.repository }}:{{ .Values.chaoimage.tag }}
+        {{- if .Values.resources }}
+          resources:
+{{ toYaml .Values.resources | trimSuffix "\n" | indent 12 }}
+        {{- end }}
           env:
             - name: GREMLIN_TEAM_ID
 {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
@@ -60,25 +86,72 @@ spec:
                   name: {{ include "gremlin.secretName" . }}
                   key: GREMLIN_TEAM_SECRET
 {{- end }}
-{{- if (eq (include "gremlin.secretType" .) "certificate") }}
-          args:
-          - "-cert_path"
-          - "/var/lib/gremlin/cert/gremlin.cert"
-          - "-key_path"
-          - "/var/lib/gremlin/cert/gremlin.key"
+{{- if .Values.gremlin.proxy.url }}
+            - name: https_proxy
+              value: {{ .Values.gremlin.proxy.url }}
+            - name: no_proxy
+              value: $(KUBERNETES_SERVICE_HOST):$(KUBERNETES_SERVICE_PORT)
 {{- end }}
+{{- if .Values.ssl.certFile }}
+            - name: SSL_CERT_FILE
+              value: /etc/gremlin/ssl/certfile.pem
+{{- end }}
+{{- if .Values.ssl.certDir }}
+            - name: SSL_CERT_DIR
+              value: {{ .Values.ssl.certDir }}
+{{- end }}
+            {{- with .Values.chao.extraEnv }}
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+          args:
+            - "-api_url"
+            - "{{ include "gremlinServiceUrl" . }}/kubernetes"
+            {{- if (eq (include "gremlin.secretType" .) "certificate") }}
+            - "-cert_path"
+            {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
+            {{- if or (not .Values.gremlin.secret.managed) (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
+            - "/var/lib/gremlin/cert/gremlin.cert"
+            {{- else }}
+            - {{ .Values.gremlin.secret.certificate | quote }}
+            {{- end }}
+            - "-key_path"
+            {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
+            {{- if or (not .Values.gremlin.secret.managed) (hasPrefix "-----BEGIN" .Values.gremlin.secret.key) }}
+            - "/var/lib/gremlin/cert/gremlin.key"
+            {{- else }}
+            - {{ .Values.gremlin.secret.key | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.chao.namespaces }}
+            - "-namespaces"
+            - "{{ join "," .Values.chao.namespaces }}"
+            {{- end}}
           imagePullPolicy: {{ .Values.chaoimage.pullPolicy }}
           name: chao
-{{- if (eq (include "gremlin.secretType" .) "certificate") }}
+{{- if (or ((eq (include "gremlin.secretType" .) "certificate")) .Values.ssl.certFile) }}
           volumeMounts:
+{{- end }}
+{{- if (eq (include "gremlin.secretType" .) "certificate") }}
           - name: gremlin-cert
             mountPath: /var/lib/gremlin/cert
             readOnly: true
+{{- end }}
+{{- if .Values.ssl.certFile }}
+          - name: ssl-cert-file
+            mountPath: /etc/gremlin/ssl
+            readOnly: true
+{{- end }}
       volumes:
       - name: gremlin-cert
         secret:
           secretName: {{ include "gremlin.secretName" . }}
+{{- if .Values.ssl.certFile }}
+      - name: ssl-cert-file
+        secret:
+          secretName: ssl-cert-file
 {{ end }}
+{{- if .Values.chao.priorityClassName }}
+      priorityClassName: {{ .Values.chao.priorityClassName }}
+{{- end }}
 ---
 {{ end }}
-

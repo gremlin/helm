@@ -6,11 +6,13 @@ image:
   repository: gremlin/gremlin
   tag: latest
   pullPolicy: Always
+  pullSecret:
 
 chaoimage:
   repository: gremlin/chao
   tag: latest
   pullPolicy: Always
+  pullSecret:
 
 nameOverride: ""
 fullnameOverride: ""
@@ -22,29 +24,329 @@ tolerations: []
 affinity: {}
 
 gremlin:
-  apparmor: ""
-  teamID: ""                    # DEPRECATED: moved to gremlin.secret.teamID
-  clusterID: ""                 # DEPRECATED: moved to gremlin.secret.clusterID
-  hostPID: false
-  hostNetwork: false
-  installK8sClient: true
+
+  # gremlin.updateStrategy -
+  # The rollout strategy Kubernetes will use when updating the Gremlin daemonset
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+  # gremlin.priorityClassName -
+  # The name of the priority class to use for the Gremlin daemonset
+  priorityClassName: ""
+
+  # gremlin.podLabels -
+  # Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods
   podLabels: {}
+
+  # gremlin.podAnnotations -
+  # Additional annotations applied to the Gremlin Agent's DaemonSet pods
   podAnnotations: {}
+
+  # gremlin.apparmor -
+  # Gremlin assumes apparmor is not enabled by default and so it will not specify any apparmor profile to use
+  # You may need to provide a specific profile if your environment requires it.
+  #
+  # NOTE: Gremlin requires a privileged apparmor profile such as `unconfined` to carry out Process Killer attacks
+  #   at the host-level (e.g. any root-owned process)
+  apparmor:
+
+  collect:
+    # gremlin.collect.dns -
+    # Specifies whether Gremlin should collect DNS call information
+    dns: true
+
+  # gremlin.hostPID -
+  # This must be true for all Gremlin container drivers. It is also required for any Gremlin
+  #   installation that wishes to carry out Process Killer or attacks at the host-level
+  #
+  hostPID: true
+
+  # gremlin.dnsPolicy -
+  # A Kubernetes DNS policy that determines how the Gremlin Daemonset should resolve DNS queries.
+  #  Possible values are:
+  #   ClusterFirstWithHostNet - The default. This will use the cluster DNS service first, but will also
+  #                             use the host's DNS configuration as a fallback. Use this to resolve
+  #                             hostnames of Kubernetes services defined in the cluster.
+  #   ClusterFirst - Uses only the cluster DNS service.
+  dnsPolicy: ClusterFirstWithHostNet
+
+  # gremlin.hostNetwork -
+  # This must be true for any Gremlin installation that wishes to carry out network attacks at the host-level. It
+  #   is also required for Gremlin's dependency discovery features.
+  hostNetwork: true
+
+  # gremlin.installApparmorProfile -
+  # This controls if gremlin installs its own apparmor profile.  This is only necessary if you're running apparmor
+  installApparmorProfile: false
   client:
+    # gremlin.client.tags -
+    # A string of comma separated key=value pairs that are used to decorate the Gremlin agent with tags.
+    #
+    # NOTE: This value's commas must be escaped. See https://github.com/gremlin/helm/issues/8
     tags: ""
-  secret: {}
+
+  container:
+    # gremlin.container.driver -
+    # Specifies which container driver with which to run Gremlin. Possible values and their meanings:
+    #   any              =   Useful when the Cluster's container runtime is not known.
+    #                        Helm will provide file access to all drivers so that Gremlin can choose.
+    #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock, /run/containers/containers.sock]
+    #
+    #   docker-linux     =   Provides full integration with Docker containers
+    #                        Implies host mounts [/var/run/docker.sock]
+    #
+    #   containerd-linux =   Provides full integration with Containerd containers
+    #                        Implies host mounts [/run/containers/containers.sock]
+    #
+    #   crio-linux       =   Provides full integration with Cri-O containers
+    #                        Implies host mounts [/run/crio/crio.sock]
+    #
+    #   linux            =   Alias for `any`
+    #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock, /run/containers/containers.sock]
+    driver: linux
+
+  cgroup:
+    # gremlin.cgroup.root -
+    # Specifies the absolute path for the cgroup controller root on target host systems
+    root: /sys/fs/cgroup
+
+  serviceAccount:
+    # gremlin.serviceAccount.create -
+    # Specifies whether Gremlin's kubernetes service account should be created by this helm chart. When true, this
+    #   creates a service account with the name `gremlin`, along with ClusterRole and ClusterRole bindings that enable
+    #   Gremlin's requirements (see gremlin.podSecurity.podSecurityPolicy and
+    #   gremlin.podSecurity.securityContextConstraints)
+    create: true
+    # Annotations to add to the service account
+    annotations: { }
+
+  podSecurity:
+
+    # gremlin.podSecurity.allowPrivilegeEscalation -
+    # Allows Gremlin containers privilege escalation powers
+    allowPrivilegeEscalation: false
+
+    # gremlin.podSecurity.capabilities -
+    # Specifies which Linux capabilities should be granted to Gremlin. Each capability is provided to the Gremlin
+    #   Daemonset as well as any pod security resource that governs it. Capabilities that are required for specific
+    #   attacks can be removed from this list if running such attacks are not desired.
+    capabilities:
+      - KILL            # Required to run Process Killer attacks
+      - NET_ADMIN       # Required to run network attacks
+      - SYS_BOOT        # Required to run Shutdown attacks
+      - SYS_TIME        # Required to run Time Travel attacks
+      - DAC_READ_SEARCH # Required to run Certificate Expiry attacks with CIDR address arguments, and to discover dependencies
+      - SYS_RESOURCE    # Required to run Process Exhaustion attacks against containers
+      - SYS_ADMIN       # Required to apply impact within container namespaces
+      - SYS_PTRACE      # Required to to identify charactistics of container processes (such as associated network)
+      - NET_RAW         # Required to discover dependencies
+
+    # gremlin.podSecurity.seLinuxOptions -
+    # Specifies SELinux options to apply to the Gremlin Daemonset container securityContext.
+    #
+    # WARNING: Setting anything other than seLinuxOptions.type should be done with caution as these options may relabel paths on the host filesystem,
+    # including container runtime socket files and container state directories. Only the `type` value is recommended to be set here, such as in the
+    # case of using BottleRocket, this should be set to `type: super_t`.
+    seLinuxOptions:
+      # gremlin.podSecurity.seLinuxOptions.type -
+      # Specifies the process label gremlind processes should run under. When running BottleRocket for example, this should be set to `super_t`
+      # type: super_t
+
+    # gremlin.podSecurity.readOnlyRootFilesystem -
+    # Forces the Gremlin Daemonset containers to run with a read-only root filesystem
+    readOnlyRootFilesystem: false
+
+    # gremlin.podSecurity.supplementalGroups -
+    # Specifies the Linux groups the Gremlin Daemonset containers should run as
+    supplementalGroups:
+      rule: RunAsAny
+
+    # gremlin.podSecurity.fsGroup -
+    # Specifies the Linux groups applied to mounted volumes
+    fsGroup:
+      rule: RunAsAny
+
+    # gremlin.podSecurity.volumes -
+    # Specifies the volume types the Gremlin Daemonset is allowed to use
+    volumes:
+      - configMap   # Required when the Gremlin Daemonset installs a seccomp profile (see gremlin.podSecurity.seccomp)
+      - secret      # Required to store and load secret information like certificates that authenticate Gremlin
+      - hostPath    # Required by Gremlin to store attack logs (/var/log/gremlin) and attack state (/var/lib/gremlin/executions)
+      - emptyDir    # Required by Gremlin to store transient files, such as `/var/lib/gremlin/.credentials`
+
+    podSecurityPolicy:
+      # gremlin.podSecurity.podSecurityPolicy.create -
+      # When true, Gremlin creates and uses a custom PodSecurityPolicy, granting all behaviors Gremlin needs
+      create: false
+      # gremlin.podSecurity.podSecurityPolicy.seLinux
+      # Sets the SecurityContext for the PSP used by the Gremlin Daemonset
+      seLinux:
+        rule: MustRunAs
+        seLinuxOptions:
+          type: gremlin.process
+          level: s0-s0:c0.c1023
+      # gremlin.podSecurity.podSecurityPolicy.runAsUser -
+      # Specifies the Linux user the Gremlin Daemonset containers should run as
+      runAsUser:
+        rule: RunAsAny
+
+    securityContextConstraints:
+      # gremlin.podSecurity.securityContextConstraints.create -
+      # When true, Gremlin creates and uses a custom SecurityContextConstraints, granting all behaviors Gremlin needs
+      create: false
+      # gremlin.podSecurity.securityContextConstraints.allowHostDirVolumePlugin -
+      # Specifies whether the Gremlin Daemonset has access to host path directories as mounted volumes
+      allowHostDirVolumePlugin: true
+      # gremlin.podSecurity.securityContextConstraints.seLinuxContext
+      # Sets the SecurityContext for the SCC used by the Gremlin Daemonset
+      seLinuxContext:
+        type: MustRunAs
+        seLinuxOptions:
+          #  gremlin.podSecurity.securityContextConstraints.seLinuxContext.type -
+          #  Specifies the SELinux process label gremlin should run under. OpenShift uses the CRI-O container runtime, which deploys any container with hostPID=true as `spc_t`. Any other value is ignored.
+          type: spc_t
+          level: s0-s0:c0.c1023
+      # gremlin.podSecurity.securityContextConstraints.runAsUser -
+      # Specifies the Linux user the Gremlin Daemonset containers should run as
+      runAsUser:
+        type: RunAsAny
+
+    # gremlin.podSecurity.privileged -
+    # Determines whether the Gremlin Daemonset should run privileged containers
+    privileged: false
+
+    # gremlin.podSecurity.seccomp -
+    # All of Gremlin's behavior runs under Docker's default seccomp profile. For systems with a more restrictive
+    #   runtime/default profile, Gremlin can create and the specific seccomp profile it needs.
+    seccomp:
+      # gremlin.podSecurity.seccomp.enabled -
+      # Determines whether the Gremlin Daemonset should be annotated with the seccomp profile specified by
+      #   gremlin.podSecurity.seccomp.profile
+      enabled: false
+      # gremlin.podSecurity.seccomp.profile -
+      # Describes the name of the seccomp profile to use
+      #
+      # NOTE: When this value is `localhost/gremlin`, Gremlin will create its own custom seccomp profile
+      profile: localhost/gremlin
+      # gremlin.podSecurity.seccomp.root
+      # The absolute path pointing to the seccomp profile root on cluster nodes
+      root: /var/lib/kubelet/seccomp
+
+  # gremlin.resources -
+  # Set resource requests and limits
+  # See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
+  #
+  # NOTE: This resource specification affects the Gremlin agent which is used for host attacks. This resource
+  # Attacks targeting other Kubernetes pods will use the resource specification of their target.
+  resources: {}
+
+  secret:
+    # Gremlin supports both `certificate` and `secret` types
+    # To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections
+    type: certificate
+    managed: false
+    # team identifier (e.g. 11111111-1111-1111-1111-111111111111)
+    teamID: ""
+    # string uniquely identifying this kubernetes cluster in Gremlin (e.g. my-cluster)
+    clusterID: ""
+
+    ## Certificate auth requires: `certificate` and `key`
+    # team certificate (e.g. -----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----)
+    certificate: ""
+    # team private key (e.g. -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----)
+    key: ""
+
+    ## Secret auth requires: `teamSecret`
+    # team secret (e.g. 00000000-0000-0000-0000-000000000000)
+    teamSecret: ""
+
+  proxy:
+    # gremlin.proxy.url -
+    # Specifies the http proxy that the Gremlin Agent and Gremlin Kubernetes agent should use to communicate with
+    # api.gremlin.com. This value is ignored when blank or absent.
+    url: ""
+
+  # gremlin.extraEnv -
+  # Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset.
+  extraEnv: []
+
+  # gremlin.features
+  features:
+
+    # gremlin.features.discoverDestinationService.enabled
+    # Give gremlin permissions to discover any supported destination services such has linkerd-dst, and Kubernetes EndpointSlices
+    #   The ClusterRole associated with Gremlin's service account receives the following access
+    #     - Services: get
+    #     - discover.k8s.io/EndpointSlices: watch, list
+    discoverDestinationService:
+      enabled: false
 
 chao:
+
+  # chao.create
+  # Determines if the `chao` deployment should be installed. This deployment launches an agent that enabled Kubernetes
+  #   targeting for Gremlin attacks
+  create: true
+
+  # chao.updateStrategy -
+  # The rollout strategy Kubernetes will use when updating the Chao deployment
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
+
+  # chao.priorityClassName -
+  # The name of the priority class to use for the Chao deployment
+  priorityClassName: ""
+
+  nodeSelector: {}
+
+  tolerations: []
+
+  affinity: {}
+
   podLabels: {}
+
+  # chao.podAnnotations -
+  # Additional annotations applied to Chao pods
   podAnnotations: {}
-    # Gremlin supports both `certificate` and `secret` types
-    # # By default, Gremlin will not manage secret values
-    # # To manage secrets with helm, uncomment the following
-    # NOTE: `certificate`+`key` OR `secret` is required, not both. `type` dictates which will be used
-    # type: certificate
-    # managed: true
-    # teamID: 1d1d1d1d-1d1d-1d1d-1d1d-1d1d1d1d1d1d
-    # clusterID: my-cluster-id
-    # certificate: -----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----
-    # key: -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----
-    # teamSecret: 5ec4e75e-c4e7-5ec4-e75e-c4e75ec4e75e
+
+  serviceAccount:
+    # Determines if the `chao` deployment should be installed. This deployment launches an agent that enabled Kubernetes
+    #   targeting for Gremlin attacks
+    create: true
+    # Annotations to add to the service account
+    annotations: { }
+
+  # chao.extraEnv -
+  # Specify any arbitrary environment variables to pass to the Chao deployment.
+  extraEnv: []
+
+  # chao.namespaces
+  # list of namespaces for Gremlin to watch for attacking
+  namespaces: []
+
+ssl:
+  # ssl.certFile -
+  # Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the
+  # certificate(s) you wish to add. When set, this chart creates secret (`ssl-cert-file`) with the contents and passes
+  # it to both agents. This value is ignored when blank or absent.
+  certFile:
+  # ssl.certDir -
+  # sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a
+  # path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent.
+  certDir:
+
+containerDrivers:
+  docker-linux:
+    runtimeSocket: "/var/run/docker.sock"
+    name: "docker"
+  containerd-linux:
+    runtimeSocket: "/run/containerd/containerd.sock"
+    name: "containerd"
+  crio-linux:
+    runtimeSocket: "/run/crio/crio.sock"
+    name: "crio"

@@ -14,12 +14,10 @@
 *.swp
 *.bak
 *.tmp
+*.orig
 *~
 # Various IDEs
 .project
 .idea/
 *.tmproj
 .vscode/
-
-# Helm unit tests which shouldn't be included in the package
-tests/
