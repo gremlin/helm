@@ -12,3 +12,4 @@ jobs:
         with:
           helm-version: v3.17.0
           unittest-version: v1.1.0
+          install-mode: if-not-present
