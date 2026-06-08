@@ -11,5 +11,5 @@ jobs:
       - uses: d3adb5/helm-unittest-action@v2
         with:
           helm-version: v3.17.0
-          unittest-version: v1.1.0
+          unittest-version: v1.1.1
           install-mode: if-not-present
