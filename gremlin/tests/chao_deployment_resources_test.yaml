@@ -1,0 +1,55 @@
+suite: Test Chao deployment resources
+templates:
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should render resources when chao.resources is set
+    set:
+      chao.resources.limits.cpu: "100m"
+      chao.resources.limits.memory: "64Mi"
+      chao.resources.requests.cpu: "10m"
+      chao.resources.requests.memory: "32Mi"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "100m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: "64Mi"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: "10m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: "32Mi"
+
+  - it: should honor the top-level resources block for backwards compatibility
+    set:
+      resources.limits.cpu: "200m"
+      resources.requests.cpu: "50m"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "200m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: "50m"
+
+  - it: should prefer chao.resources over the top-level resources block
+    set:
+      resources.limits.cpu: "200m"
+      chao.resources.limits.cpu: "100m"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "100m"
+
+  - it: should not render a resources block when neither is set
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].resources
