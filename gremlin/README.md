@@ -31,6 +31,7 @@ their default values. See values.yaml for all available options.
 | `chao.tolerations`                     | List of node taints to tolerate for the `chao` container       | `[]`                                                                                        |
 | `chao.affinity`                        | Map of node/pod affinities for the `chao` container            | `{}`                                                                                        |
 | `chao.create`                          | Enable kubernetes targeting by installing k8s client           | true                                                                                        |
+| `chao.resources`                       | Set resource requests and limits for the chao deployment       | `{}`                                                                                        |
 | `chao.extraEnv`                        | Specify any arbitrary environment variables to pass to the Chao deployment. | `[]`                                                                                        |
 | `chao.namespaces`                      | List of namespaces for Gremlin to watch for attacking          | `[]`                                                                                        
 | `gremlin.podLabels`           | Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods| `{}`                                                                                        |

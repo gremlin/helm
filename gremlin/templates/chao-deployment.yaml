@@ -54,9 +54,9 @@ spec:
       {{- end }}
       containers:
         - image: {{ .Values.chaoimage.repository }}:{{ .Values.chaoimage.tag }}
-        {{- if .Values.resources }}
+        {{- with (default .Values.resources .Values.chao.resources) }}
           resources:
-{{ toYaml .Values.resources | trimSuffix "\n" | indent 12 }}
+{{ toYaml . | trimSuffix "\n" | indent 12 }}
         {{- end }}
           securityContext:
             readOnlyRootFilesystem: true

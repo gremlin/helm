@@ -354,6 +354,14 @@ chao:
   #   targeting for Gremlin attacks
   create: true
 
+  # chao.resources -
+  # Set resource requests and limits for the Chao deployment.
+  # See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
+  #
+  # NOTE: For backwards compatibility, a top-level `resources` block is still honored when `chao.resources`
+  # is unset, but `chao.resources` is preferred and takes precedence.
+  resources: {}
+
   # chao.updateStrategy -
   # The rollout strategy Kubernetes will use when updating the Chao deployment
   updateStrategy:
