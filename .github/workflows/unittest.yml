@@ -2,6 +2,9 @@ name: Unit tests
 
 on: pull_request
 
+permissions:
+  contents: read
+
 jobs:
   unittest:
     runs-on: ubuntu-latest
