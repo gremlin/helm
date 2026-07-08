@@ -32,6 +32,8 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          resources:
+{{- toYaml .Values.gremlin.resources | nindent 12 }}
           env:
             - name: GREMLIN_TEAM_ID
           {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
@@ -66,6 +68,8 @@ spec:
               value: {{ .Values.gremlin.secret.key }}
               {{- end }}
           {{- end }}
+            - name: GREMLIN_CLIENT_TAGS
+              value: {{ .Values.gremlin.client.tags }}
           {{- if .Values.gremlin.allowList }}
             - name: GREMLIN_INTEGRATION_AGENT_ALLOW_LIST
               value: {{ .Values.gremlin.allowList }}
@@ -84,6 +88,9 @@ spec:
             - name: SSL_CERT_DIR
               value: {{ .Values.ssl.certDir }}
           {{- end }}
+          {{- if include "gremlinTlsIdentityEnv" . }}
+          {{- include "gremlinTlsIdentityEnv" . | nindent 12 }}
+          {{- end }}
           {{- with .Values.gremlin.extraEnv }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -98,6 +105,9 @@ spec:
               mountPath: /etc/gremlin/ssl
               readOnly: true
             {{- end }}
+            {{- if include "gremlinTlsIdentityVolumeMounts" . }}
+            {{- include "gremlinTlsIdentityVolumeMounts" . | nindent 12 }}
+            {{- end }}
       volumes:
         {{- if (eq (include "gremlin.secretType" .) "certificate") }}
         - name: gremlin-cert
@@ -109,6 +119,9 @@ spec:
           secret:
             secretName: integrations-ssl-cert-file
         {{ end }}
+        {{- if include "gremlinTlsIdentityVolumes" . }}
+        {{- include "gremlinTlsIdentityVolumes" . | nindent 8 }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

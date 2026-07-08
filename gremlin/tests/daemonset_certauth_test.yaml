@@ -1,0 +1,383 @@
+suite: Test daemonset
+templates:
+  - daemonset.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+values:
+  - values-certauth-test.yaml
+
+tests:
+  - it: should create a daemonset
+    asserts:
+      - isKind:
+          of: DaemonSet
+      - equal:
+          path: metadata.name
+          value: my-release-gremlin
+      - equal:
+          path: metadata.namespace
+          value: my-namespace
+  - it: should allow specifying a custom registry and tag
+    set:
+      image.tag: "0.0.1"
+      image.repository: docker.io/my/custom/repository
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: docker.io/my/custom/repository:0.0.1
+  - it: should allow specifying a custom pull secret
+    set:
+      image.pullSecret: "my-pull-secret"
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: my-pull-secret
+  - it: should mount all container sockets when driver is `any`
+    set:
+      gremlin.container.driver: any
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: crio-sock
+            hostPath:
+              path: /run/crio/crio.sock
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: containerd-sock
+            hostPath:
+              path: /run/containerd/containerd.sock
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: docker-sock
+            hostPath:
+              path: /var/run/docker.sock
+
+  - it: should mount all container sockets when driver is `linux`
+    set:
+      gremlin.container.driver: linux
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: crio-sock
+            hostPath:
+              path: /run/crio/crio.sock
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: containerd-sock
+            hostPath:
+              path: /run/containerd/containerd.sock
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: docker-sock
+            hostPath:
+              path: /var/run/docker.sock
+
+  - it: should mount containerd sockets when driver is `containerd-linux`
+    set:
+      gremlin.container.driver: containerd-linux
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: containerd-sock
+            hostPath:
+              path: /run/containerd/containerd.sock
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: crio-sock
+            hostPath:
+              path: /run/crio/crio.sock
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: docker-sock
+            hostPath:
+              path: /var/run/docker.sock
+
+  - it: should mount containerd sockets when driver is `crio-linux`
+    set:
+      gremlin.container.driver: crio-linux
+    asserts:
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: containerd-sock
+            hostPath:
+              path: /run/containerd/containerd.sock
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: crio-sock
+            hostPath:
+              path: /run/crio/crio.sock
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: docker-sock
+            hostPath:
+              path: /var/run/docker.sock
+
+  - it: should mount containerd sockets when driver is `docker-linux`
+    set:
+      gremlin.container.driver: docker-linux
+    asserts:
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: containerd-sock
+            hostPath:
+              path: /run/containerd/containerd.sock
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: crio-sock
+            hostPath:
+              path: /run/crio/crio.sock
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: docker-sock
+            hostPath:
+              path: /var/run/docker.sock
+  - it: should not explicitly set environment variables by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_PUSH_POD_CIDR_TAGS
+            value: "false"
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_PUSH_ZONE_CIDR_TAGS
+            value: "false"
+  - it: should explicitly set environment variables when features.pushCIDRTags.enabled=false
+    set:
+      gremlin.features.pushCIDRTags.enabled: false
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_PUSH_POD_CIDR_TAGS
+            value: "false"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_PUSH_ZONE_CIDR_TAGS
+            value: "false"
+
+  # gremlin.tls.identity tests
+
+  - it: should not include TLS identity env vars when tls identity is not enabled
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TLS_IDENTITY_CERTIFICATE
+          any: true
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TLS_IDENTITY_PRIVATE_KEY
+          any: true
+
+  - it: should set TLS identity env vars to ARN values when remoteSecret is configured
+    set:
+      gremlin.tls.identity.enabled: true
+      gremlin.tls.identity.remoteSecret.cert: "arn:aws:secretsmanager:us-east-1:123456789:secret:cert"
+      gremlin.tls.identity.remoteSecret.key: "arn:aws:secretsmanager:us-east-1:123456789:secret:key"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TLS_IDENTITY_CERTIFICATE
+            value: "arn:aws:secretsmanager:us-east-1:123456789:secret:cert"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TLS_IDENTITY_PRIVATE_KEY
+            value: "arn:aws:secretsmanager:us-east-1:123456789:secret:key"
+
+  - it: should not mount TLS identity volumes when remoteSecret is configured
+    set:
+      gremlin.tls.identity.enabled: true
+      gremlin.tls.identity.remoteSecret.cert: "arn:aws:secretsmanager:us-east-1:123456789:secret:cert"
+      gremlin.tls.identity.remoteSecret.key: "arn:aws:secretsmanager:us-east-1:123456789:secret:key"
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gremlin-tls-identity
+            mountPath: /var/lib/gremlin/tls/identity
+            readOnly: true
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-tls-identity
+          any: true
+
+  - it: should set TLS identity env vars to file paths when createSecret is configured
+    set:
+      gremlin.tls.identity.enabled: true
+      gremlin.tls.identity.createSecret.name: gremlin-tls-identity
+      gremlin.tls.identity.createSecret.cert: |
+        -----BEGIN CERTIFICATE-----
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        11111111111111111111111111111111111111111111111111==
+        -----END CERTIFICATE-----
+      gremlin.tls.identity.createSecret.key:
+        -----BEGIN PRIVATE KEY-----
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        11111111111111111111111111111111111111111111111111==
+        -----END PRIVATE KEY-----
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TLS_IDENTITY_CERTIFICATE
+            value: /var/lib/gremlin/tls/identity/cert
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TLS_IDENTITY_PRIVATE_KEY
+            value: /var/lib/gremlin/tls/identity/key
+
+  - it: should mount TLS identity volume when createSecret is configured
+    set:
+      gremlin.tls.identity.enabled: true
+      gremlin.tls.identity.createSecret.name: gremlin-tls-identity
+      gremlin.tls.identity.createSecret.cert: |
+        -----BEGIN CERTIFICATE-----
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        11111111111111111111111111111111111111111111111111==
+        -----END CERTIFICATE-----
+      gremlin.tls.identity.createSecret.key:
+        -----BEGIN PRIVATE KEY-----
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        1111111111111111111111111111111111111111111111111111111111111111
+        11111111111111111111111111111111111111111111111111==
+        -----END PRIVATE KEY-----
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gremlin-tls-identity
+            mountPath: /var/lib/gremlin/tls/identity
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-tls-identity
+            secret:
+              secretName: gremlin-tls-identity
+
+  - it: should set TLS identity env vars to file paths when existingSecret is configured
+    set:
+      gremlin.tls.identity.enabled: true
+      gremlin.tls.identity.existingSecret.name: my-existing-secret
+      gremlin.tls.identity.existingSecret.cert: tls.crt
+      gremlin.tls.identity.existingSecret.key: tls.key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TLS_IDENTITY_CERTIFICATE
+            value: /var/lib/gremlin/tls/identity/tls.crt
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TLS_IDENTITY_PRIVATE_KEY
+            value: /var/lib/gremlin/tls/identity/tls.key
+
+  - it: should set TLS identity env vars to file paths when existingSecret is customized
+    set:
+      gremlin.tls.identity.enabled: true
+      gremlin.tls.identity.existingSecret.name: my-existing-secret
+      gremlin.tls.identity.existingSecret.cert: custom.crt
+      gremlin.tls.identity.existingSecret.key: custom.key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TLS_IDENTITY_CERTIFICATE
+            value: /var/lib/gremlin/tls/identity/custom.crt
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: GREMLIN_TLS_IDENTITY_PRIVATE_KEY
+            value: /var/lib/gremlin/tls/identity/custom.key
+
+  - it: should mount TLS identity volume from existingSecret when configured
+    set:
+      gremlin.tls.identity.enabled: true
+      gremlin.tls.identity.existingSecret.name: my-existing-secret
+      gremlin.tls.identity.existingSecret.cert: tls.crt
+      gremlin.tls.identity.existingSecret.key: tls.key
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gremlin-tls-identity
+            mountPath: /var/lib/gremlin/tls/identity
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-tls-identity
+            secret:
+              secretName: my-existing-secret
+
+  - it: should fail when multiple TLS identity strategies are configured for gremlin
+    set:
+      gremlin.tls.identity.enabled: true
+      gremlin.tls.identity.remoteSecret.cert: "arn:aws:secretsmanager:us-east-1:123456789:secret:cert"
+      gremlin.tls.identity.remoteSecret.key: "arn:aws:secretsmanager:us-east-1:123456789:secret:key"
+      gremlin.tls.identity.createSecret.name: gremlin-tls-identity
+      gremlin.tls.identity.createSecret.cert: "dummy-cert"
+      gremlin.tls.identity.createSecret.key: "dummy-key"
+    asserts:
+      - failedTemplate:
+          errorMessage: "gremlin.tls.identity: only one of remoteSecret, createSecret, or existingSecret should be fully configured"

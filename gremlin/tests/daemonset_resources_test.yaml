@@ -1,0 +1,34 @@
+suite: Test daemonset resources
+templates:
+  - daemonset.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should render resources when gremlin.resources is set
+    set:
+      gremlin.resources.limits.cpu: "500m"
+      gremlin.resources.limits.memory: "256Mi"
+      gremlin.resources.requests.cpu: "100m"
+      gremlin.resources.requests.memory: "32Mi"
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "500m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: "256Mi"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: "100m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: "32Mi"
+
+  - it: should not render a resources block when gremlin.resources is unset
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].resources
