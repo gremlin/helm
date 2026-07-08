@@ -50,7 +50,8 @@ helm install gremlin-integrations gremlin/gremlin-integrations \
     --namespace gremlin \
     --set gremlin.secret.teamID=YOUR-TEAM-ID \
     --set-file gremlin.secret.certificate=PATH_TO_CERTIFICATE \
-    --set-file gremlin.secret.key=PATH_TO_PRIVATE_KEY
+    --set-file gremlin.secret.key=PATH_TO_PRIVATE_KEY \
+    --set gremlin.secret.certVolume=YOUR-CERT-VOLUME-CONFIG
 ```
 
 For more detailed instructions, see the chart's
