@@ -271,6 +271,14 @@ gremlin:
     #     ""     - no preset; configure everything via the advanced options below.
     vendor: nvidia
 
+    # gremlin.gpu.createRuntimeClass -
+    # When true, and the effective runtimeClassName is set, the chart creates that RuntimeClass
+    #   object IF it does not already exist in the cluster.
+    #
+    # An existing RuntimeClass of the same name is detected and left untouched, so this will not
+    #   interfere with a RuntimeClass already managed by the GPU Operator or your platform.
+    createRuntimeClass: false
+
     # --- Advanced options -------------------------------------------------------------------
     # Everything below overrides the vendor preset. Leave a field at its empty default to keep
     #   the preset's value for that field.
