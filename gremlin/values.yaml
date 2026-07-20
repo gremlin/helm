@@ -243,6 +243,82 @@ gremlin:
   # Attacks targeting other Kubernetes pods will use the resource specification of their target.
   resources: {}
 
+  # gremlin.gpu -
+  # Exposes the host's GPU / OpenCL drivers to the Gremlin agent so that the GPU attack can
+  #   enumerate and target GPUs from inside the container.
+  #
+  # The easy path is to just set `enabled: true` and pick a `vendor` (e.g. "nvidia" or "amd").
+  #   Each vendor is a preset that fills in all the typical options
+  #   for that hardware, so most users never need to touch the advanced options.
+  #
+  # The advanced options (runtimeClassName, env, hostMounts) remain available for custom setups.
+  #   Any advanced option you set explicitly OVERRIDES the corresponding value from the vendor
+  #   preset, so you can start from a preset and tweak a single field, or set vendor to "" and
+  #   configure everything by hand.
+  gpu:
+    # gremlin.gpu.enabled -
+    # When true, applies the GPU configuration (vendor preset plus any advanced overrides below)
+    #   to the Gremlin Daemonset. When false, none of the GPU settings have any effect.
+    enabled: false
+
+    # gremlin.gpu.vendor -
+    # The easy default. Selects a preset that configures all the normal GPU options for you:
+    #     nvidia - run under the "nvidia" RuntimeClass and set NVIDIA_VISIBLE_DEVICES /
+    #              NVIDIA_DRIVER_CAPABILITIES=all so the NVIDIA container toolkit injects the driver
+    #              libraries and device nodes. No hostMounts needed.
+    #     amd    - mount the /dev/kfd and /dev/dri device nodes and the OpenCL ICD registry
+    #              (/etc/OpenCL/vendors) so the ROCm/amdgpu driver on the host is reachable.
+    #     ""     - no preset; configure everything via the advanced options below.
+    vendor: nvidia
+
+    # --- Advanced options -------------------------------------------------------------------
+    # Everything below overrides the vendor preset. Leave a field at its empty default to keep
+    #   the preset's value for that field.
+
+    # gremlin.gpu.runtimeClassName -
+    # The Kubernetes RuntimeClass to run the Gremlin Daemonset pods under. Overrides the vendor
+    #   preset when set. Ignored when blank (the preset value, if any, is used).
+    runtimeClassName: ""
+
+    # gremlin.gpu.env -
+    # Extra environment variables applied to the Gremlin Daemonset container when GPU access is
+    #   enabled. Overrides the vendor preset's env when set to a non-empty list. For the NVIDIA
+    #   container toolkit the capabilities value MUST include `compute` (or `all`) for OpenCL.
+    env: []
+    #  - name: NVIDIA_VISIBLE_DEVICES
+    #    value: "all"
+    #  - name: NVIDIA_DRIVER_CAPABILITIES
+    #    value: "all"
+
+    # gremlin.gpu.hostMounts -
+    # A list of hostPath volumes mounted into the Gremlin container so the OpenCL ICD loader can
+    #   find vendor drivers and access GPU device nodes. Overrides the vendor preset's hostMounts
+    #   when set to a non-empty list. Each entry accepts:
+    #     - name:      a unique volume name (required)
+    #     - hostPath:  the path on the Kubernetes node (required)
+    #     - mountPath: the path inside the container (defaults to hostPath when omitted)
+    #     - type:      an optional hostPath type, e.g. Directory, DirectoryOrCreate, CharDevice
+    #     - readOnly:  whether the mount is read-only (defaults to true; set false for device nodes)
+    #
+    # NOTE: GPU device nodes (/dev/nvidia*, /dev/kfd, /dev/dri) require the container to have
+    #   device access. This generally means running privileged (gremlin.podSecurity.privileged:
+    #   true) or otherwise granting the pod cgroup device permissions. Device access is not
+    #   required when the NVIDIA container toolkit injects the devices for you.
+    hostMounts: []
+    #  - name: opencl-vendors
+    #    hostPath: /etc/OpenCL/vendors
+    #    mountPath: /etc/OpenCL/vendors
+    #    type: DirectoryOrCreate
+    #    readOnly: true
+    #  - name: nvidia0
+    #    hostPath: /dev/nvidia0
+    #    type: CharDevice
+    #    readOnly: false
+    #  # NVIDIA OpenCL driver library (path/version varies by distro and driver release)
+    #  - name: nvidia-opencl-lib
+    #    hostPath: /usr/lib/x86_64-linux-gnu/libnvidia-opencl.so.1
+    #    readOnly: true
+
   secret:
     # Gremlin supports both `certificate` and `secret` types
     # To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections
