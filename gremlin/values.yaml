@@ -279,6 +279,25 @@ gremlin:
     #   interfere with a RuntimeClass already managed by the GPU Operator or your platform.
     createRuntimeClass: false
 
+    # gremlin.gpu.openclIcd -
+    # Projects an OpenCL ICD registry file into the container. Some NVIDIA container runtimes
+    #   inject the OpenCL driver library (libnvidia-opencl.so.1) but do NOT create the
+    #   /etc/OpenCL/vendors/nvidia.icd registry file the ICD loader reads to discover it. Without
+    #   that file the GPU attack fails with "GetPlatformIdsPlatformListUnavailable" (no OpenCL
+    #   platforms found) even though `nvidia-smi` works inside the pod.
+    #
+    # This is applied automatically whenever GPU access is enabled, EXCEPT when an effective
+    #   hostMount already provides /etc/OpenCL/vendors (e.g. the amd preset mounts the host's
+    #   registry), in which case the chart defers to that mount.
+    openclIcd:
+      # gremlin.gpu.openclIcd.filename -
+      # The ICD registry filename created under /etc/OpenCL/vendors/.
+      filename: nvidia.icd
+      # gremlin.gpu.openclIcd.library -
+      # The OpenCL vendor library soname written into the ICD file; the ICD loader dlopen()s it.
+      #   Defaults to the NVIDIA driver library. Set to "" to disable ICD projection entirely.
+      library: libnvidia-opencl.so.1
+
     # --- Advanced options -------------------------------------------------------------------
     # Everything below overrides the vendor preset. Leave a field at its empty default to keep
     #   the preset's value for that field.

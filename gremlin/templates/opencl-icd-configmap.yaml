@@ -1,0 +1,26 @@
+{{- /*
+Projects an OpenCL ICD registry file into the Gremlin container.
+
+Some NVIDIA container runtimes inject the OpenCL driver library (libnvidia-opencl.so.1) but do
+NOT create the /etc/OpenCL/vendors/<vendor>.icd registry file that the ICD loader reads to
+discover the driver. Without it, clGetPlatformIDs returns no platforms (surfacing in the GPU
+attack as "GetPlatformIdsPlatformListUnavailable"). The ICD file is a one-line text file
+containing the soname of the vendor's OpenCL library, which the loader dlopen()s.
+
+See gremlinGpuOpenclIcdActive for when this is rendered.
+*/ -}}
+{{- if include "gremlinGpuOpenclIcdActive" . }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "gremlin.fullname" . }}-opencl-icd
+  namespace: {{ .Release.Namespace }}
+  labels:
+    helm.sh/chart: {{ include "gremlin.chart" . }}
+    app.kubernetes.io/name: {{ include "gremlin.fullname" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+data:
+  {{ .Values.gremlin.gpu.openclIcd.filename }}: |
+    {{ .Values.gremlin.gpu.openclIcd.library }}
+{{- end }}

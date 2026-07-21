@@ -58,6 +58,33 @@ tests:
             hostPath:
               path: /etc/OpenCL/vendors
               type: DirectoryOrCreate
+      # the OpenCL ICD registry file is projected so the injected driver is discoverable
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gremlin-opencl-icd
+            mountPath: /etc/OpenCL/vendors/nvidia.icd
+            subPath: nvidia.icd
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-opencl-icd
+            configMap:
+              name: my-release-gremlin-opencl-icd
+
+  - it: should not project the OpenCL ICD when the library is blank
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.openclIcd.library: ""
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gremlin-opencl-icd
+            mountPath: /etc/OpenCL/vendors/nvidia.icd
+            subPath: nvidia.icd
+            readOnly: true
 
   # --- Easy default: amd preset ------------------------------------------------------------
   - it: should apply the amd preset when vendor is amd
@@ -95,6 +122,14 @@ tests:
             hostPath:
               path: /etc/OpenCL/vendors
               type: DirectoryOrCreate
+      # amd already mounts /etc/OpenCL/vendors from the host, so the chart defers and does not
+      # project its own ICD file there
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-opencl-icd
+            configMap:
+              name: my-release-gremlin-opencl-icd
 
   - it: should apply no preset when vendor is blank
     set:

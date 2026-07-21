@@ -335,9 +335,31 @@ NVIDIA_DRIVER_CAPABILITIES (which must include `compute` or `all` for OpenCL).
 {{- end -}}
 
 {{/*
+gremlinGpuOpenclIcdActive returns "true" when the chart should project an OpenCL ICD registry
+file into the container, and nothing otherwise. This is the fix for NVIDIA runtimes that inject
+the OpenCL driver library (libnvidia-opencl.so.1) but do NOT create /etc/OpenCL/vendors/nvidia.icd,
+leaving clGetPlatformIDs with no platforms to enumerate.
+
+The ICD is projected automatically whenever GPU access is enabled and gremlin.gpu.openclIcd.library
+is set, UNLESS an effective hostMount already provides /etc/OpenCL/vendors (e.g. the amd preset or
+a custom mount), in which case we defer to that mount to avoid overlapping mount paths.
+*/}}
+{{- define "gremlinGpuOpenclIcdActive" -}}
+{{- if and .Values.gremlin.gpu.enabled .Values.gremlin.gpu.openclIcd.library -}}
+{{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
+{{- $dirMounted := false -}}
+{{- range $eff.hostMounts }}
+{{- if eq (default .hostPath .mountPath) "/etc/OpenCL/vendors" }}{{- $dirMounted = true -}}{{- end }}
+{{- end -}}
+{{- if not $dirMounted -}}true{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 gremlinGpuVolumeMounts returns the volumeMounts that expose host GPU/OpenCL drivers.
 Each effective hostMounts entry (vendor preset or the gremlin.gpu.hostMounts override) becomes a
 volumeMount. mountPath defaults to hostPath and readOnly defaults to true when not specified.
+When gremlinGpuOpenclIcdActive, the projected OpenCL ICD file is mounted as well.
 */}}
 {{- define "gremlinGpuVolumeMounts" -}}
 {{- if .Values.gremlin.gpu.enabled -}}
@@ -346,6 +368,12 @@ volumeMount. mountPath defaults to hostPath and readOnly defaults to true when n
 - name: {{ .name }}
   mountPath: {{ default .hostPath .mountPath }}
   readOnly: {{ if hasKey . "readOnly" }}{{ .readOnly }}{{ else }}true{{ end }}
+{{- end -}}
+{{- if include "gremlinGpuOpenclIcdActive" . }}
+- name: gremlin-opencl-icd
+  mountPath: /etc/OpenCL/vendors/{{ .Values.gremlin.gpu.openclIcd.filename }}
+  subPath: {{ .Values.gremlin.gpu.openclIcd.filename }}
+  readOnly: true
 {{- end -}}
 {{- end -}}
 {{- end -}}
@@ -365,6 +393,11 @@ hostPath volume. An optional `type` (e.g. DirectoryOrCreate, CharDevice) is pass
     {{- if .type }}
     type: {{ .type }}
     {{- end }}
+{{- end -}}
+{{- if include "gremlinGpuOpenclIcdActive" . }}
+- name: gremlin-opencl-icd
+  configMap:
+    name: {{ include "gremlin.fullname" . }}-opencl-icd
 {{- end -}}
 {{- end -}}
 {{- end -}}
