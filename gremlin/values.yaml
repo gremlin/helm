@@ -248,8 +248,8 @@ gremlin:
   #   enumerate and target GPUs from inside the container.
   #
   # The easy path is to just set `enabled: true` and pick a `vendor` (e.g. "nvidia" or "amd").
-  #   Each vendor is a preset that fills in all the typical options
-  #   for that hardware, so most users never need to touch the advanced options.
+  #   Each vendor is a preset that fills in all the typical options for that hardware,
+  #   so most users never need to touch the advanced options.
   #
   # The advanced options (runtimeClassName, env, hostMounts) remain available for custom setups.
   #   Any advanced option you set explicitly OVERRIDES the corresponding value from the vendor
@@ -274,25 +274,45 @@ gremlin:
 
     # gremlin.gpu.createRuntimeClass -
     # When true, and the effective runtimeClassName is set, the chart creates that RuntimeClass
-    #   object IF it does not already exist in the cluster.
+    #   object IF it does not already exist in the cluster. A non-existent RuntimeClass will cause
+    #   the gremlin pod to fail to start.
     #
     # An existing RuntimeClass of the same name is detected and left untouched, so this will not
     #   interfere with a RuntimeClass already managed by the GPU Operator or your platform.
     createRuntimeClass: false
+
+    # gremlin.gpu.cdiDevice -
+    # For nodes using the Container Device Interface (CDI) rather than the container-toolkit
+    #   runtime hook. When set, the chart adds a `cdi.k8s.io/gremlin-gpu: <cdiDevice>` pod annotation
+    #   so the CRI injects the named CDI device(s). Use this when NVIDIA_VISIBLE_DEVICES is NOT
+    #   honored by your runtime (pure Kubernetes-native CDI).
+    #
+    # Requires containerd >= 1.7 or CRI-O with CDI enabled.
+    #
+    # NOTE: in pure CDI mode NVIDIA_DRIVER_CAPABILITIES is ignored (capabilities come from the CDI
+    #   device), and you likely do not need a RuntimeClass — set runtimeClassName: "" below if the
+    #   "nvidia" RuntimeClass does not exist on your cluster.
+    cdiDevice: ""
+
+    # gremlin.gpu.projectOpenclIcd -
+    # Whether to project the vendor preset's OpenCL ICD registry file (e.g. /etc/OpenCL/vendors/
+    #   nvidia.icd) into the container. Defaults to true, which fixes runtimes that inject the
+    #   OpenCL driver library but not the ICD file. Set to false when your CDI spec (or another
+    #   mechanism) already creates the ICD file, to avoid a conflicting mount at the same path.
+    projectOpenclIcd: true
 
     # --- Advanced options -------------------------------------------------------------------
     # Everything below overrides the vendor preset. Leave a field at its empty default to keep
     #   the preset's value for that field.
 
     # gremlin.gpu.runtimeClassName -
-    # The Kubernetes RuntimeClass to run the Gremlin Daemonset pods under. Overrides the vendor
-    #   preset when set. Ignored when blank (the preset value, if any, is used).
+    # The Kubernetes RuntimeClass to run the Gremlin Daemonset pods under.
     runtimeClassName: ""
 
     # gremlin.gpu.env -
     # Extra environment variables applied to the Gremlin Daemonset container when GPU access is
-    #   enabled. Overrides the vendor preset's env when set to a non-empty list. For the NVIDIA
-    #   container toolkit the capabilities value MUST include `compute` (or `all`) for OpenCL.
+    #   enabled. For the NVIDIA container toolkit the capabilities value MUST include `compute`
+    #   (or `all`) for OpenCL.
     env: []
     #  - name: NVIDIA_VISIBLE_DEVICES
     #    value: "all"
@@ -301,8 +321,8 @@ gremlin:
 
     # gremlin.gpu.hostMounts -
     # A list of hostPath volumes mounted into the Gremlin container so the OpenCL ICD loader can
-    #   find vendor drivers and access GPU device nodes. Overrides the vendor preset's hostMounts
-    #   when set to a non-empty list. Each entry accepts:
+    #   find vendor drivers and access GPU device nodes.
+    #   Each entry accepts:
     #     - name:      a unique volume name (required)
     #     - hostPath:  the path on the Kubernetes node (required)
     #     - mountPath: the path inside the container (defaults to hostPath when omitted)

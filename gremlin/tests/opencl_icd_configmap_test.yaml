@@ -39,6 +39,14 @@ tests:
       - hasDocuments:
           count: 0
 
+  - it: should not render when projectOpenclIcd is false
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.projectOpenclIcd: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
   - it: should not render for the amd preset (host registry is mounted instead)
     set:
       gremlin.gpu.enabled: true

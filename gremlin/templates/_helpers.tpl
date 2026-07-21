@@ -245,10 +245,9 @@ When createSecret or existingSecret are configured
 {{- end -}}
 
 {{/*
-gremlinGpuVendorPreset returns a YAML dict of the "easy default" GPU configuration for a
-given vendor. The context passed in is the vendor string (gremlin.gpu.vendor). Supported
-values are "nvidia" and "amd"; any other value (including "") yields an empty preset so the
-chart falls back to whatever the advanced options specify.
+gremlinGpuVendorPreset returns the GPU configuration for a given vendor. The context passed in
+is the vendor string (gremlin.gpu.vendor). Supported values are "nvidia" and "amd"; any other value
+(including "") yields an empty preset so the chart falls back to whatever the advanced options specify.
 
   nvidia - relies on the NVIDIA container toolkit: run under the "nvidia" RuntimeClass and set
            NVIDIA_VISIBLE_DEVICES / NVIDIA_DRIVER_CAPABILITIES so the runtime injects the driver
@@ -299,10 +298,8 @@ hostMounts: []
 {{- end -}}
 
 {{/*
-gremlinGpuEffective returns a YAML dict with the effective GPU configuration: the vendor
-preset (see gremlinGpuVendorPreset) with each advanced option overriding the preset when set.
-A blank runtimeClassName, an empty env list, or an empty hostMounts list means "use the preset".
-Keys: runtimeClassName (string), env (list), hostMounts (list), openclIcd (dict, from the preset).
+gremlinGpuEffective returns the vendor preset (see gremlinGpuVendorPreset) with each advanced
+option overriding the preset when set.
 */}}
 {{- define "gremlinGpuEffective" -}}
 {{- $gpu := .Values.gremlin.gpu -}}
@@ -345,17 +342,27 @@ NVIDIA_DRIVER_CAPABILITIES (which must include `compute` or `all` for OpenCL).
 {{- end -}}
 
 {{/*
-gremlinGpuOpenclIcdActive returns "true" when the chart should project an OpenCL ICD registry
-file into the container, and nothing otherwise. This is the fix for NVIDIA runtimes that inject
-the OpenCL driver library (libnvidia-opencl.so.1) but do NOT create /etc/OpenCL/vendors/nvidia.icd,
-leaving clGetPlatformIDs with no platforms to enumerate.
+gremlinGpuCdiAnnotation returns the CDI device pod annotation when gremlin.gpu.cdiDevice is set,
+and nothing otherwise. This targets the annotation-based CDI injection path supported by
+containerd >= 1.7 / CRI-O, which does not consume a schedulable GPU resource.
+*/}}
+{{- define "gremlinGpuCdiAnnotation" -}}
+{{- if and .Values.gremlin.gpu.enabled .Values.gremlin.gpu.cdiDevice -}}
+cdi.k8s.io/gremlin-gpu: {{ .Values.gremlin.gpu.cdiDevice | quote }}
+{{- end -}}
+{{- end -}}
 
-The ICD is projected automatically whenever the selected vendor preset defines one (nvidia does),
-UNLESS an effective hostMount already provides /etc/OpenCL/vendors (e.g. the amd preset or a custom
-mount), in which case we defer to that mount to avoid overlapping mount paths.
+{{/*
+gremlinGpuOpenclIcdActive returns "true" when the chart should project an OpenCL ICD registry
+file into the container, and nothing otherwise.
+
+The ICD is projected automatically whenever gremlin.gpu.projectOpenclIcd is true and the selected
+vendor preset defines one (nvidia does), UNLESS an effective hostMount already provides
+/etc/OpenCL/vendors (e.g. the amd preset or a custom mount), in which case we defer to that mount
+to avoid overlapping mount paths.
 */}}
 {{- define "gremlinGpuOpenclIcdActive" -}}
-{{- if .Values.gremlin.gpu.enabled -}}
+{{- if and .Values.gremlin.gpu.enabled .Values.gremlin.gpu.projectOpenclIcd -}}
 {{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
 {{- if and $eff.openclIcd $eff.openclIcd.library -}}
 {{- $dirMounted := false -}}
