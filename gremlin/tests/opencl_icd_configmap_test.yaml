@@ -31,21 +31,10 @@ tests:
           path: data["nvidia.icd"]
           pattern: libnvidia-opencl\.so\.1
 
-  - it: should honor a custom filename and library
+  - it: should not render when no vendor preset defines an ICD
     set:
       gremlin.gpu.enabled: true
-      gremlin.gpu.openclIcd.filename: custom.icd
-      gremlin.gpu.openclIcd.library: libcustom-opencl.so.1
-    asserts:
-      - equal:
-          path: data["custom.icd"]
-          value: |
-            libcustom-opencl.so.1
-
-  - it: should not render when the library is blank
-    set:
-      gremlin.gpu.enabled: true
-      gremlin.gpu.openclIcd.library: ""
+      gremlin.gpu.vendor: ""
     asserts:
       - hasDocuments:
           count: 0

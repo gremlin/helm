@@ -73,10 +73,10 @@ tests:
             configMap:
               name: my-release-gremlin-opencl-icd
 
-  - it: should not project the OpenCL ICD when the library is blank
+  - it: should not project the OpenCL ICD when no vendor preset defines one
     set:
       gremlin.gpu.enabled: true
-      gremlin.gpu.openclIcd.library: ""
+      gremlin.gpu.vendor: ""
     asserts:
       - notContains:
           path: spec.template.spec.containers[0].volumeMounts

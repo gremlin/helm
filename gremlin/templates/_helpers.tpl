@@ -252,9 +252,14 @@ chart falls back to whatever the advanced options specify.
 
   nvidia - relies on the NVIDIA container toolkit: run under the "nvidia" RuntimeClass and set
            NVIDIA_VISIBLE_DEVICES / NVIDIA_DRIVER_CAPABILITIES so the runtime injects the driver
-           libraries and device nodes (no hostMounts required).
+           libraries and device nodes (no hostMounts required). Also projects the nvidia OpenCL
+           ICD registry file, since some runtimes inject libnvidia-opencl.so.1 but not the
+           /etc/OpenCL/vendors/nvidia.icd file the loader needs to discover it.
   amd    - relies on the ROCm/amdgpu driver on the host: mount the /dev/kfd and /dev/dri device
            nodes plus the OpenCL ICD registry so the container can reach the GPUs directly.
+
+The optional `openclIcd` key (filename + library) tells the chart to project an OpenCL ICD
+registry file; vendors that already expose /etc/OpenCL/vendors (amd) omit it.
 */}}
 {{- define "gremlinGpuVendorPreset" -}}
 {{- $vendor := . -}}
@@ -266,6 +271,9 @@ env:
   - name: NVIDIA_DRIVER_CAPABILITIES
     value: "all"
 hostMounts: []
+openclIcd:
+  filename: nvidia.icd
+  library: libnvidia-opencl.so.1
 {{- else if eq $vendor "amd" -}}
 runtimeClassName: ""
 env: []
@@ -294,7 +302,7 @@ hostMounts: []
 gremlinGpuEffective returns a YAML dict with the effective GPU configuration: the vendor
 preset (see gremlinGpuVendorPreset) with each advanced option overriding the preset when set.
 A blank runtimeClassName, an empty env list, or an empty hostMounts list means "use the preset".
-Keys: runtimeClassName (string), env (list), hostMounts (list).
+Keys: runtimeClassName (string), env (list), hostMounts (list), openclIcd (dict, from the preset).
 */}}
 {{- define "gremlinGpuEffective" -}}
 {{- $gpu := .Values.gremlin.gpu -}}
@@ -305,7 +313,9 @@ Keys: runtimeClassName (string), env (list), hostMounts (list).
 {{- if $gpu.env -}}{{- $env = $gpu.env -}}{{- end -}}
 {{- $hostMounts := $preset.hostMounts -}}
 {{- if $gpu.hostMounts -}}{{- $hostMounts = $gpu.hostMounts -}}{{- end -}}
-{{- dict "runtimeClassName" $runtimeClassName "env" $env "hostMounts" $hostMounts | toYaml -}}
+{{- $effective := dict "runtimeClassName" $runtimeClassName "env" $env "hostMounts" $hostMounts -}}
+{{- if $preset.openclIcd -}}{{- $_ := set $effective "openclIcd" $preset.openclIcd -}}{{- end -}}
+{{- $effective | toYaml -}}
 {{- end -}}
 
 {{/*
@@ -340,18 +350,20 @@ file into the container, and nothing otherwise. This is the fix for NVIDIA runti
 the OpenCL driver library (libnvidia-opencl.so.1) but do NOT create /etc/OpenCL/vendors/nvidia.icd,
 leaving clGetPlatformIDs with no platforms to enumerate.
 
-The ICD is projected automatically whenever GPU access is enabled and gremlin.gpu.openclIcd.library
-is set, UNLESS an effective hostMount already provides /etc/OpenCL/vendors (e.g. the amd preset or
-a custom mount), in which case we defer to that mount to avoid overlapping mount paths.
+The ICD is projected automatically whenever the selected vendor preset defines one (nvidia does),
+UNLESS an effective hostMount already provides /etc/OpenCL/vendors (e.g. the amd preset or a custom
+mount), in which case we defer to that mount to avoid overlapping mount paths.
 */}}
 {{- define "gremlinGpuOpenclIcdActive" -}}
-{{- if and .Values.gremlin.gpu.enabled .Values.gremlin.gpu.openclIcd.library -}}
+{{- if .Values.gremlin.gpu.enabled -}}
 {{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
+{{- if and $eff.openclIcd $eff.openclIcd.library -}}
 {{- $dirMounted := false -}}
 {{- range $eff.hostMounts }}
 {{- if eq (default .hostPath .mountPath) "/etc/OpenCL/vendors" }}{{- $dirMounted = true -}}{{- end }}
 {{- end -}}
 {{- if not $dirMounted -}}true{{- end -}}
+{{- end -}}
 {{- end -}}
 {{- end -}}
 
@@ -371,8 +383,8 @@ When gremlinGpuOpenclIcdActive, the projected OpenCL ICD file is mounted as well
 {{- end -}}
 {{- if include "gremlinGpuOpenclIcdActive" . }}
 - name: gremlin-opencl-icd
-  mountPath: /etc/OpenCL/vendors/{{ .Values.gremlin.gpu.openclIcd.filename }}
-  subPath: {{ .Values.gremlin.gpu.openclIcd.filename }}
+  mountPath: /etc/OpenCL/vendors/{{ $eff.openclIcd.filename }}
+  subPath: {{ $eff.openclIcd.filename }}
   readOnly: true
 {{- end -}}
 {{- end -}}

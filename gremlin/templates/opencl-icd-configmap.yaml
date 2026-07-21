@@ -7,9 +7,11 @@ discover the driver. Without it, clGetPlatformIDs returns no platforms (surfacin
 attack as "GetPlatformIdsPlatformListUnavailable"). The ICD file is a one-line text file
 containing the soname of the vendor's OpenCL library, which the loader dlopen()s.
 
+The ICD filename and library come from the selected vendor preset (see gremlinGpuVendorPreset).
 See gremlinGpuOpenclIcdActive for when this is rendered.
 */ -}}
 {{- if include "gremlinGpuOpenclIcdActive" . }}
+{{- $eff := fromYaml (include "gremlinGpuEffective" .) }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -21,6 +23,6 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
-  {{ .Values.gremlin.gpu.openclIcd.filename }}: |
-    {{ .Values.gremlin.gpu.openclIcd.library }}
+  {{ $eff.openclIcd.filename }}: |
+    {{ $eff.openclIcd.library }}
 {{- end }}

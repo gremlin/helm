@@ -265,7 +265,8 @@ gremlin:
     # The easy default. Selects a preset that configures all the normal GPU options for you:
     #     nvidia - run under the "nvidia" RuntimeClass and set NVIDIA_VISIBLE_DEVICES /
     #              NVIDIA_DRIVER_CAPABILITIES=all so the NVIDIA container toolkit injects the driver
-    #              libraries and device nodes. No hostMounts needed.
+    #              libraries and device nodes. Also projects the nvidia OpenCL ICD registry file so
+    #              the injected driver is discoverable. No hostMounts needed.
     #     amd    - mount the /dev/kfd and /dev/dri device nodes and the OpenCL ICD registry
     #              (/etc/OpenCL/vendors) so the ROCm/amdgpu driver on the host is reachable.
     #     ""     - no preset; configure everything via the advanced options below.
@@ -278,25 +279,6 @@ gremlin:
     # An existing RuntimeClass of the same name is detected and left untouched, so this will not
     #   interfere with a RuntimeClass already managed by the GPU Operator or your platform.
     createRuntimeClass: false
-
-    # gremlin.gpu.openclIcd -
-    # Projects an OpenCL ICD registry file into the container. Some NVIDIA container runtimes
-    #   inject the OpenCL driver library (libnvidia-opencl.so.1) but do NOT create the
-    #   /etc/OpenCL/vendors/nvidia.icd registry file the ICD loader reads to discover it. Without
-    #   that file the GPU attack fails with "GetPlatformIdsPlatformListUnavailable" (no OpenCL
-    #   platforms found) even though `nvidia-smi` works inside the pod.
-    #
-    # This is applied automatically whenever GPU access is enabled, EXCEPT when an effective
-    #   hostMount already provides /etc/OpenCL/vendors (e.g. the amd preset mounts the host's
-    #   registry), in which case the chart defers to that mount.
-    openclIcd:
-      # gremlin.gpu.openclIcd.filename -
-      # The ICD registry filename created under /etc/OpenCL/vendors/.
-      filename: nvidia.icd
-      # gremlin.gpu.openclIcd.library -
-      # The OpenCL vendor library soname written into the ICD file; the ICD loader dlopen()s it.
-      #   Defaults to the NVIDIA driver library. Set to "" to disable ICD projection entirely.
-      library: libnvidia-opencl.so.1
 
     # --- Advanced options -------------------------------------------------------------------
     # Everything below overrides the vendor preset. Leave a field at its empty default to keep
