@@ -245,6 +245,183 @@ When createSecret or existingSecret are configured
 {{- end -}}
 
 {{/*
+gremlinGpuVendorPreset returns the GPU configuration for a given vendor. The context passed in
+is the vendor string (gremlin.gpu.vendor). Supported values are "nvidia" and "amd"; any other value
+(including "") yields an empty preset so the chart falls back to whatever the advanced options specify.
+
+  nvidia - relies on the NVIDIA container toolkit: run under the "nvidia" RuntimeClass and set
+           NVIDIA_VISIBLE_DEVICES / NVIDIA_DRIVER_CAPABILITIES so the runtime injects the driver
+           libraries and device nodes (no hostMounts required). Also projects the nvidia OpenCL
+           ICD registry file, since some runtimes inject libnvidia-opencl.so.1 but not the
+           /etc/OpenCL/vendors/nvidia.icd file the loader needs to discover it.
+  amd    - relies on the ROCm/amdgpu driver on the host: mount the /dev/kfd and /dev/dri device
+           nodes plus the OpenCL ICD registry so the container can reach the GPUs directly.
+
+The optional `openclIcd` key (filename + library) tells the chart to project an OpenCL ICD
+registry file; vendors that already expose /etc/OpenCL/vendors (amd) omit it.
+*/}}
+{{- define "gremlinGpuVendorPreset" -}}
+{{- $vendor := . -}}
+{{- if eq $vendor "nvidia" -}}
+runtimeClassName: nvidia
+env:
+  - name: NVIDIA_VISIBLE_DEVICES
+    value: "all"
+  - name: NVIDIA_DRIVER_CAPABILITIES
+    value: "all"
+hostMounts: []
+openclIcd:
+  filename: nvidia.icd
+  library: libnvidia-opencl.so.1
+{{- else if eq $vendor "amd" -}}
+runtimeClassName: ""
+env: []
+hostMounts:
+  - name: kfd
+    hostPath: /dev/kfd
+    type: CharDevice
+    readOnly: false
+  - name: dri
+    hostPath: /dev/dri
+    type: Directory
+    readOnly: false
+  - name: opencl-vendors
+    hostPath: /etc/OpenCL/vendors
+    mountPath: /etc/OpenCL/vendors
+    type: DirectoryOrCreate
+    readOnly: true
+{{- else -}}
+runtimeClassName: ""
+env: []
+hostMounts: []
+{{- end -}}
+{{- end -}}
+
+{{/*
+gremlinGpuEffective returns the vendor preset (see gremlinGpuVendorPreset) with each advanced
+option overriding the preset when set.
+*/}}
+{{- define "gremlinGpuEffective" -}}
+{{- $gpu := .Values.gremlin.gpu -}}
+{{- $preset := fromYaml (include "gremlinGpuVendorPreset" (default "" $gpu.vendor)) -}}
+{{- $runtimeClassName := $preset.runtimeClassName -}}
+{{- if $gpu.runtimeClassName -}}{{- $runtimeClassName = $gpu.runtimeClassName -}}{{- end -}}
+{{- $env := $preset.env -}}
+{{- if $gpu.env -}}{{- $env = $gpu.env -}}{{- end -}}
+{{- $hostMounts := $preset.hostMounts -}}
+{{- if $gpu.hostMounts -}}{{- $hostMounts = $gpu.hostMounts -}}{{- end -}}
+{{- $effective := dict "runtimeClassName" $runtimeClassName "env" $env "hostMounts" $hostMounts -}}
+{{- if $preset.openclIcd -}}{{- $_ := set $effective "openclIcd" $preset.openclIcd -}}{{- end -}}
+{{- $effective | toYaml -}}
+{{- end -}}
+
+{{/*
+gremlinGpuRuntimeClassName returns the effective RuntimeClass name for the Gremlin pods, or
+nothing when GPU access is disabled or no RuntimeClass applies.
+*/}}
+{{- define "gremlinGpuRuntimeClassName" -}}
+{{- if .Values.gremlin.gpu.enabled -}}
+{{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
+{{- $eff.runtimeClassName -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+gremlinGpuEnv returns the environment variables that enable GPU/OpenCL access.
+When gremlin.gpu.enabled is true, the effective env entries (vendor preset or the gremlin.gpu.env
+override) are emitted. For the NVIDIA container toolkit these include NVIDIA_VISIBLE_DEVICES and
+NVIDIA_DRIVER_CAPABILITIES (which must include `compute` or `all` for OpenCL).
+*/}}
+{{- define "gremlinGpuEnv" -}}
+{{- if .Values.gremlin.gpu.enabled -}}
+{{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
+{{- with $eff.env -}}
+{{- toYaml . -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+gremlinGpuCdiAnnotation returns the CDI device pod annotation when gremlin.gpu.cdiDevice is set,
+and nothing otherwise. This targets the annotation-based CDI injection path supported by
+containerd >= 1.7 / CRI-O, which does not consume a schedulable GPU resource.
+*/}}
+{{- define "gremlinGpuCdiAnnotation" -}}
+{{- if and .Values.gremlin.gpu.enabled .Values.gremlin.gpu.cdiDevice -}}
+cdi.k8s.io/gremlin-gpu: {{ .Values.gremlin.gpu.cdiDevice | quote }}
+{{- end -}}
+{{- end -}}
+
+{{/*
+gremlinGpuOpenclIcdActive returns "true" when the chart should project an OpenCL ICD registry
+file into the container, and nothing otherwise.
+
+The ICD is projected automatically whenever gremlin.gpu.projectOpenclIcd is true and the selected
+vendor preset defines one (nvidia does), UNLESS an effective hostMount already provides
+/etc/OpenCL/vendors (e.g. the amd preset or a custom mount), in which case we defer to that mount
+to avoid overlapping mount paths.
+*/}}
+{{- define "gremlinGpuOpenclIcdActive" -}}
+{{- if and .Values.gremlin.gpu.enabled .Values.gremlin.gpu.projectOpenclIcd -}}
+{{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
+{{- if and $eff.openclIcd $eff.openclIcd.library -}}
+{{- $dirMounted := false -}}
+{{- range $eff.hostMounts }}
+{{- if eq (default .hostPath .mountPath) "/etc/OpenCL/vendors" }}{{- $dirMounted = true -}}{{- end }}
+{{- end -}}
+{{- if not $dirMounted -}}true{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+gremlinGpuVolumeMounts returns the volumeMounts that expose host GPU/OpenCL drivers.
+Each effective hostMounts entry (vendor preset or the gremlin.gpu.hostMounts override) becomes a
+volumeMount. mountPath defaults to hostPath and readOnly defaults to true when not specified.
+When gremlinGpuOpenclIcdActive, the projected OpenCL ICD file is mounted as well.
+*/}}
+{{- define "gremlinGpuVolumeMounts" -}}
+{{- if .Values.gremlin.gpu.enabled -}}
+{{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
+{{- range $eff.hostMounts }}
+- name: {{ .name }}
+  mountPath: {{ default .hostPath .mountPath }}
+  readOnly: {{ if hasKey . "readOnly" }}{{ .readOnly }}{{ else }}true{{ end }}
+{{- end -}}
+{{- if include "gremlinGpuOpenclIcdActive" . }}
+- name: gremlin-opencl-icd
+  mountPath: /etc/OpenCL/vendors/{{ $eff.openclIcd.filename }}
+  subPath: {{ $eff.openclIcd.filename }}
+  readOnly: true
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+gremlinGpuVolumes returns the hostPath volumes that expose host GPU/OpenCL drivers.
+Each effective hostMounts entry (vendor preset or the gremlin.gpu.hostMounts override) becomes a
+hostPath volume. An optional `type` (e.g. DirectoryOrCreate, CharDevice) is passed through when present.
+*/}}
+{{- define "gremlinGpuVolumes" -}}
+{{- if .Values.gremlin.gpu.enabled -}}
+{{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
+{{- range $eff.hostMounts }}
+- name: {{ .name }}
+  hostPath:
+    path: {{ .hostPath }}
+    {{- if .type }}
+    type: {{ .type }}
+    {{- end }}
+{{- end -}}
+{{- if include "gremlinGpuOpenclIcdActive" . }}
+- name: gremlin-opencl-icd
+  configMap:
+    name: {{ include "gremlin.fullname" . }}-opencl-icd
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 chaoTlsIdentityArgs returns the chao cli arguments needed to configure TLS client identity
 When remoteSecret is configured
   - sets -tls_identity_cert and -tls_identity_private_key to their respective `cert` and `key` values

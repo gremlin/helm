@@ -1,0 +1,282 @@
+suite: Test GPU / OpenCL access options
+templates:
+  - daemonset.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+tests:
+  - it: should not add any GPU configuration by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.runtimeClassName
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: opencl-vendors
+            hostPath:
+              path: /etc/OpenCL/vendors
+              type: DirectoryOrCreate
+
+  - it: should not add GPU configuration when a vendor is set but gpu is disabled
+    set:
+      gremlin.gpu.enabled: false
+      gremlin.gpu.vendor: nvidia
+    asserts:
+      - notExists:
+          path: spec.template.spec.runtimeClassName
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NVIDIA_VISIBLE_DEVICES
+            value: "all"
+
+  # --- Easy default: nvidia preset ---------------------------------------------------------
+  - it: should apply the nvidia preset when enabled with the default vendor
+    set:
+      gremlin.gpu.enabled: true
+    asserts:
+      - equal:
+          path: spec.template.spec.runtimeClassName
+          value: nvidia
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NVIDIA_VISIBLE_DEVICES
+            value: "all"
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NVIDIA_DRIVER_CAPABILITIES
+            value: "all"
+      # nvidia relies on the container toolkit, so no GPU hostPath mounts are added
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: opencl-vendors
+            hostPath:
+              path: /etc/OpenCL/vendors
+              type: DirectoryOrCreate
+      # the OpenCL ICD registry file is projected so the injected driver is discoverable
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gremlin-opencl-icd
+            mountPath: /etc/OpenCL/vendors/nvidia.icd
+            subPath: nvidia.icd
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-opencl-icd
+            configMap:
+              name: my-release-gremlin-opencl-icd
+
+  - it: should not project the OpenCL ICD when no vendor preset defines one
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.vendor: ""
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gremlin-opencl-icd
+            mountPath: /etc/OpenCL/vendors/nvidia.icd
+            subPath: nvidia.icd
+            readOnly: true
+
+  # --- Easy default: amd preset ------------------------------------------------------------
+  - it: should apply the amd preset when vendor is amd
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.vendor: amd
+    asserts:
+      # amd does not use a RuntimeClass
+      - notExists:
+          path: spec.template.spec.runtimeClassName
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: kfd
+            mountPath: /dev/kfd
+            readOnly: false
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: kfd
+            hostPath:
+              path: /dev/kfd
+              type: CharDevice
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: dri
+            hostPath:
+              path: /dev/dri
+              type: Directory
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: opencl-vendors
+            hostPath:
+              path: /etc/OpenCL/vendors
+              type: DirectoryOrCreate
+      # amd already mounts /etc/OpenCL/vendors from the host, so the chart defers and does not
+      # project its own ICD file there
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-opencl-icd
+            configMap:
+              name: my-release-gremlin-opencl-icd
+
+  - it: should apply no preset when vendor is blank
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.vendor: ""
+    asserts:
+      - notExists:
+          path: spec.template.spec.runtimeClassName
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: kfd
+            hostPath:
+              path: /dev/kfd
+              type: CharDevice
+
+  # --- Advanced overrides ------------------------------------------------------------------
+  - it: should let runtimeClassName override the vendor preset
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.vendor: nvidia
+      gremlin.gpu.runtimeClassName: nvidia-custom
+    asserts:
+      - equal:
+          path: spec.template.spec.runtimeClassName
+          value: nvidia-custom
+
+  - it: should let env override the vendor preset
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.vendor: nvidia
+      gremlin.gpu.env:
+        - name: NVIDIA_VISIBLE_DEVICES
+          value: "0,1"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NVIDIA_VISIBLE_DEVICES
+            value: "0,1"
+      # the preset's NVIDIA_DRIVER_CAPABILITIES is replaced, not merged
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NVIDIA_DRIVER_CAPABILITIES
+            value: "all"
+
+  - it: should let hostMounts override the vendor preset
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.vendor: amd
+      gremlin.gpu.hostMounts:
+        - name: opencl-vendors
+          hostPath: /etc/OpenCL/vendors
+          mountPath: /etc/OpenCL/vendors
+          type: DirectoryOrCreate
+          readOnly: true
+        - name: nvidia0
+          hostPath: /dev/nvidia0
+          type: CharDevice
+          readOnly: false
+    asserts:
+      # amd preset device nodes are replaced by the custom mounts
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: kfd
+            hostPath:
+              path: /dev/kfd
+              type: CharDevice
+      # mountPath defaults to hostPath and readOnly is respected
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: nvidia0
+            mountPath: /dev/nvidia0
+            readOnly: false
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: nvidia0
+            hostPath:
+              path: /dev/nvidia0
+              type: CharDevice
+
+  - it: should default readOnly to true and mountPath to hostPath when omitted
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.vendor: ""
+      gremlin.gpu.hostMounts:
+        - name: opencl-vendors
+          hostPath: /etc/OpenCL/vendors
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: opencl-vendors
+            mountPath: /etc/OpenCL/vendors
+            readOnly: true
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: opencl-vendors
+            hostPath:
+              path: /etc/OpenCL/vendors
+
+  # --- CDI (Container Device Interface) ----------------------------------------------------
+  - it: should not add a CDI annotation by default
+    set:
+      gremlin.gpu.enabled: true
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations["cdi.k8s.io/gremlin-gpu"]
+
+  - it: should add the CDI device annotation when cdiDevice is set
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.cdiDevice: nvidia.com/gpu=all
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["cdi.k8s.io/gremlin-gpu"]
+          value: nvidia.com/gpu=all
+
+  - it: should not add a CDI annotation when gpu is disabled
+    set:
+      gremlin.gpu.enabled: false
+      gremlin.gpu.cdiDevice: nvidia.com/gpu=all
+    asserts:
+      - notExists:
+          path: spec.template.metadata.annotations["cdi.k8s.io/gremlin-gpu"]
+
+  # --- ICD projection toggle ---------------------------------------------------------------
+  - it: should not project the OpenCL ICD when projectOpenclIcd is false
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.projectOpenclIcd: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gremlin-opencl-icd
+            mountPath: /etc/OpenCL/vendors/nvidia.icd
+            subPath: nvidia.icd
+            readOnly: true
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: gremlin-opencl-icd
+            configMap:
+              name: my-release-gremlin-opencl-icd

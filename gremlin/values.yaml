@@ -243,6 +243,111 @@ gremlin:
   # Attacks targeting other Kubernetes pods will use the resource specification of their target.
   resources: {}
 
+  # gremlin.gpu -
+  # Exposes the host's GPU / OpenCL drivers to the Gremlin agent so that the GPU attack can
+  #   enumerate and target GPUs from inside the container.
+  #
+  # The easy path is to just set `enabled: true` and pick a `vendor` (e.g. "nvidia" or "amd").
+  #   Each vendor is a preset that fills in all the typical options for that hardware,
+  #   so most users never need to touch the advanced options.
+  #
+  # The advanced options (runtimeClassName, env, hostMounts) remain available for custom setups.
+  #   Any advanced option you set explicitly OVERRIDES the corresponding value from the vendor
+  #   preset, so you can start from a preset and tweak a single field, or set vendor to "" and
+  #   configure everything by hand.
+  gpu:
+    # gremlin.gpu.enabled -
+    # When true, applies the GPU configuration (vendor preset plus any advanced overrides below)
+    #   to the Gremlin Daemonset. When false, none of the GPU settings have any effect.
+    enabled: false
+
+    # gremlin.gpu.vendor -
+    # The easy default. Selects a preset that configures all the normal GPU options for you:
+    #     nvidia - run under the "nvidia" RuntimeClass and set NVIDIA_VISIBLE_DEVICES /
+    #              NVIDIA_DRIVER_CAPABILITIES=all so the NVIDIA container toolkit injects the driver
+    #              libraries and device nodes. Also projects the nvidia OpenCL ICD registry file so
+    #              the injected driver is discoverable. No hostMounts needed.
+    #     amd    - mount the /dev/kfd and /dev/dri device nodes and the OpenCL ICD registry
+    #              (/etc/OpenCL/vendors) so the ROCm/amdgpu driver on the host is reachable.
+    #     ""     - no preset; configure everything via the advanced options below.
+    vendor: nvidia
+
+    # gremlin.gpu.createRuntimeClass -
+    # When true, and the effective runtimeClassName is set, the chart creates that RuntimeClass
+    #   object IF it does not already exist in the cluster. A non-existent RuntimeClass will cause
+    #   the gremlin pod to fail to start.
+    #
+    # An existing RuntimeClass of the same name is detected and left untouched, so this will not
+    #   interfere with a RuntimeClass already managed by the GPU Operator or your platform.
+    createRuntimeClass: false
+
+    # gremlin.gpu.cdiDevice -
+    # For nodes using the Container Device Interface (CDI) rather than the container-toolkit
+    #   runtime hook. When set, the chart adds a `cdi.k8s.io/gremlin-gpu: <cdiDevice>` pod annotation
+    #   so the CRI injects the named CDI device(s). Use this when NVIDIA_VISIBLE_DEVICES is NOT
+    #   honored by your runtime (pure Kubernetes-native CDI).
+    #
+    # Requires containerd >= 1.7 or CRI-O with CDI enabled.
+    #
+    # NOTE: in pure CDI mode NVIDIA_DRIVER_CAPABILITIES is ignored (capabilities come from the CDI
+    #   device), and you likely do not need a RuntimeClass — set runtimeClassName: "" below if the
+    #   "nvidia" RuntimeClass does not exist on your cluster.
+    cdiDevice: ""
+
+    # gremlin.gpu.projectOpenclIcd -
+    # Whether to project the vendor preset's OpenCL ICD registry file (e.g. /etc/OpenCL/vendors/
+    #   nvidia.icd) into the container. Defaults to true, which fixes runtimes that inject the
+    #   OpenCL driver library but not the ICD file. Set to false when your CDI spec (or another
+    #   mechanism) already creates the ICD file, to avoid a conflicting mount at the same path.
+    projectOpenclIcd: true
+
+    # --- Advanced options -------------------------------------------------------------------
+    # Everything below overrides the vendor preset. Leave a field at its empty default to keep
+    #   the preset's value for that field.
+
+    # gremlin.gpu.runtimeClassName -
+    # The Kubernetes RuntimeClass to run the Gremlin Daemonset pods under.
+    runtimeClassName: ""
+
+    # gremlin.gpu.env -
+    # Extra environment variables applied to the Gremlin Daemonset container when GPU access is
+    #   enabled. For the NVIDIA container toolkit the capabilities value MUST include `compute`
+    #   (or `all`) for OpenCL.
+    env: []
+    #  - name: NVIDIA_VISIBLE_DEVICES
+    #    value: "all"
+    #  - name: NVIDIA_DRIVER_CAPABILITIES
+    #    value: "all"
+
+    # gremlin.gpu.hostMounts -
+    # A list of hostPath volumes mounted into the Gremlin container so the OpenCL ICD loader can
+    #   find vendor drivers and access GPU device nodes.
+    #   Each entry accepts:
+    #     - name:      a unique volume name (required)
+    #     - hostPath:  the path on the Kubernetes node (required)
+    #     - mountPath: the path inside the container (defaults to hostPath when omitted)
+    #     - type:      an optional hostPath type, e.g. Directory, DirectoryOrCreate, CharDevice
+    #     - readOnly:  whether the mount is read-only (defaults to true; set false for device nodes)
+    #
+    # NOTE: GPU device nodes (/dev/nvidia*, /dev/kfd, /dev/dri) require the container to have
+    #   device access. This generally means running privileged (gremlin.podSecurity.privileged:
+    #   true) or otherwise granting the pod cgroup device permissions. Device access is not
+    #   required when the NVIDIA container toolkit injects the devices for you.
+    hostMounts: []
+    #  - name: opencl-vendors
+    #    hostPath: /etc/OpenCL/vendors
+    #    mountPath: /etc/OpenCL/vendors
+    #    type: DirectoryOrCreate
+    #    readOnly: true
+    #  - name: nvidia0
+    #    hostPath: /dev/nvidia0
+    #    type: CharDevice
+    #    readOnly: false
+    #  # NVIDIA OpenCL driver library (path/version varies by distro and driver release)
+    #  - name: nvidia-opencl-lib
+    #    hostPath: /usr/lib/x86_64-linux-gnu/libnvidia-opencl.so.1
+    #    readOnly: true
+
   secret:
     # Gremlin supports both `certificate` and `secret` types
     # To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections

@@ -1,0 +1,56 @@
+suite: Test OpenCL ICD registry ConfigMap
+templates:
+  - opencl-icd-configmap.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+tests:
+  - it: should not render when gpu is disabled
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render the nvidia ICD ConfigMap when gpu is enabled
+    set:
+      gremlin.gpu.enabled: true
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: my-release-gremlin-opencl-icd
+      - equal:
+          path: data["nvidia.icd"]
+          value: |
+            libnvidia-opencl.so.1
+      - matchRegex:
+          path: data["nvidia.icd"]
+          pattern: libnvidia-opencl\.so\.1
+
+  - it: should not render when no vendor preset defines an ICD
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.vendor: ""
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render when projectOpenclIcd is false
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.projectOpenclIcd: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should not render for the amd preset (host registry is mounted instead)
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.vendor: amd
+    asserts:
+      - hasDocuments:
+          count: 0

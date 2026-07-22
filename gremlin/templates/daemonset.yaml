@@ -31,7 +31,7 @@ spec:
         {{- if .Values.gremlin.podLabels }}
         {{- toYaml .Values.gremlin.podLabels | nindent 8 }}
         {{- end }}
-      {{- if or .Values.gremlin.apparmor .Values.gremlin.installApparmorProfile .Values.gremlin.podSecurity.seccomp.enabled .Values.gremlin.podSecurity.securityContextConstraints.create .Values.gremlin.podAnnotations }}
+      {{- if or .Values.gremlin.apparmor .Values.gremlin.installApparmorProfile .Values.gremlin.podSecurity.seccomp.enabled .Values.gremlin.podSecurity.securityContextConstraints.create .Values.gremlin.podAnnotations (include "gremlinGpuCdiAnnotation" .) }}
       annotations:
         {{- if .Values.gremlin.apparmor }}
         container.apparmor.security.beta.kubernetes.io/{{ .Chart.Name }}: {{ .Values.gremlin.apparmor }}
@@ -44,12 +44,18 @@ spec:
         {{- if .Values.gremlin.podSecurity.securityContextConstraints.create }}
         openshift.io/required-scc: "gremlin"
         {{- end }}
+        {{- if include "gremlinGpuCdiAnnotation" . }}
+        {{- include "gremlinGpuCdiAnnotation" . | nindent 8 }}
+        {{- end }}
         {{- if .Values.gremlin.podAnnotations }}
         {{- toYaml .Values.gremlin.podAnnotations | nindent 8 }}
         {{- end }}
       {{- end }}
     spec:
       serviceAccountName: gremlin
+      {{- if include "gremlinGpuRuntimeClassName" . }}
+      runtimeClassName: {{ include "gremlinGpuRuntimeClassName" . }}
+      {{- end }}
       {{- if .Values.affinity }}
       affinity: {{ toYaml .Values.affinity | trimSuffix "\n" | nindent 8 }}
       {{- end }}
@@ -163,6 +169,9 @@ spec:
           {{- if include "gremlinTlsIdentityEnv" . }}
           {{- include "gremlinTlsIdentityEnv" . | nindent 10 }}
           {{- end }}
+          {{- if include "gremlinGpuEnv" . }}
+          {{- include "gremlinGpuEnv" . | nindent 10 }}
+          {{- end }}
           {{- with .Values.gremlin.extraEnv }}
             {{- toYaml . | nindent 10 }}
           {{- end }}
@@ -194,6 +203,9 @@ spec:
           {{- end }}
           {{- if include "gremlinTlsIdentityVolumeMounts" . }}
           {{- include "gremlinTlsIdentityVolumeMounts" . | nindent 10 }}
+          {{- end }}
+          {{- if include "gremlinGpuVolumeMounts" . }}
+          {{- include "gremlinGpuVolumeMounts" . | nindent 10 }}
           {{- end }}
       volumes:
         - name: cgroup-root
@@ -234,6 +246,9 @@ spec:
         {{- end }}
         {{- if include "gremlinTlsIdentityVolumes" . }}
         {{- include "gremlinTlsIdentityVolumes" . | nindent 8 }}
+        {{- end }}
+        {{- if include "gremlinGpuVolumes" . }}
+        {{- include "gremlinGpuVolumes" . | nindent 8 }}
         {{- end }}
 {{- if .Values.gremlin.priorityClassName }}
       priorityClassName: {{ .Values.gremlin.priorityClassName }}
