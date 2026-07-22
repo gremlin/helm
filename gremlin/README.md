@@ -74,6 +74,14 @@ their default values. See values.yaml for all available options.
 | `gremlin.proxy.url`                    | Specifies the http proxy the agent should use to communicate with api.gremlin.com. | `""` (ignored)                                                                              |                                       |
 | `gremlin.extraEnv`                     | Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset. | `[]`                                                                                        |
 | `gremlin.features.discoverDestinationService.enabled` | Enable discovery of a destination service in a service mesh to resolve hostnames | `false`                                                                |
+| `gremlin.gpu.enabled`                  | Expose host GPU/OpenCL drivers to the agent for the GPU attack | `false`                                                                                     |
+| `gremlin.gpu.vendor`                   | GPU vendor preset (`nvidia`, `amd`, or `""` for manual config) | `nvidia`                                                                                    |
+| `gremlin.gpu.createRuntimeClass`       | Create the effective RuntimeClass if it doesn't already exist  | `false`                                                                                     |
+| `gremlin.gpu.cdiDevice`                | CDI device to inject via pod annotation (for CDI-based runtimes) | `""`                                                                                        |
+| `gremlin.gpu.projectOpenclIcd`         | Project the vendor's OpenCL ICD registry file into the container | `true`                                                                                      |
+| `gremlin.gpu.runtimeClassName`         | Override the RuntimeClass to run the agent under               | `""` (uses vendor preset)                                                                   |
+| `gremlin.gpu.env`                      | Override GPU environment variables on the agent container      | `[]` (uses vendor preset)                                                                   |
+| `gremlin.gpu.hostMounts`               | Override hostPath mounts for GPU drivers and device nodes      | `[]` (uses vendor preset)                                                                   |
 | `ssl.certFile`                         | Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the certificate(s) you wish to add. When set, this chart creates secret (`ssl-cert-file`) with the contents and passes it to both agents. This value is ignored when blank or absent. | `""` (ignored)                                                                              |
 | `ssl.certDir`                          | sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent. | `""` (ignored)                                                                              |
 
@@ -212,6 +220,24 @@ helm install gremlin gremlin/gremlin \
     --set      gremlin.proxy.url=https://proxy.net:3128 \
     --set-file ssl.certFile=$HOME/Workspace/proxy/ca.pem
 ```
+
+### With GPU Support
+
+To let the GPU attack enumerate and target GPUs, enable `gremlin.gpu` and pick a vendor preset.
+
+```shell
+helm install gremlin gremlin/gremlin \
+    --namespace gremlin \
+    --set      gremlin.secret.managed=true \
+    --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
+    --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
+    --set-file gremlin.secret.certificate=/path/to/gremlin.cert \
+    --set-file gremlin.secret.key=/path/to/gremlin.key \
+    --set      gremlin.gpu.enabled=true \
+    --set      gremlin.gpu.vendor=nvidia
+```
+
+_note_: The `nvidia` preset runs the agent under the `nvidia` RuntimeClass. If the Gremlin pod fails to start (for example, a `RuntimeClass not found` error), the RuntimeClass likely doesn't exist on your cluster. Have the chart create it by also setting `--set gremlin.gpu.createRuntimeClass=true`.
 
 ## Uninstallation
 
