@@ -18,7 +18,7 @@ metadata:
     helm.sh/chart: {{ include "gremlin.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
-handler: {{ default $runtimeClassName .Values.gremlin.gpu.runtimeClassHandler | quote }}
+handler: {{ $runtimeClassName | quote }}
 {{- end }}
 {{- end }}
 {{- end }}
