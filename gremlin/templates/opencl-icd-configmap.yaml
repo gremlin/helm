@@ -1,15 +1,24 @@
 {{- /*
-Projects an OpenCL ICD registry file into the Gremlin container.
+Projects an OpenCL ICD registry file into the Gremlin container(s).
 
 Some NVIDIA container runtimes inject the OpenCL driver library (libnvidia-opencl.so.1) but do
 NOT create the /etc/OpenCL/vendors/<vendor>.icd registry file that the ICD loader reads to
 discover the driver. Without it, the OpenCL platforms cannot be listed.
 
-The ICD filename and library come from the selected vendor preset (see gremlinGpuVendorPreset).
-See gremlinGpuOpenclIcdActive for when this is rendered.
+One ConfigMap holds an entry per GPU vendor in use that needs an ICD file (see gremlinGpuVendorsInUse
+and gremlinGpuOpenclIcdActiveFromSpec). On a hybrid cluster each vendor DaemonSet subPath-mounts its
+own entry from this shared ConfigMap. The ICD filename and library come from the vendor block's
+`openclIcd` field in values.yaml (gremlin.gpu.<vendor>.openclIcd).
 */ -}}
-{{- if include "gremlinGpuOpenclIcdActive" . }}
-{{- $eff := fromYaml (include "gremlinGpuEffective" .) }}
+{{- $root := . -}}
+{{- $entries := dict -}}
+{{- range $vendor := (compact (splitList "," (include "gremlinGpuVendorsInUse" .))) -}}
+{{- $spec := default (dict) (index $root.Values.gremlin.gpu $vendor) -}}
+{{- if include "gremlinGpuOpenclIcdActiveFromSpec" (dict "root" $root "gpu" $spec) -}}
+{{- $_ := set $entries $spec.openclIcd.filename $spec.openclIcd.library -}}
+{{- end -}}
+{{- end -}}
+{{- if $entries }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -21,6 +30,8 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
 data:
-  {{ $eff.openclIcd.filename }}: |
-    {{ $eff.openclIcd.library }}
+{{- range $filename, $library := $entries }}
+  {{ $filename }}: |
+    {{ $library }}
+{{- end }}
 {{- end }}

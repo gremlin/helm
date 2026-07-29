@@ -1,1 +1,12 @@
 {{- include "gremlin.validateValues" $}}
+{{- if and .Values.gremlin.gpu.enabled (not (include "gremlinGpuNodesVisible" .)) }}
+
+WARNING: GPU support is enabled, but this chart could not list the cluster's Nodes so the Kubernetes
+`lookup` returned nothing. Per-node GPU DaemonSets could NOT be created, so a single GPU DaemonSet
+using gremlin.gpu.vendor ({{ .Values.gremlin.gpu.vendor }}) was rendered instead. On a mixed cluster
+that DaemonSet will fail to start on any node that lacks the GPU RuntimeClass or device mounts.
+
+This usually means the account running Helm cannot list Nodes (RBAC), or the cluster genuinely has
+no Nodes yet. To have the agent split per node, re-run `helm upgrade` with an account that can list
+Nodes.
+{{- end }}

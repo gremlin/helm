@@ -245,179 +245,92 @@ When createSecret or existingSecret are configured
 {{- end -}}
 
 {{/*
-gremlinGpuVendorPreset returns the GPU configuration for a given vendor. The context passed in
-is the vendor string (gremlin.gpu.vendor). Supported values are "nvidia" and "amd"; any other value
-(including "") yields an empty preset so the chart falls back to whatever the advanced options specify.
-
-  nvidia - relies on the NVIDIA container toolkit: run under the "nvidia" RuntimeClass and set
-           NVIDIA_VISIBLE_DEVICES / NVIDIA_DRIVER_CAPABILITIES so the runtime injects the driver
-           libraries and device nodes (no hostMounts required). Also projects the nvidia OpenCL
-           ICD registry file, since some runtimes inject libnvidia-opencl.so.1 but not the
-           /etc/OpenCL/vendors/nvidia.icd file the loader needs to discover it.
-  amd    - relies on the ROCm/amdgpu driver on the host: mount the /dev/kfd and /dev/dri device
-           nodes plus the OpenCL ICD registry so the container can reach the GPUs directly.
-
-The optional `openclIcd` key (filename + library) tells the chart to project an OpenCL ICD
-registry file; vendors that already expose /etc/OpenCL/vendors (amd) omit it.
+gremlinGpuOpenclIcdActiveFromSpec returns "true" when the OpenCL ICD file should be projected:
+gremlin.gpu.projectOpenclIcd is set and the vendor block defines openclIcd (filename + library).
+Context: dict "root" $ "gpu" <spec>
 */}}
-{{- define "gremlinGpuVendorPreset" -}}
-{{- $vendor := . -}}
-{{- if eq $vendor "nvidia" -}}
-runtimeClassName: nvidia
-env:
-  - name: NVIDIA_VISIBLE_DEVICES
-    value: "all"
-  - name: NVIDIA_DRIVER_CAPABILITIES
-    value: "all"
-hostMounts: []
-openclIcd:
-  filename: nvidia.icd
-  library: libnvidia-opencl.so.1
-{{- else if eq $vendor "amd" -}}
-runtimeClassName: ""
-env: []
-hostMounts:
-  - name: kfd
-    hostPath: /dev/kfd
-    type: CharDevice
-    readOnly: false
-  - name: dri
-    hostPath: /dev/dri
-    type: Directory
-    readOnly: false
-  - name: opencl-vendors
-    hostPath: /etc/OpenCL/vendors
-    mountPath: /etc/OpenCL/vendors
-    type: DirectoryOrCreate
-    readOnly: true
+{{- define "gremlinGpuOpenclIcdActiveFromSpec" -}}
+{{- $icd := .gpu.openclIcd -}}
+{{- if and .root.Values.gremlin.gpu.projectOpenclIcd $icd $icd.filename $icd.library -}}true{{- end -}}
+{{- end -}}
+
+{{/*
+gremlinGpuNodesVisible returns "true" when GPU access is on AND the cluster's Nodes are visible via
+`lookup`, which is what enables the per-node (mixed cluster) DaemonSets. lookup is empty under
+`helm template`/GitOps, so the chart then falls back to a single DaemonSet driven by
+gremlin.gpu.vendor. When GPU is on and this is empty, NOTES.txt warns that the split could not be
+made.
+*/}}
+{{- define "gremlinGpuNodesVisible" -}}
+{{- if .Values.gremlin.gpu.enabled -}}
+{{- if gt (len (default (list) (lookup "v1" "Node" "" "").items)) 0 -}}
+{{- true -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+gremlinGpuVendorsInUse returns the vendor blocks the install needs, comma-separated: those of
+gremlin.gpu.vendors whose nodes are present in the cluster, or just gremlin.gpu.vendor when the Nodes
+are not visible (the single-DaemonSet fallback). Empty when GPU access is disabled. A node counts for
+a vendor when it carries all of the vendor block's nodeSelector labels, or advertises any of its
+`resources` in the node's capacity.
+*/}}
+{{- define "gremlinGpuVendorsInUse" -}}
+{{- if not (include "gremlinGpuNodesVisible" .) -}}
+{{- if .Values.gremlin.gpu.enabled -}}{{- .Values.gremlin.gpu.vendor -}}{{- end -}}
 {{- else -}}
-runtimeClassName: ""
-env: []
-hostMounts: []
+{{- $root := . -}}
+{{- $nodes := default (list) (lookup "v1" "Node" "" "").items -}}
+{{- $active := list -}}
+{{- range $name := (default (list) $root.Values.gremlin.gpu.vendors) -}}
+{{- $vspec := default (dict) (index $root.Values.gremlin.gpu $name) -}}
+{{- $found := false -}}
+{{- range $node := $nodes -}}
+{{- $labels := default (dict) $node.metadata.labels -}}
+{{- if $vspec.nodeSelector -}}
+{{- $match := true -}}
+{{- range $lk, $lv := $vspec.nodeSelector -}}{{- if ne (toString (index $labels $lk)) (toString $lv) -}}{{- $match = false -}}{{- end -}}{{- end -}}
+{{- if $match -}}{{- $found = true -}}{{- end -}}
+{{- end -}}
+{{- range $r := (default (list) $vspec.resources) -}}{{- if hasKey (default (dict) $node.status.capacity) $r -}}{{- $found = true -}}{{- end -}}{{- end -}}
+{{- end -}}
+{{- if $found -}}{{- $active = append $active $name -}}{{- end -}}
+{{- end -}}
+{{- join "," $active -}}
 {{- end -}}
 {{- end -}}
 
 {{/*
-gremlinGpuEffective returns the vendor preset (see gremlinGpuVendorPreset) with each advanced
-option overriding the preset when set.
+gremlinGpuNodeAffinity returns the user's .Values.affinity (as YAML) with an added requirement that a
+node carry ("In") or lack ("NotIn") the nodeSelector labels of the given vendor blocks. The
+requirement is ANDed into every nodeSelectorTerm the user supplied (or a new term when they supplied
+none), so GPU node targeting and a user's affinity are both honored. Renders nothing when those
+vendor blocks define no nodeSelector, rather than an empty (API-invalid) nodeSelectorTerm.
+Context: dict "root" $ "vendors" <list of vendor names> "operator" "In" | "NotIn"
 */}}
-{{- define "gremlinGpuEffective" -}}
-{{- $gpu := .Values.gremlin.gpu -}}
-{{- $preset := fromYaml (include "gremlinGpuVendorPreset" (default "" $gpu.vendor)) -}}
-{{- $runtimeClassName := $preset.runtimeClassName -}}
-{{- if $gpu.runtimeClassName -}}{{- $runtimeClassName = $gpu.runtimeClassName -}}{{- end -}}
-{{- $env := $preset.env -}}
-{{- if $gpu.env -}}{{- $env = $gpu.env -}}{{- end -}}
-{{- $hostMounts := $preset.hostMounts -}}
-{{- if $gpu.hostMounts -}}{{- $hostMounts = $gpu.hostMounts -}}{{- end -}}
-{{- $effective := dict "runtimeClassName" $runtimeClassName "env" $env "hostMounts" $hostMounts -}}
-{{- if $preset.openclIcd -}}{{- $_ := set $effective "openclIcd" $preset.openclIcd -}}{{- end -}}
-{{- $effective | toYaml -}}
-{{- end -}}
-
-{{/*
-gremlinGpuRuntimeClassName returns the effective RuntimeClass name for the Gremlin pods, or
-nothing when GPU access is disabled or no RuntimeClass applies.
-*/}}
-{{- define "gremlinGpuRuntimeClassName" -}}
-{{- if .Values.gremlin.gpu.enabled -}}
-{{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
-{{- $eff.runtimeClassName -}}
+{{- define "gremlinGpuNodeAffinity" -}}
+{{- $root := .root -}}
+{{- $operator := .operator -}}
+{{- $exprs := list -}}
+{{- range $vendor := .vendors -}}
+{{- range $k, $v := (default (dict) (index $root.Values.gremlin.gpu $vendor)).nodeSelector -}}
+{{- $exprs = append $exprs (dict "key" $k "operator" $operator "values" (list (toString $v))) -}}
 {{- end -}}
 {{- end -}}
-
-{{/*
-gremlinGpuEnv returns the environment variables that enable GPU/OpenCL access.
-When gremlin.gpu.enabled is true, the effective env entries (vendor preset or the gremlin.gpu.env
-override) are emitted. For the NVIDIA container toolkit these include NVIDIA_VISIBLE_DEVICES and
-NVIDIA_DRIVER_CAPABILITIES (which must include `compute` or `all` for OpenCL).
-*/}}
-{{- define "gremlinGpuEnv" -}}
-{{- if .Values.gremlin.gpu.enabled -}}
-{{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
-{{- with $eff.env -}}
-{{- toYaml . -}}
+{{- if $exprs -}}
+{{- $affinity := deepCopy (default (dict) $root.Values.affinity) -}}
+{{- $nodeAffinity := default (dict) $affinity.nodeAffinity -}}
+{{- $required := default (dict) $nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution -}}
+{{- /* the terms are dicts, so `set` updates them in place inside $terms */ -}}
+{{- $terms := default (list (dict)) $required.nodeSelectorTerms -}}
+{{- range $term := $terms -}}
+{{- $_ := set $term "matchExpressions" (concat (default (list) $term.matchExpressions) $exprs) -}}
 {{- end -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-gremlinGpuCdiAnnotation returns the CDI device pod annotation when gremlin.gpu.cdiDevice is set,
-and nothing otherwise. This targets the annotation-based CDI injection path supported by
-containerd >= 1.7 / CRI-O, which does not consume a schedulable GPU resource.
-*/}}
-{{- define "gremlinGpuCdiAnnotation" -}}
-{{- if and .Values.gremlin.gpu.enabled .Values.gremlin.gpu.cdiDevice -}}
-cdi.k8s.io/gremlin-gpu: {{ .Values.gremlin.gpu.cdiDevice | quote }}
-{{- end -}}
-{{- end -}}
-
-{{/*
-gremlinGpuOpenclIcdActive returns "true" when the chart should project an OpenCL ICD registry
-file into the container, and nothing otherwise.
-
-The ICD is projected automatically whenever gremlin.gpu.projectOpenclIcd is true and the selected
-vendor preset defines one (nvidia does), UNLESS an effective hostMount already provides
-/etc/OpenCL/vendors (e.g. the amd preset or a custom mount), in which case we defer to that mount
-to avoid overlapping mount paths.
-*/}}
-{{- define "gremlinGpuOpenclIcdActive" -}}
-{{- if and .Values.gremlin.gpu.enabled .Values.gremlin.gpu.projectOpenclIcd -}}
-{{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
-{{- if and $eff.openclIcd $eff.openclIcd.library -}}
-{{- $dirMounted := false -}}
-{{- range $eff.hostMounts }}
-{{- if eq (default .hostPath .mountPath) "/etc/OpenCL/vendors" }}{{- $dirMounted = true -}}{{- end }}
-{{- end -}}
-{{- if not $dirMounted -}}true{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-gremlinGpuVolumeMounts returns the volumeMounts that expose host GPU/OpenCL drivers.
-Each effective hostMounts entry (vendor preset or the gremlin.gpu.hostMounts override) becomes a
-volumeMount. mountPath defaults to hostPath and readOnly defaults to true when not specified.
-When gremlinGpuOpenclIcdActive, the projected OpenCL ICD file is mounted as well.
-*/}}
-{{- define "gremlinGpuVolumeMounts" -}}
-{{- if .Values.gremlin.gpu.enabled -}}
-{{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
-{{- range $eff.hostMounts }}
-- name: {{ .name }}
-  mountPath: {{ default .hostPath .mountPath }}
-  readOnly: {{ if hasKey . "readOnly" }}{{ .readOnly }}{{ else }}true{{ end }}
-{{- end -}}
-{{- if include "gremlinGpuOpenclIcdActive" . }}
-- name: gremlin-opencl-icd
-  mountPath: /etc/OpenCL/vendors/{{ $eff.openclIcd.filename }}
-  subPath: {{ $eff.openclIcd.filename }}
-  readOnly: true
-{{- end -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-gremlinGpuVolumes returns the hostPath volumes that expose host GPU/OpenCL drivers.
-Each effective hostMounts entry (vendor preset or the gremlin.gpu.hostMounts override) becomes a
-hostPath volume. An optional `type` (e.g. DirectoryOrCreate, CharDevice) is passed through when present.
-*/}}
-{{- define "gremlinGpuVolumes" -}}
-{{- if .Values.gremlin.gpu.enabled -}}
-{{- $eff := fromYaml (include "gremlinGpuEffective" .) -}}
-{{- range $eff.hostMounts }}
-- name: {{ .name }}
-  hostPath:
-    path: {{ .hostPath }}
-    {{- if .type }}
-    type: {{ .type }}
-    {{- end }}
-{{- end -}}
-{{- if include "gremlinGpuOpenclIcdActive" . }}
-- name: gremlin-opencl-icd
-  configMap:
-    name: {{ include "gremlin.fullname" . }}-opencl-icd
-{{- end -}}
+{{- $_ := set $required "nodeSelectorTerms" $terms -}}
+{{- $_ := set $nodeAffinity "requiredDuringSchedulingIgnoredDuringExecution" $required -}}
+{{- $_ := set $affinity "nodeAffinity" $nodeAffinity -}}
+{{- $affinity | toYaml -}}
 {{- end -}}
 {{- end -}}
 

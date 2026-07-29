@@ -1,255 +1,44 @@
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  name: {{ include "gremlin.fullname" . }}
-  namespace: {{ .Release.Namespace }}
-  labels:
-    app.kubernetes.io/name: {{ include "gremlin.name" . }}
-    helm.sh/chart: {{ include "gremlin.chart" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    version: v1
-    {{- if .Values.gremlin.podLabels }}
-    {{- toYaml .Values.gremlin.podLabels | nindent 4 }}
-    {{- end }}
-spec:
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: {{ include "gremlin.name" . }}
-  {{- if .Values.gremlin.updateStrategy }}
-  updateStrategy:
-    {{- toYaml .Values.gremlin.updateStrategy | nindent 4 }}
-  {{- end }}
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: {{ include "gremlin.name" . }}
-        helm.sh/chart: {{ include "gremlin.chart" . }}
-        app.kubernetes.io/instance: {{ .Release.Name }}
-        app.kubernetes.io/managed-by: {{ .Release.Service }}
-        version: v1
-        {{- if .Values.gremlin.podLabels }}
-        {{- toYaml .Values.gremlin.podLabels | nindent 8 }}
-        {{- end }}
-      {{- if or .Values.gremlin.apparmor .Values.gremlin.installApparmorProfile .Values.gremlin.podSecurity.seccomp.enabled .Values.gremlin.podSecurity.securityContextConstraints.create .Values.gremlin.podAnnotations (include "gremlinGpuCdiAnnotation" .) }}
-      annotations:
-        {{- if .Values.gremlin.apparmor }}
-        container.apparmor.security.beta.kubernetes.io/{{ .Chart.Name }}: {{ .Values.gremlin.apparmor }}
-        {{- else if .Values.gremlin.installApparmorProfile }}
-        container.apparmor.security.beta.kubernetes.io/{{ .Chart.Name }}: {{ "localhost/gremlin-agent" }}
-        {{- end }}
-        {{- if .Values.gremlin.podSecurity.seccomp.enabled }}
-        container.seccomp.security.alpha.kubernetes.io/{{ .Chart.Name }}: {{ .Values.gremlin.podSecurity.seccomp.profile }}
-        {{- end }}
-        {{- if .Values.gremlin.podSecurity.securityContextConstraints.create }}
-        openshift.io/required-scc: "gremlin"
-        {{- end }}
-        {{- if include "gremlinGpuCdiAnnotation" . }}
-        {{- include "gremlinGpuCdiAnnotation" . | nindent 8 }}
-        {{- end }}
-        {{- if .Values.gremlin.podAnnotations }}
-        {{- toYaml .Values.gremlin.podAnnotations | nindent 8 }}
-        {{- end }}
-      {{- end }}
-    spec:
-      serviceAccountName: gremlin
-      {{- if include "gremlinGpuRuntimeClassName" . }}
-      runtimeClassName: {{ include "gremlinGpuRuntimeClassName" . }}
-      {{- end }}
-      {{- if .Values.affinity }}
-      affinity: {{ toYaml .Values.affinity | trimSuffix "\n" | nindent 8 }}
-      {{- end }}
-      {{- if .Values.nodeSelector }}
-      nodeSelector: {{ toYaml .Values.nodeSelector | trimSuffix "\n" | nindent 8 }}
-      {{- end }}
-      {{- if .Values.tolerations }}
-      tolerations: {{ toYaml .Values.tolerations | trimSuffix "\n" | nindent 8 }}
-      {{- end }}
-      dnsPolicy: {{ .Values.gremlin.dnsPolicy }}
-      hostPID: {{ .Values.gremlin.hostPID }}
-      hostNetwork: {{ .Values.gremlin.hostNetwork }}
-      {{- if .Values.image.pullSecret }}
-      imagePullSecrets:
-        - name: {{ .Values.image.pullSecret }}
-      {{- end }}
-      {{- if and .Values.gremlin.podSecurity.seccomp.enabled (eq "localhost/gremlin" .Values.gremlin.podSecurity.seccomp.profile) }}
-      initContainers:
-        - name: seccomp-init
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          volumeMounts:
-            - mountPath: {{ .Values.gremlin.podSecurity.seccomp.root }}
-              name: seccomp-root
-            - mountPath: /gremlin
-              name: seccomp-profile
-          command:
-            - cp
-            - /gremlin/seccomp.json
-            - {{ .Values.gremlin.podSecurity.seccomp.root }}/gremlin
-      {{- end }}
-      containers:
-      - name: {{ .Chart.Name }}
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        args: [ "daemon" ]
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        {{- if .Values.gremlin.resources }}
-        resources: {{ toYaml .Values.gremlin.resources | nindent 10 }}
-        {{- end }}
-        securityContext:
-          privileged: {{ .Values.gremlin.podSecurity.privileged }}
-          allowPrivilegeEscalation: {{ .Values.gremlin.podSecurity.allowPrivilegeEscalation }}
-          capabilities:
-            add: {{ toYaml .Values.gremlin.podSecurity.capabilities | nindent 14 }}
-          {{- if .Values.gremlin.podSecurity.seLinuxOptions }}
-          seLinuxOptions: {{ toYaml .Values.gremlin.podSecurity.seLinuxOptions | nindent 12 }}
-          {{- end }}
-          readOnlyRootFilesystem: {{ .Values.gremlin.podSecurity.readOnlyRootFilesystem }}
-        env:
-          - name: GREMLIN_TEAM_ID
-            {{- /* If we aren't managing this secret and a teamID was supplied, assume teamID is not in the external secret */}}
-            {{- if (and (not .Values.gremlin.secret.managed) (default .Values.gremlin.teamID .Values.gremlin.secret.teamID)) }}
-            value: {{ default .Values.gremlin.teamID .Values.gremlin.secret.teamID | quote }}
-            {{- else }}
-            valueFrom:
-              secretKeyRef:
-                name:  {{ include "gremlin.secretName" . }}
-                key: GREMLIN_TEAM_ID
-            {{- end }}
+{{- /*
+Decides which Gremlin DaemonSet(s) exist and resolves each one's name, pod-selector labels, GPU
+vendor config and node affinity. The DaemonSet body itself is rendered by the "gremlin.daemonset"
+template (see _daemonset.tpl), which knows nothing about GPUs or node mixes.
 
-          {{- if (eq (include "gremlin.secretType" .) "secret") }}
-          - name: GREMLIN_TEAM_SECRET
-            valueFrom:
-              secretKeyRef:
-                name: {{ include "gremlin.secretName" . }}
-                key: GREMLIN_TEAM_SECRET
-          {{- else }}
-          - name: GREMLIN_TEAM_CERTIFICATE_OR_FILE
-            {{- /* If managed outside of this chart, or if the value is a literal, reference the secret as a file */}}
-            {{- if or (not .Values.gremlin.secret.managed)  (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
-            value: file:///var/lib/gremlin/cert/gremlin.cert
-            {{- else }}
-            value: {{ .Values.gremlin.secret.certificate }}
-            {{- end }}
-          - name: GREMLIN_TEAM_PRIVATE_KEY_OR_FILE
-            {{- /* If managed outside of this chart, or if the value is a literal, reference the secret as a file */}}
-            {{- if or (not .Values.gremlin.secret.managed) (hasPrefix "-----BEGIN" .Values.gremlin.secret.certificate) }}
-            value: file:///var/lib/gremlin/cert/gremlin.key
-            {{- else }}
-            value: {{ .Values.gremlin.secret.key }}
-            {{- end }}
-          {{- end }}
-          - name: GREMLIN_IDENTIFIER
-            valueFrom:
-              fieldRef:
-                fieldPath: spec.nodeName
-          - name: GREMLIN_CLIENT_TAGS
-            value: {{ .Values.gremlin.client.tags }}
-          - name: GREMLIN_COLLECT_DNS
-            value: {{ .Values.gremlin.collect.dns | quote }}
-          - name: GREMLIN_SERVICE_URL
-            value: {{ include "gremlinServiceUrl" . }}
-          {{- if not .Values.gremlin.features.pushCIDRTags.enabled }}
-          - name: GREMLIN_PUSH_POD_CIDR_TAGS
-            value: "false"
-          - name: GREMLIN_PUSH_ZONE_CIDR_TAGS
-            value: "false"
-          {{- end }}
-          {{- if .Values.gremlin.proxy.url }}
-          - name: https_proxy
-            value: {{ .Values.gremlin.proxy.url }}
-          {{- end }}
-          {{- if .Values.ssl.certFile }}
-          - name: SSL_CERT_FILE
-            value: /etc/gremlin/ssl/certfile.pem
-          {{- end }}
-          {{- if .Values.ssl.certDir }}
-          - name: SSL_CERT_DIR
-            value: {{ .Values.ssl.certDir }}
-          {{- end }}
-          {{- if include "gremlinTlsIdentityEnv" . }}
-          {{- include "gremlinTlsIdentityEnv" . | nindent 10 }}
-          {{- end }}
-          {{- if include "gremlinGpuEnv" . }}
-          {{- include "gremlinGpuEnv" . | nindent 10 }}
-          {{- end }}
-          {{- with .Values.gremlin.extraEnv }}
-            {{- toYaml . | nindent 10 }}
-          {{- end }}
-        volumeMounts:
-          - name: gremlin-state
-            mountPath: /var/lib/gremlin
-            readOnly: false
-          - name: gremlin-executions
-            mountPath: /var/lib/gremlin/executions
-            readOnly: false
-          - name: gremlin-logs
-            mountPath: /var/log/gremlin
-            readOnly: false
-          - name: cgroup-root
-            mountPath: /sys/fs/cgroup
-            readOnly: false
-          {{- if include "containerMounts" . }}
-          {{- include "containerMounts" . | nindent 10 }}
-          {{- end }}
-          {{- if (eq (include "gremlin.secretType" .) "certificate") }}
-          - name: gremlin-cert
-            mountPath: /var/lib/gremlin/cert
-            readOnly: true
-          {{- end }}
-          {{- if .Values.ssl.certFile }}
-          - name: ssl-cert-file
-            mountPath: /etc/gremlin/ssl
-            readOnly: true
-          {{- end }}
-          {{- if include "gremlinTlsIdentityVolumeMounts" . }}
-          {{- include "gremlinTlsIdentityVolumeMounts" . | nindent 10 }}
-          {{- end }}
-          {{- if include "gremlinGpuVolumeMounts" . }}
-          {{- include "gremlinGpuVolumeMounts" . | nindent 10 }}
-          {{- end }}
-      volumes:
-        - name: cgroup-root
-          hostPath:
-            path: {{ .Values.gremlin.cgroup.root }}
-        {{- if include "containerVolumes" . }}
-        {{- include "containerVolumes" . | nindent 8 }}
-        {{- end }}
-        # The Gremlin daemon communicates with Gremlin sidecars via its state directory.
-        - name: gremlin-state
-          emptyDir:
-            medium: Memory
-        - name: gremlin-executions
-          hostPath:
-            path: /var/lib/gremlin/executions
-        # The Gremlin daemon forwards logs from the Gremlin sidecars to the Gremlin control plane
-        # These logs should be shared with the host
-        - name: gremlin-logs
-          hostPath:
-            path: /var/log/gremlin
-        {{- if (eq (include "gremlin.secretType" .) "certificate") }}
-        - name: gremlin-cert
-          secret:
-            secretName: {{ include "gremlin.secretName" . }}
-        {{- end }}
-        {{- if and .Values.gremlin.podSecurity.seccomp.enabled (eq "localhost/gremlin" .Values.gremlin.podSecurity.seccomp.profile) }}
-        - name: seccomp-root
-          hostPath:
-            path: {{ .Values.gremlin.podSecurity.seccomp.root }}
-        - name: seccomp-profile
-          configMap:
-            name: {{ template "gremlin.fullname" . }}-seccomp
-        {{- end }}
-        {{- if .Values.ssl.certFile }}
-        - name: ssl-cert-file
-          secret:
-            secretName: ssl-cert-file
-        {{- end }}
-        {{- if include "gremlinTlsIdentityVolumes" . }}
-        {{- include "gremlinTlsIdentityVolumes" . | nindent 8 }}
-        {{- end }}
-        {{- if include "gremlinGpuVolumes" . }}
-        {{- include "gremlinGpuVolumes" . | nindent 8 }}
-        {{- end }}
-{{- if .Values.gremlin.priorityClassName }}
-      priorityClassName: {{ .Values.gremlin.priorityClassName }}
+  - GPU disabled                -> a single DaemonSet.
+  - GPU enabled, nodes visible  -> one DaemonSet per detected GPU vendor, pinned to that vendor's
+                                   nodes, plus one DaemonSet for every remaining non-GPU node. See
+                                   gremlinGpuNodesVisible / gremlinGpuVendorsInUse for how the
+                                   cluster is inspected.
+  - GPU enabled, otherwise      -> a single GPU DaemonSet using gremlin.gpu.vendor. This is the
+                                   fallback when the cluster's nodes are not visible.
+*/ -}}
+{{- if .Values.gremlin.gpu.enabled -}}
+{{- if include "gremlinGpuNodesVisible" . -}}
+{{- $active := compact (splitList "," (include "gremlinGpuVendorsInUse" .)) -}}
+{{- range $i, $vendor := $active }}
+{{- if $i }}
+---
+{{ end }}
+{{- include "gremlin.daemonset" (dict
+      "root" $
+      "name" (printf "%s-gpu-%s" (include "gremlin.fullname" $) $vendor)
+      "selectorLabels" (dict "gremlin.com/gpu" $vendor)
+      "gpu" (default (dict) (index $.Values.gremlin.gpu $vendor))
+      "affinity" (include "gremlinGpuNodeAffinity" (dict "root" $ "vendors" (list $vendor) "operator" "In"))) }}
 {{- end }}
+{{- if $active }}
+---
+{{ end }}
+{{- include "gremlin.daemonset" (dict
+      "root" $
+      "name" (include "gremlin.fullname" $)
+      "selectorLabels" (dict "gremlin.com/gpu" "none")
+      "affinity" (include "gremlinGpuNodeAffinity" (dict "root" $ "vendors" $active "operator" "NotIn"))) }}
+{{- else -}}
+{{- include "gremlin.daemonset" (dict
+      "root" $
+      "name" (include "gremlin.fullname" $)
+      "gpu" (default (dict) (index .Values.gremlin.gpu .Values.gremlin.gpu.vendor))) }}
+{{- end -}}
+{{- else -}}
+{{- include "gremlin.daemonset" (dict "root" $ "name" (include "gremlin.fullname" $)) }}
+{{- end -}}
