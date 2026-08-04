@@ -255,53 +255,6 @@ Context: dict "root" $ "gpu" <spec>
 {{- end -}}
 
 {{/*
-gremlinGpuNodesVisible returns "true" when GPU access is on AND the cluster's Nodes are visible via
-`lookup`, which is what enables the per-node (mixed cluster) DaemonSets. lookup is empty under
-`helm template`/GitOps, so the chart then falls back to a single DaemonSet driven by
-gremlin.gpu.vendor. When GPU is on and this is empty, NOTES.txt warns that the split could not be
-made.
-*/}}
-{{- define "gremlinGpuNodesVisible" -}}
-{{- if .Values.gremlin.gpu.enabled -}}
-{{- if gt (len (default (list) (lookup "v1" "Node" "" "").items)) 0 -}}
-{{- true -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-gremlinGpuVendorsInUse returns the vendor blocks the install needs, comma-separated: those of
-gremlin.gpu.vendors whose nodes are present in the cluster, or just gremlin.gpu.vendor when the Nodes
-are not visible (the single-DaemonSet fallback). Empty when GPU access is disabled. A node counts for
-a vendor when it carries all of the vendor block's nodeSelector labels, or advertises any of its
-`resources` in the node's capacity.
-*/}}
-{{- define "gremlinGpuVendorsInUse" -}}
-{{- if not (include "gremlinGpuNodesVisible" .) -}}
-{{- if .Values.gremlin.gpu.enabled -}}{{- .Values.gremlin.gpu.vendor -}}{{- end -}}
-{{- else -}}
-{{- $root := . -}}
-{{- $nodes := default (list) (lookup "v1" "Node" "" "").items -}}
-{{- $active := list -}}
-{{- range $name := (default (list) $root.Values.gremlin.gpu.vendors) -}}
-{{- $vspec := default (dict) (index $root.Values.gremlin.gpu $name) -}}
-{{- $found := false -}}
-{{- range $node := $nodes -}}
-{{- $labels := default (dict) $node.metadata.labels -}}
-{{- if $vspec.nodeSelector -}}
-{{- $match := true -}}
-{{- range $lk, $lv := $vspec.nodeSelector -}}{{- if ne (toString (index $labels $lk)) (toString $lv) -}}{{- $match = false -}}{{- end -}}{{- end -}}
-{{- if $match -}}{{- $found = true -}}{{- end -}}
-{{- end -}}
-{{- range $r := (default (list) $vspec.resources) -}}{{- if hasKey (default (dict) $node.status.capacity) $r -}}{{- $found = true -}}{{- end -}}{{- end -}}
-{{- end -}}
-{{- if $found -}}{{- $active = append $active $name -}}{{- end -}}
-{{- end -}}
-{{- join "," $active -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
 gremlinGpuNodeAffinity returns the user's .Values.affinity (as YAML) with an added requirement that a
 node carry ("In") or lack ("NotIn") the nodeSelector labels of the given vendor blocks. The
 requirement is ANDed into every nodeSelectorTerm the user supplied (or a new term when they supplied

@@ -11,17 +11,3 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "When using a managed certificate, both the certificate and key must be provided."
-
-  # Under helm unittest the Node `lookup` returns nothing, so GPU always triggers the console
-  # warning that per-node GPU DaemonSets could not be created.
-  - it: should warn when GPU is enabled but node lookup finds nothing
-    set:
-      gremlin.gpu.enabled: true
-    asserts:
-      - matchRegexRaw:
-          pattern: "DaemonSets could NOT be created"
-
-  - it: should not warn when GPU is disabled
-    asserts:
-      - notMatchRegexRaw:
-          pattern: "DaemonSets could NOT be created"

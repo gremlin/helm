@@ -75,11 +75,10 @@ their default values. See values.yaml for all available options.
 | `gremlin.extraEnv`                     | Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset. | `[]`                                                                                        |
 | `gremlin.features.discoverDestinationService.enabled` | Enable discovery of a destination service in a service mesh to resolve hostnames | `false`                                                                |
 | `gremlin.gpu.enabled`                  | Expose host GPU/OpenCL drivers to the agent for the GPU attack | `false`                                                                                     |
-| `gremlin.gpu.vendor`                   | Fallback vendor block used when the chart cannot inspect the cluster's Nodes (`nvidia`, `amd`, `custom`, ...) | `nvidia`                                       |
 | `gremlin.gpu.cdiDevice`                | CDI device to inject via pod annotation (for CDI-based runtimes) | `""`                                                                                        |
-| `gremlin.gpu.projectOpenclIcd`         | Project the selected vendor's OpenCL ICD registry file into the container | `true`                                                                             |
-| `gremlin.gpu.vendors`                  | Vendor blocks to detect & target on a hybrid (mixed) cluster   | `[nvidia, amd]`                                                                             |
-| `gremlin.gpu.<vendor>`                 | Per-vendor config block: `nodeSelector`, `resources`, `runtimeClassName`, `env`, `volumes`, `volumeMounts`, `openclIcd` | see `values.yaml`                                  |
+| `gremlin.gpu.projectOpenclIcd`         | Project a vendor's OpenCL ICD registry file into the container  | `true`                                                                             |
+| `gremlin.gpu.vendors`                  | Vendor blocks to target; one DaemonSet is created per entry     | `[nvidia, amd]`                                                                             |
+| `gremlin.gpu.<vendor>`                 | Per-vendor config block: `nodeSelector`, `runtimeClassName`, `env`, `volumes`, `volumeMounts`, `openclIcd` | see `values.yaml`                                  |
 | `ssl.certFile`                         | Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the certificate(s) you wish to add. When set, this chart creates secret (`ssl-cert-file`) with the contents and passes it to both agents. This value is ignored when blank or absent. | `""` (ignored)                                                                              |
 | `ssl.certDir`                          | sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent. | `""` (ignored)                                                                              |
 
@@ -221,7 +220,7 @@ helm install gremlin gremlin/gremlin \
 
 ### With GPU Support
 
-To let the GPU attack enumerate and target GPUs, enable `gremlin.gpu` and pick a vendor preset.
+To let the GPU attack enumerate and target GPUs, enable `gremlin.gpu` and list the vendors your cluster has in `gremlin.gpu.vendors` (both `nvidia` and `amd` by default).
 
 ```shell
 helm install gremlin gremlin/gremlin \
@@ -232,25 +231,25 @@ helm install gremlin gremlin/gremlin \
     --set-file gremlin.secret.certificate=/path/to/gremlin.cert \
     --set-file gremlin.secret.key=/path/to/gremlin.key \
     --set      gremlin.gpu.enabled=true \
-    --set      gremlin.gpu.vendor=nvidia
+    --set      gremlin.gpu.vendors={nvidia}
 ```
 
 _note_: The `nvidia` preset runs the agent under the `nvidia` RuntimeClass. If the Gremlin pod fails to start (for example, a `RuntimeClass not found` error), the RuntimeClass likely doesn't exist on your cluster. This chart does not create RuntimeClass objects. Ensure the RuntimeClass named by the vendor block exists (it is normally provided by the NVIDIA GPU Operator or your platform), or set the vendor's `runtimeClassName` to `""`.
 
-#### Hybrid (mixed) clusters
+#### One DaemonSet per vendor
 
-On a cluster where only some nodes have GPUs and different nodes may have different GPU vendors, a single GPU DaemonSet cannot run cluster-wide: nodes lacking the vendor's RuntimeClass or device mounts would fail to start the Gremlin pod. So whenever `gremlin.gpu.enabled` is set, the chart inspects the cluster's Nodes at install/upgrade time and renders:
+Only some nodes have GPUs, and different nodes may have different GPU vendors, so a single GPU DaemonSet cannot run cluster-wide: nodes lacking the vendor's RuntimeClass or device mounts would fail to start the Gremlin pod. So whenever `gremlin.gpu.enabled` is set, the chart renders:
 
-- one GPU DaemonSet per detected vendor (`<release>-gremlin-gpu-<vendor>`), scheduled via node affinity onto that vendor's nodes and carrying that vendor's GPU configuration, and
-- one plain DaemonSet (`<release>-gremlin`) for every remaining non-GPU node.
+- one GPU DaemonSet per entry in `gremlin.gpu.vendors` (`<release>-gremlin-gpu-<vendor>`), scheduled via node affinity onto that vendor's nodes and carrying that vendor's GPU configuration, and
+- one DaemonSet (`<release>-gremlin-gpu-none`) for every node that belongs to none of those vendors.
 
-The vendors to look for come from `gremlin.gpu.vendors`. Detection and scheduling use each vendor block's `nodeSelector` (node labels such as `nvidia.com/gpu.present` / `amd.com/gpu.present`, set by the NVIDIA GPU Operator / Node Feature Discovery and the AMD GPU labeller), plus optional `resources` (node capacity) for detection. GPU nodes must carry the vendor's `nodeSelector` labels for its DaemonSet to schedule.
+Each vendor's DaemonSet is rendered whether or not the cluster currently has nodes of that vendor; a vendor with no matching nodes simply schedules no pods. Trim `gremlin.gpu.vendors` to the vendors you care about to avoid the extra DaemonSets.
 
-Because node inspection relies on Helm's `lookup`, it only runs during `helm install`/`upgrade`. Under `helm template` or a GitOps renderer with no cluster access, detection finds no nodes and the chart falls back to a single DaemonSet using `gremlin.gpu.vendor`. If that fallback happens during an actual `helm install`/`upgrade` (for example, the account running Helm cannot list Nodes), the chart prints a warning to the console noting that per-node GPU DaemonSets could not be created.
+Scheduling uses each vendor block's `nodeSelector` (node labels such as `nvidia.com/gpu.present` / `amd.com/gpu.present`, set by the NVIDIA GPU Operator / Node Feature Discovery and the AMD GPU labeller): its DaemonSet requires those labels, and the `gpu-none` DaemonSet requires their absence. GPU nodes must therefore carry the vendor's `nodeSelector` labels for its DaemonSet to schedule. Any `affinity` you set is preserved — the vendor requirement is ANDed into it.
 
 This chart does not create RuntimeClass objects; any RuntimeClass named by a vendor block must already exist on the cluster.
 
-_note_: The per-node DaemonSets carry an extra `gremlin.com/gpu` pod-selector label so each only manages its own pods. Because a DaemonSet's selector is immutable, upgrading an existing GPU-less Gremlin install to a GPU one may require deleting the old DaemonSet first (or `helm upgrade --force`).
+_note_: When GPU support is disabled the agent DaemonSet keeps its original `<release>-gremlin` name. Enabling GPU support replaces it with the per-vendor DaemonSets above (including `<release>-gremlin-gpu-none`), so Helm deletes the old DaemonSet and its pods are recreated by the new ones. The per-vendor DaemonSets also carry an extra `gremlin.com/gpu` pod-selector label so each only manages its own pods.
 
 ## Uninstallation
 

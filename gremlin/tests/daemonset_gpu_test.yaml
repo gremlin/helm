@@ -7,8 +7,16 @@ release:
   revision: 1
   upgrade: true
 tests:
-  - it: should not add any GPU configuration by default
+  # --- GPU disabled: one DaemonSet, keeping the original name ------------------------------
+  - it: should render a single DaemonSet with no GPU configuration by default
     asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: my-release-gremlin
+      - notExists:
+          path: metadata.labels["gremlin.com/gpu"]
       - notExists:
           path: spec.template.spec.runtimeClassName
       - notContains:
@@ -19,11 +27,17 @@ tests:
               path: /etc/OpenCL/vendors
               type: DirectoryOrCreate
 
-  - it: should not add GPU configuration when a vendor is set but gpu is disabled
+  - it: should not add GPU configuration when vendors are set but gpu is disabled
     set:
       gremlin.gpu.enabled: false
-      gremlin.gpu.vendor: nvidia
+      gremlin.gpu.vendors:
+        - nvidia
     asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: my-release-gremlin
       - notExists:
           path: spec.template.spec.runtimeClassName
       - notContains:
@@ -32,14 +46,82 @@ tests:
             name: NVIDIA_VISIBLE_DEVICES
             value: "all"
 
-  # --- Easy default: nvidia block ----------------------------------------------------------
-  - it: should apply the nvidia block when enabled with the default vendor
+  # --- GPU enabled: one DaemonSet per vendor, plus gpu-none --------------------------------
+  - it: should render one DaemonSet per vendor plus a gpu-none DaemonSet when enabled
     set:
       gremlin.gpu.enabled: true
     asserts:
+      - hasDocuments:
+          count: 3
+      - equal:
+          path: metadata.name
+          value: my-release-gremlin-gpu-nvidia
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: my-release-gremlin-gpu-amd
+        documentIndex: 1
+      - equal:
+          path: metadata.name
+          value: my-release-gremlin-gpu-none
+        documentIndex: 2
+
+  - it: should render a DaemonSet per vendor even when only one vendor is listed
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.vendors:
+        - nvidia
+    asserts:
+      - hasDocuments:
+          count: 2
+      - equal:
+          path: metadata.name
+          value: my-release-gremlin-gpu-nvidia
+        documentIndex: 0
+      - equal:
+          path: metadata.name
+          value: my-release-gremlin-gpu-none
+        documentIndex: 1
+
+  - it: should render only the gpu-none DaemonSet when no vendors are listed
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.vendors: []
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: my-release-gremlin-gpu-none
+      # with no vendor labels to exclude there is nothing to add to the user's affinity
+      - notExists:
+          path: spec.template.spec.affinity
+
+  # --- Each DaemonSet carries its own vendor's configuration -------------------------------
+  - it: should apply the nvidia block to the nvidia DaemonSet
+    set:
+      gremlin.gpu.enabled: true
+    documentSelector:
+      path: metadata.name
+      value: my-release-gremlin-gpu-nvidia
+    asserts:
+      - equal:
+          path: metadata.labels["gremlin.com/gpu"]
+          value: nvidia
+      - equal:
+          path: spec.selector.matchLabels["gremlin.com/gpu"]
+          value: nvidia
       - equal:
           path: spec.template.spec.runtimeClassName
           value: nvidia
+      # scheduled onto the nvidia nodes
+      - contains:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions
+          content:
+            key: nvidia.com/gpu.present
+            operator: In
+            values:
+              - "true"
       - contains:
           path: spec.template.spec.containers[0].env
           content:
@@ -73,28 +155,27 @@ tests:
             configMap:
               name: my-release-gremlin-opencl-icd
 
-  - it: should not project the OpenCL ICD when the vendor block defines none
+  - it: should apply the amd block to the amd DaemonSet
     set:
       gremlin.gpu.enabled: true
-      gremlin.gpu.vendor: ""
+    documentSelector:
+      path: metadata.name
+      value: my-release-gremlin-gpu-amd
     asserts:
-      - notContains:
-          path: spec.template.spec.containers[0].volumeMounts
-          content:
-            name: gremlin-opencl-icd
-            mountPath: /etc/OpenCL/vendors/nvidia.icd
-            subPath: nvidia.icd
-            readOnly: true
-
-  # --- Easy default: amd block -------------------------------------------------------------
-  - it: should apply the amd block when vendor is amd
-    set:
-      gremlin.gpu.enabled: true
-      gremlin.gpu.vendor: amd
-    asserts:
+      - equal:
+          path: metadata.labels["gremlin.com/gpu"]
+          value: amd
       # amd does not use a RuntimeClass
       - notExists:
           path: spec.template.spec.runtimeClassName
+      # scheduled onto the amd nodes
+      - contains:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions
+          content:
+            key: amd.com/gpu.present
+            operator: In
+            values:
+              - "true"
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:
@@ -131,13 +212,26 @@ tests:
             configMap:
               name: my-release-gremlin-opencl-icd
 
-  - it: should apply no GPU config when vendor is blank
+  - it: should keep the gpu-none DaemonSet off every vendor's nodes and free of GPU config
     set:
       gremlin.gpu.enabled: true
-      gremlin.gpu.vendor: ""
+    documentSelector:
+      path: metadata.name
+      value: my-release-gremlin-gpu-none
     asserts:
+      - equal:
+          path: metadata.labels["gremlin.com/gpu"]
+          value: none
+      - equal:
+          path: spec.selector.matchLabels["gremlin.com/gpu"]
+          value: none
       - notExists:
           path: spec.template.spec.runtimeClassName
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NVIDIA_VISIBLE_DEVICES
+            value: "all"
       - notContains:
           path: spec.template.spec.volumes
           content:
@@ -145,13 +239,60 @@ tests:
             hostPath:
               path: /dev/kfd
               type: CharDevice
+      - contains:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions
+          content:
+            key: nvidia.com/gpu.present
+            operator: NotIn
+            values:
+              - "true"
+      - contains:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions
+          content:
+            key: amd.com/gpu.present
+            operator: NotIn
+            values:
+              - "true"
+
+  - it: should AND the vendor node requirement into a user-supplied affinity
+    set:
+      gremlin.gpu.enabled: true
+      gremlin.gpu.vendors:
+        - nvidia
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/os
+                    operator: In
+                    values:
+                      - linux
+    documentSelector:
+      path: metadata.name
+      value: my-release-gremlin-gpu-nvidia
+    asserts:
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms
+          value:
+            - matchExpressions:
+                - key: kubernetes.io/os
+                  operator: In
+                  values:
+                    - linux
+                - key: nvidia.com/gpu.present
+                  operator: In
+                  values:
+                    - "true"
 
   # --- Editing / overriding a vendor block -------------------------------------------------
   - it: should honor a runtimeClassName set on the vendor block
     set:
       gremlin.gpu.enabled: true
-      gremlin.gpu.vendor: nvidia
       gremlin.gpu.nvidia.runtimeClassName: nvidia-custom
+    documentSelector:
+      path: metadata.name
+      value: my-release-gremlin-gpu-nvidia
     asserts:
       - equal:
           path: spec.template.spec.runtimeClassName
@@ -160,10 +301,12 @@ tests:
   - it: should honor env set on the vendor block
     set:
       gremlin.gpu.enabled: true
-      gremlin.gpu.vendor: nvidia
       gremlin.gpu.nvidia.env:
         - name: NVIDIA_VISIBLE_DEVICES
           value: "0,1"
+    documentSelector:
+      path: metadata.name
+      value: my-release-gremlin-gpu-nvidia
     asserts:
       - contains:
           path: spec.template.spec.containers[0].env
@@ -180,7 +323,10 @@ tests:
   - it: should render native volumes and volumeMounts from a custom vendor block
     set:
       gremlin.gpu.enabled: true
-      gremlin.gpu.vendor: custom
+      gremlin.gpu.vendors:
+        - custom
+      gremlin.gpu.custom.nodeSelector:
+        my.com/gpu.present: "true"
       gremlin.gpu.custom.volumes:
         - name: nvidia0
           hostPath:
@@ -190,6 +336,9 @@ tests:
         - name: nvidia0
           mountPath: /dev/nvidia0
           readOnly: false
+    documentSelector:
+      path: metadata.name
+      value: my-release-gremlin-gpu-custom
     asserts:
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
@@ -204,16 +353,26 @@ tests:
             hostPath:
               path: /dev/nvidia0
               type: CharDevice
+      - contains:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions
+          content:
+            key: my.com/gpu.present
+            operator: In
+            values:
+              - "true"
 
   # --- CDI (Container Device Interface) ----------------------------------------------------
   - it: should not add a CDI annotation by default
     set:
       gremlin.gpu.enabled: true
+    documentSelector:
+      path: metadata.name
+      value: my-release-gremlin-gpu-nvidia
     asserts:
       - notExists:
           path: spec.template.metadata.annotations["cdi.k8s.io/gremlin-gpu"]
 
-  - it: should add the CDI device annotation when cdiDevice is set
+  - it: should add the CDI device annotation to the vendor DaemonSets when cdiDevice is set
     set:
       gremlin.gpu.enabled: true
       gremlin.gpu.cdiDevice: nvidia.com/gpu=all
@@ -221,6 +380,15 @@ tests:
       - equal:
           path: spec.template.metadata.annotations["cdi.k8s.io/gremlin-gpu"]
           value: nvidia.com/gpu=all
+        documentSelector:
+          path: metadata.name
+          value: my-release-gremlin-gpu-nvidia
+      # the non-GPU nodes get no CDI device
+      - notExists:
+          path: spec.template.metadata.annotations["cdi.k8s.io/gremlin-gpu"]
+        documentSelector:
+          path: metadata.name
+          value: my-release-gremlin-gpu-none
 
   - it: should let a vendor block override the CDI device
     set:
@@ -231,6 +399,15 @@ tests:
       - equal:
           path: spec.template.metadata.annotations["cdi.k8s.io/gremlin-gpu"]
           value: nvidia.com/gpu=0
+        documentSelector:
+          path: metadata.name
+          value: my-release-gremlin-gpu-nvidia
+      - equal:
+          path: spec.template.metadata.annotations["cdi.k8s.io/gremlin-gpu"]
+          value: nvidia.com/gpu=all
+        documentSelector:
+          path: metadata.name
+          value: my-release-gremlin-gpu-amd
 
   - it: should not add a CDI annotation when gpu is disabled
     set:
@@ -245,6 +422,9 @@ tests:
     set:
       gremlin.gpu.enabled: true
       gremlin.gpu.projectOpenclIcd: false
+    documentSelector:
+      path: metadata.name
+      value: my-release-gremlin-gpu-nvidia
     asserts:
       - notContains:
           path: spec.template.spec.containers[0].volumeMounts
@@ -260,10 +440,18 @@ tests:
             configMap:
               name: my-release-gremlin-opencl-icd
 
-  # --- Single DaemonSet under helm template (lookup finds no nodes) ------------------------
-  - it: should render exactly one DaemonSet when GPU is enabled (falls back without a cluster)
+  - it: should not project the OpenCL ICD when the vendor block defines none
     set:
       gremlin.gpu.enabled: true
+      gremlin.gpu.nvidia.openclIcd: null
+    documentSelector:
+      path: metadata.name
+      value: my-release-gremlin-gpu-nvidia
     asserts:
-      - hasDocuments:
-          count: 1
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: gremlin-opencl-icd
+            mountPath: /etc/OpenCL/vendors/nvidia.icd
+            subPath: nvidia.icd
+            readOnly: true

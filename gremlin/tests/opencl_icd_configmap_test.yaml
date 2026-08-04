@@ -31,10 +31,10 @@ tests:
           path: data["nvidia.icd"]
           pattern: libnvidia-opencl\.so\.1
 
-  - it: should not render when no vendor preset defines an ICD
+  - it: should not render when no vendor in use defines an ICD
     set:
       gremlin.gpu.enabled: true
-      gremlin.gpu.vendor: ""
+      gremlin.gpu.nvidia.openclIcd: null
     asserts:
       - hasDocuments:
           count: 0
@@ -47,10 +47,11 @@ tests:
       - hasDocuments:
           count: 0
 
-  - it: should not render for the amd preset (host registry is mounted instead)
+  - it: should not render for the amd preset alone (host registry is mounted instead)
     set:
       gremlin.gpu.enabled: true
-      gremlin.gpu.vendor: amd
+      gremlin.gpu.vendors:
+        - amd
     asserts:
       - hasDocuments:
           count: 0

@@ -3,42 +3,28 @@ Decides which Gremlin DaemonSet(s) exist and resolves each one's name, pod-selec
 vendor config and node affinity. The DaemonSet body itself is rendered by the "gremlin.daemonset"
 template (see _daemonset.tpl), which knows nothing about GPUs or node mixes.
 
-  - GPU disabled                -> a single DaemonSet.
-  - GPU enabled, nodes visible  -> one DaemonSet per detected GPU vendor, pinned to that vendor's
-                                   nodes, plus one DaemonSet for every remaining non-GPU node. See
-                                   gremlinGpuNodesVisible / gremlinGpuVendorsInUse for how the
-                                   cluster is inspected.
-  - GPU enabled, otherwise      -> a single GPU DaemonSet using gremlin.gpu.vendor. This is the
-                                   fallback when the cluster's nodes are not visible.
+  - GPU disabled -> a single DaemonSet, `<fullname>`.
+  - GPU enabled  -> one DaemonSet per gremlin.gpu.vendors entry, `<fullname>-gpu-<vendor>`, pinned to
+                    that vendor's nodes and carrying that vendor's GPU config, plus
+                    `<fullname>-gpu-none` for every node that belongs to none of those vendors.
 */ -}}
+{{- $fullname := include "gremlin.fullname" $ -}}
 {{- if .Values.gremlin.gpu.enabled -}}
-{{- if include "gremlinGpuNodesVisible" . -}}
-{{- $active := compact (splitList "," (include "gremlinGpuVendorsInUse" .)) -}}
-{{- range $i, $vendor := $active }}
-{{- if $i }}
----
-{{ end }}
+{{- $vendors := default (list) .Values.gremlin.gpu.vendors -}}
+{{- range $vendor := $vendors }}
 {{- include "gremlin.daemonset" (dict
       "root" $
-      "name" (printf "%s-gpu-%s" (include "gremlin.fullname" $) $vendor)
+      "name" (printf "%s-gpu-%s" $fullname $vendor)
       "selectorLabels" (dict "gremlin.com/gpu" $vendor)
       "gpu" (default (dict) (index $.Values.gremlin.gpu $vendor))
       "affinity" (include "gremlinGpuNodeAffinity" (dict "root" $ "vendors" (list $vendor) "operator" "In"))) }}
-{{- end }}
-{{- if $active }}
 ---
 {{ end }}
 {{- include "gremlin.daemonset" (dict
       "root" $
-      "name" (include "gremlin.fullname" $)
+      "name" (printf "%s-gpu-none" $fullname)
       "selectorLabels" (dict "gremlin.com/gpu" "none")
-      "affinity" (include "gremlinGpuNodeAffinity" (dict "root" $ "vendors" $active "operator" "NotIn"))) }}
+      "affinity" (include "gremlinGpuNodeAffinity" (dict "root" $ "vendors" $vendors "operator" "NotIn"))) }}
 {{- else -}}
-{{- include "gremlin.daemonset" (dict
-      "root" $
-      "name" (include "gremlin.fullname" $)
-      "gpu" (default (dict) (index .Values.gremlin.gpu .Values.gremlin.gpu.vendor))) }}
-{{- end -}}
-{{- else -}}
-{{- include "gremlin.daemonset" (dict "root" $ "name" (include "gremlin.fullname" $)) }}
+{{- include "gremlin.daemonset" (dict "root" $ "name" $fullname) }}
 {{- end -}}

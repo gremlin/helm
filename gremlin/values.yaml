@@ -247,20 +247,15 @@ gremlin:
   # Exposes the host's GPU / OpenCL drivers to the Gremlin agent so that the GPU attack can
   #   enumerate and target GPUs from inside the container.
   #
-  # The easy path is to set `enabled: true` and pick a `vendor` (e.g. "nvidia" or "amd"). Each
-  #   vendor's full configuration lives in a same-named block below.
-  #   To customize, edit that vendor's block, or copy it to `custom` and set vendor: custom.
+  # The easy path is to set `enabled: true` and list the vendors your cluster has in `vendors`
+  #   (e.g. "nvidia" or "amd"). Each vendor's full configuration lives in a same-named block below.
+  #   To customize, edit that vendor's block, or copy it to `custom` and add "custom" to `vendors`.
   gpu:
     # gremlin.gpu.enabled -
-    # When true, applies the selected vendor's GPU configuration to the Gremlin DaemonSet(s). When
-    #   false, none of the GPU settings have any effect.
+    # When true, the chart renders one DaemonSet per `vendors` entry, each carrying that vendor's GPU
+    #   configuration, plus a `-gpu-none` DaemonSet for the cluster's non-GPU nodes. When false, none
+    #   of the GPU settings have any effect and a single DaemonSet is rendered.
     enabled: false
-
-    # gremlin.gpu.vendor -
-    # Which vendor block below to use when the chart cannot inspect the cluster's Nodes (see
-    #   gremlin.gpu.vendors): "nvidia", "amd", "custom", or any other block you define. Whenever the
-    #   Nodes are visible this is unused, the per-node vendor is detected automatically.
-    vendor: nvidia          # nvidia | amd | custom
 
     # NOTE: when a selected vendor sets runtimeClassName, that RuntimeClass must already exist on the
     #   cluster (typically created by the GPU Operator or your platform). This chart does NOT create
@@ -277,22 +272,24 @@ gremlin:
     cdiDevice: ""
 
     # gremlin.gpu.projectOpenclIcd -
-    # Whether to project the selected vendor's `openclIcd` file (e.g. /etc/OpenCL/vendors/nvidia.icd)
-    #   into the container, when that vendor block defines one. Defaults to true, which fixes runtimes
+    # Whether to project a vendor's `openclIcd` file (e.g. /etc/OpenCL/vendors/nvidia.icd) into the
+    #   container, when that vendor block defines one. Defaults to true, which fixes runtimes
     #   that inject the OpenCL driver library but not the ICD file. Set to false when your CDI spec
     #   (or another mechanism) already creates the ICD file, to avoid a conflicting mount.
     projectOpenclIcd: true
 
     # gremlin.gpu.vendors -
-    # The vendor blocks to detect and target on a hybrid / mixed cluster, where only some nodes have
+    # The vendor blocks to target, which handles a hybrid / mixed cluster where only some nodes have
     #   GPUs and different nodes may have different vendors. Whenever GPU access is enabled the chart
-    #   inspects the cluster's Nodes and renders a separate DaemonSet per detected vendor; scheduled
-    #   only onto that vendor's nodes, carrying that vendor's GPU config, plus one plain DaemonSet
-    #   for every remaining node, so each node runs exactly one agent matching its capabilities.
+    #   renders one DaemonSet per vendor listed here, scheduled only onto that vendor's nodes and
+    #   carrying that vendor's GPU config, plus one `-gpu-none` DaemonSet for every remaining node, so
+    #   each node runs exactly one agent matching its capabilities. Trim this list to the vendors your
+    #   cluster actually has.
     #
-    # Each name must reference a vendor block below defining a `nodeSelector`, which both detects and
-    #   schedules, so GPU nodes must carry those labels (the NVIDIA GPU Operator / Node Feature
-    #   Discovery and the AMD GPU labeller set them). A block's optional `resources` also detects.
+    # Each name must reference a vendor block below defining a `nodeSelector`: those labels are what
+    #   pin the vendor's DaemonSet to its nodes (and keep it off the `-gpu-none` DaemonSet's nodes), so
+    #   GPU nodes must carry them (the NVIDIA GPU Operator / Node Feature Discovery and the AMD GPU
+    #   labeller set them).
     vendors:
       - nvidia
       - amd
@@ -300,7 +297,6 @@ gremlin:
     # --- Vendor configuration blocks --------------------------------------------------------
     # Each block is the full, native-shaped GPU configuration for one vendor. Fields:
     #   nodeSelector   - node label(s) that identify AND schedule this vendor's nodes
-    #   resources      - (optional) node capacity resource names that also mark the vendor
     #   runtimeClassName - the RuntimeClass the Gremlin pods run under ("" for none)
     #   env            - environment variables added to the Gremlin container (native env entries).
     #                    For the NVIDIA container toolkit the capabilities value MUST include
@@ -324,8 +320,6 @@ gremlin:
       #   registry file so the injected driver is discoverable.
       nodeSelector:
         nvidia.com/gpu.present: "true"
-      resources:
-        - nvidia.com/gpu
       runtimeClassName: nvidia
       env:
         - name: NVIDIA_VISIBLE_DEVICES
@@ -344,8 +338,6 @@ gremlin:
       #   directly.
       nodeSelector:
         amd.com/gpu.present: "true"
-      resources:
-        - amd.com/gpu
       runtimeClassName: ""
       env: []
       volumes:
@@ -367,8 +359,8 @@ gremlin:
           readOnly: true
 
     custom:
-      # A blank block to configure a GPU vendor by hand. Add "custom" to gremlin.gpu.vendors along
-      #   with a nodeSelector (and/or set gremlin.gpu.vendor: custom) and fill in the fields.
+      # A blank block to configure a GPU vendor by hand. Add "custom" to gremlin.gpu.vendors, give it
+      #   a nodeSelector, and fill in the fields.
       runtimeClassName: ""
       env: []
       volumes: []
