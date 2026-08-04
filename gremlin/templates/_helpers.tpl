@@ -245,6 +245,49 @@ When createSecret or existingSecret are configured
 {{- end -}}
 
 {{/*
+gremlinGpuOpenclIcdActiveFromSpec returns "true" when the OpenCL ICD file should be projected:
+gremlin.gpu.projectOpenclIcd is set and the vendor block defines openclIcd (filename + library).
+Context: dict "root" $ "gpu" <spec>
+*/}}
+{{- define "gremlinGpuOpenclIcdActiveFromSpec" -}}
+{{- $icd := .gpu.openclIcd -}}
+{{- if and .root.Values.gremlin.gpu.projectOpenclIcd $icd $icd.filename $icd.library -}}true{{- end -}}
+{{- end -}}
+
+{{/*
+gremlinGpuNodeAffinity returns the user's .Values.affinity (as YAML) with an added requirement that a
+node carry ("In") or lack ("NotIn") the nodeSelector labels of the given vendor blocks. The
+requirement is ANDed into every nodeSelectorTerm the user supplied (or a new term when they supplied
+none), so GPU node targeting and a user's affinity are both honored. Renders nothing when those
+vendor blocks define no nodeSelector, rather than an empty (API-invalid) nodeSelectorTerm.
+Context: dict "root" $ "vendors" <list of vendor names> "operator" "In" | "NotIn"
+*/}}
+{{- define "gremlinGpuNodeAffinity" -}}
+{{- $root := .root -}}
+{{- $operator := .operator -}}
+{{- $exprs := list -}}
+{{- range $vendor := .vendors -}}
+{{- range $k, $v := (default (dict) (index $root.Values.gremlin.gpu $vendor)).nodeSelector -}}
+{{- $exprs = append $exprs (dict "key" $k "operator" $operator "values" (list (toString $v))) -}}
+{{- end -}}
+{{- end -}}
+{{- if $exprs -}}
+{{- $affinity := deepCopy (default (dict) $root.Values.affinity) -}}
+{{- $nodeAffinity := default (dict) $affinity.nodeAffinity -}}
+{{- $required := default (dict) $nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution -}}
+{{- /* the terms are dicts, so `set` updates them in place inside $terms */ -}}
+{{- $terms := default (list (dict)) $required.nodeSelectorTerms -}}
+{{- range $term := $terms -}}
+{{- $_ := set $term "matchExpressions" (concat (default (list) $term.matchExpressions) $exprs) -}}
+{{- end -}}
+{{- $_ := set $required "nodeSelectorTerms" $terms -}}
+{{- $_ := set $nodeAffinity "requiredDuringSchedulingIgnoredDuringExecution" $required -}}
+{{- $_ := set $affinity "nodeAffinity" $nodeAffinity -}}
+{{- $affinity | toYaml -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 chaoTlsIdentityArgs returns the chao cli arguments needed to configure TLS client identity
 When remoteSecret is configured
   - sets -tls_identity_cert and -tls_identity_private_key to their respective `cert` and `key` values
