@@ -1,0 +1,9 @@
+{{ if .Values.autopilot.enabled -}}
+apiVersion: auto.gke.io/v1
+kind: AllowlistSynchronizer
+metadata:
+  name: {{ include "gremlin.fullname" . | trunc 40 | trimSuffix "-" }}-allowlist-synchronizer
+spec:
+  allowlistPaths:
+    - Gremlin/agent/{{ .Values.autopilot.allowlistVersion }}
+{{- end }}
