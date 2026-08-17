@@ -128,6 +128,9 @@ spec:
             - "-namespaces"
             - "{{ join "," .Values.chao.namespaces }}"
             {{- end}}
+            {{- if .Values.chao.features.dynamicQuery.enabled }}
+            - "-dynamic_query"
+            {{- end }}
             {{- if include "chaoTlsIdentityArgs" . }}
             {{- include "chaoTlsIdentityArgs" . | nindent 12 }}
             {{- end }}

@@ -11,3 +11,61 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "When using a managed certificate, both the certificate and key must be provided."
+  - it: should fail if dynamic query is enabled but its allowlist is empty
+    set:
+      chao:
+        features:
+          dynamicQuery:
+            enabled: true
+            allowlist: []
+    asserts:
+      - failedTemplate:
+          errorPattern: "chao.features.dynamicQuery is enabled but its allowlist names no resources"
+  - it: should fail if dynamic query is enabled but no allowlist entry names a resource
+    set:
+      chao:
+        features:
+          dynamicQuery:
+            enabled: true
+            allowlist:
+              - apiGroups: ["apps"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "chao.features.dynamicQuery is enabled but its allowlist names no resources"
+  - it: should fail if a dynamic query allowlist entry does not name its apiGroups
+    set:
+      chao:
+        features:
+          dynamicQuery:
+            enabled: true
+            allowlist:
+              - resources: ["deployments"]
+    asserts:
+      - failedTemplate:
+          errorPattern: 'entry for resources \["deployments"\] does not name its apiGroups'
+  - it: should fail if a dynamic query allowlist entry asks for a verb other than get or list
+    set:
+      chao:
+        features:
+          dynamicQuery:
+            enabled: true
+            allowlist:
+              - apiGroups: ["apps"]
+                resources: ["deployments"]
+                verbs: ["get", "watch", "list"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "grants only the read-only verbs get and list, but found: watch"
+  - it: should fail if a dynamic query allowlist entry asks for the verb wildcard
+    set:
+      chao:
+        features:
+          dynamicQuery:
+            enabled: true
+            allowlist:
+              - apiGroups: ["*"]
+                resources: ["*"]
+                verbs: ["*"]
+    asserts:
+      - failedTemplate:
+          errorPattern: "grants only the read-only verbs get and list"
