@@ -105,7 +105,7 @@ gremlin:
     #
     #   linux            =   Alias for `any`
     #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock, /run/containerd/containerd.sock]
-    driver: linux
+    driver: any
 
   cgroup:
     # gremlin.cgroup.root -
