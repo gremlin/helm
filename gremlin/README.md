@@ -3,6 +3,15 @@
 ## Prerequisites
 
 * Kubernetes with apps/v1 available
+* Helm 3. The uninstall instructions below use Helm 3 syntax.
+* Permission to create cluster-scoped resources. With default values this chart creates
+  `ClusterRole/gremlin-metadata-reader`, `ClusterRoleBinding/gremlin-metadata-reader`,
+  `ClusterRole/gremlin-watcher` and `ClusterRoleBinding/chao`. If you cannot create
+  cluster-scoped resources, set `gremlin.serviceAccount.create=false` and
+  `chao.serviceAccount.create=false` and pre-create ServiceAccounts named exactly `gremlin`
+  and `chao` in the release namespace — both names are fixed in the pod specs. Note that
+  disabling them removes permissions the agent and Chao use; check with Gremlin support
+  before doing so in production.
 
 ## Configuration
 
@@ -37,29 +46,30 @@ their default values. See values.yaml for all available options.
 | `gremlin.podLabels`           | Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods| `{}`                                                                                        |
 | `gremlin.apparmor`                     | Apparmor profile to set for the Gremlin Daemon                 | `""` (When empty, no profile is set)                                                        |
 | `gremlin.installApparmorProfile`       | Have Gremlin install their own [Apparmor Profile](agent_apparmor.profile) (NOTE: `gremlin.apparmor` overrides this) | `false`                                                                                     |
-| `gremlin.container.driver`             | Specifies which container driver with which to run Gremlin. [See example][driverexample] | `any`                                                                                       |
+| `gremlin.container.driver`             | Specifies which container driver with which to run Gremlin. [See example][driverexample] | `linux` (`any` is an accepted alias with identical behaviour)                                |
 | `gremlin.cgroup.root`                  | Specifies the absolute path for the cgroup controller root on target host systems | `/sys/fs/cgroup`                                                                            |
 | `gremlin.serviceAccount.create`        | Specifies whether Gremlin's kubernetes service account should be created by this helm chart | `true`                                                                                      |
 | `gremlin.podSecurity.allowPrivilegeEscalation` | Allows Gremlin containers privilege escalation powers  | `false`                                                                                     |
-| `gremlin.podSecurity.capabilities`     | Specifies which Linux capabilities should be granted to Gremlin| `[KILL, NET_ADMIN, SYS_BOOT, SYS_TIME, SYS_ADMIN, SYS_PTRACE, SETFCAP, AUDIT_WRITE, MKNOD]` |
+| `gremlin.podSecurity.capabilities`     | Specifies which Linux capabilities should be granted to Gremlin| `[KILL, NET_ADMIN, SYS_BOOT, SYS_TIME, DAC_READ_SEARCH, SYS_RESOURCE, SYS_ADMIN, SYS_PTRACE, NET_RAW]` |
 | `gremlin.podSecurity.seLinuxOptions`   | Specifies SELinux options to apply to the Gremlin Daemonset container securityContext. WARNING: This option should be enabled with caution as it is likely to break the GremlinAgent or your Kubernetes installation. Gremlin recommends users instead install a custom SELinux policy that provides integration with the labels already defined on the target system so that paths do not need to be relabeled. See https://github.com/gremlin/selinux-policies | `""`                                                                                        |
 | `gremlin.podSecurity.readOnlyRootFilesystem` | Forces the Gremlin Daemonset containers to run with a read-only root filesystem | `false`                                                                                     |
 | `gremlin.podSecurity.supplementalGroups.rule` | Specifies the Linux groups the Gremlin Daemonset containers should run as | `RunAsAny`                                                                                  |
 | `gremlin.podSecurity.fsGroup.rule`     | Specifies the Linux groups applied to mounted volumes          | `RunAsAny`                                                                                  |
-| `gremlin.podSecurity.volumes`          | Specifies the volume types the Gremlin Daemonset is allowed to use | `[configMap, secret, hostPath]`                                                             |
+| `gremlin.podSecurity.volumes`          | Specifies the volume types the Gremlin Daemonset is allowed to use | `[configMap, secret, hostPath, emptyDir]`                                                             |
 | `gremlin.podSecurity.podSecurityPolicy.create` | When true, Gremlin creates and uses a custom PodSecurityPolicy, granting all behaviors Gremlin needs | `false`                                                                                     |
 | `gremlin.podSecurity.podSecurityPolicy.seLinux` | Sets the SecurityContext for the PSP used by the Gremlin Daemonset | `{ rule: MustRunAs, seLinuxOptions: { type: gremlin.process } }`                            |
 | `gremlin.podSecurity.podSecurityPolicy.runAsUser.rule`   | Specifies the Linux user the Gremlin Daemonset containers should run as | `RunAsAny`                                                                                  |
 | `gremlin.podSecurity.securityContextConstraints.create` | When true, Gremlin creates and uses a custom SecurityContextConstraints, granting all behaviors Gremlin needs | `false`                                                                                     |
 | `gremlin.podSecurity.securityContextConstraints.allowHostDirVolumePlugin` | Specifies whether the Gremlin Daemonset has access to host path directories as mounted volumes | `true`                                                                                      |
-| `gremlin.podSecurity.securityContextConstraints.seLinuxContext` | Sets the SecurityContext for the SCC used by the Gremlin Daemonset | `{ type: MustRunAs, seLinuxOptions: { type: gremlin.process } }`                            |
+| `gremlin.podSecurity.securityContextConstraints.seLinuxContext` | Sets the SecurityContext for the SCC used by the Gremlin Daemonset | `{ type: MustRunAs, seLinuxOptions: { type: spc_t, level: s0-s0:c0.c1023 } }`                 |
 | `gremlin.podSecurity.securityContextConstraints.runAsUser.type`   | Specifies the Linux user the Gremlin Daemonset containers should run as | `RunAsAny`                                                                                  |
 | `gremlin.podSecurity.privileged`       | Determines whether the Gremlin Daemonset should run privileged containers | `false`                                                                                     |
 | `gremlin.podSecurity.seccomp.enabled`  | Determines whether the Gremlin Daemonset should be annotated with the seccomp profile | `false`                                                                                     |
 | `gremlin.podSecurity.seccomp.profile`  | Describes the name of the seccomp profile to use               | `localhost/gremlin`                                                                         |
 | `gremlin.secret.managed`               | Specifies whether Gremlin should manage its secrets with Helm  | `false`                                                                                     |
 | `gremlin.secret.type`                  | The type of certificate to use, can be either `certificate` or `secret` | `certificate`                                                                               |
-| `gremlin.secret.name`                  | The name of certificate to use, like in the case of pointing to an eternally managed secret | `gremlin-team-cert`                                                                         |
+| `gremlin.serviceUrl`                   | Base URL of the Gremlin API the agent and Chao report to. The values file generated at https://app.gremlin.com/getting-started always sets this explicitly, so you rarely need to change it; override it for Gremlin Private Edition | `https://api.gremlin.com/v1`                                                                 |
+| `gremlin.secret.name`                  | Name of the Secret holding the credentials, for example when pointing at an externally managed secret | `gremlin-team-cert` when `gremlin.secret.managed=false`, `gremlin-secret` when `true`        |
 | `gremlin.secret.teamID`                | Gremlin Team ID to authenticate with                           | `""`                                                                                        |
 | `gremlin.secret.clusterID`             | Arbitrary string that uniquely identifies your cluster (e.g. `my-production-cluster`) | `""`                                                                                        |
 | `gremlin.secret.certificate`           | Contents of the certificate. Required if using managed secrets of `type=certificate`  | `""`                                                                                        |
@@ -70,7 +80,7 @@ their default values. See values.yaml for all available options.
 | `gremlin.hostPID`                      | Enable host-level process killing                              | `true`                                                                                      |
 | `gremlin.hostNetwork`                  | Enable host-level network attacks                              | `true`                                                                                      |
 | `gremlin.priorityClassName`            | The priority class to use for the agent DaemonSet              | `""`                                                                                        |
-| `gremlin.client.tags`                  | Comma-separated list of custom tags to assign to this client   | `""`                                                                                        |
+| `gremlin.client.tags`                  | Comma-separated list of `key=value` tag pairs to assign to this client. Commas must be backslash-escaped when using `--set`; see [Example Usage](#example-usage) | `""`                                                                                        |
 | `gremlin.proxy.url`                    | Specifies the http proxy the agent should use to communicate with api.gremlin.com. | `""` (ignored)                                                                              |                                       |
 | `gremlin.extraEnv`                     | Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset. | `[]`                                                                                        |
 | `gremlin.features.discoverDestinationService.enabled` | Enable discovery of a destination service in a service mesh to resolve hostnames | `false`                                                                |
@@ -87,8 +97,9 @@ Specify each parameter using the `--set[-file] key=value[,key=value]` argument t
 **Example Usage**
 ```
 $ helm install gremlin gremlin/gremlin \
-  --set       gremlin.client.tags="k8s,kubernetes" \
-  --set       gremlin.clusterID=my-cluster \
+  --namespace gremlin --create-namespace \
+  --set       'gremlin.client.tags=env=prod\,team=core' \
+  --set       gremlin.secret.clusterID=my-cluster \
   --set       gremlin.hostNetwork=true \
   --set       gremlin.hostPID=true \
   --set       gremlin.secret.managed=true \
@@ -126,7 +137,7 @@ Some find it preferable to have this chart manage Gremlin's secret values instea
 
 ```shell
 helm install gremlin gremlin/gremlin \
-    --namespace gremlin \
+    --namespace gremlin --create-namespace \
     --set      gremlin.secret.managed=true \
     --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
     --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
@@ -138,7 +149,7 @@ helm install gremlin gremlin/gremlin \
 
 ```shell
 helm install gremlin gremlin/gremlin \
-    --namespace gremlin \
+    --namespace gremlin --create-namespace \
     --set gremlin.secret.managed=true \
     --set gremlin.secret.type=secret \
     --set gremlin.secret.teamID=$GREMLIN_TEAM_ID \
@@ -165,7 +176,7 @@ Install the Helm chart
 
 ```shell
 helm install gremlin gremlin/gremlin \
-    --namespace gremlin \
+    --namespace gremlin --create-namespace \
     --set gremlin.secret.name=gremlin-team-secret \
     --set gremlin.secret.type=secret # Default is gremlin.secret.type=certificate
 ```
@@ -185,7 +196,7 @@ kubectl create secret generic gremlin-team-cert \
 
 ```shell
 helm install gremlin gremlin/gremlin \
-    --namespace gremlin \
+    --namespace gremlin --create-namespace \
     --set gremlin.secret.name=gremlin-team-cert
 ```
 
@@ -195,7 +206,7 @@ Gremlin can be configured to communicate with api.gremlin.com through an http_pr
 
 ```shell
 helm install gremlin gremlin/gremlin \
-    --namespace gremlin \
+    --namespace gremlin --create-namespace \
     --set      gremlin.secret.managed=true \
     --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
     --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
@@ -208,7 +219,7 @@ helm install gremlin gremlin/gremlin \
 
 ```shell
 helm install gremlin gremlin/gremlin \
-    --namespace gremlin \
+    --namespace gremlin --create-namespace \
     --set      gremlin.secret.managed=true \
     --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
     --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
@@ -224,7 +235,7 @@ To let the GPU attack enumerate and target GPUs, enable `gremlin.gpu` and list t
 
 ```shell
 helm install gremlin gremlin/gremlin \
-    --namespace gremlin \
+    --namespace gremlin --create-namespace \
     --set      gremlin.secret.managed=true \
     --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
     --set      gremlin.secret.clusterID=$GREMLIN_CLUSTER_ID \
@@ -254,12 +265,17 @@ _note_: When GPU support is disabled the agent DaemonSet keeps its original `<re
 ## Uninstallation
 
 ```shell
-helm delete gremlin
+helm uninstall gremlin --namespace gremlin
 ```
 
-To delete the deployment and its history:
+`helm uninstall` removes the release and its history. Pass `--keep-history` if you want to retain
+the release history for a later rollback.
+
+Uninstalling the release does not delete the namespace. Remove it separately if you no longer need
+it:
+
 ```shell
-helm delete --purge gremlin
+kubectl delete namespace gremlin
 ```
 
 [driverexample]: examples/drivers

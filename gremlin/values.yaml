@@ -84,7 +84,7 @@ gremlin:
     # gremlin.client.tags -
     # A string of comma separated key=value pairs that are used to decorate the Gremlin agent with tags.
     #
-    # NOTE: This value's commas must be escaped. See https://github.com/gremlin/helm/issues/8
+    # NOTE: This value's commas must be escaped. See the Example Usage section of README.md
     tags: ""
 
   container:
@@ -92,19 +92,19 @@ gremlin:
     # Specifies which container driver with which to run Gremlin. Possible values and their meanings:
     #   any              =   Useful when the Cluster's container runtime is not known.
     #                        Helm will provide file access to all drivers so that Gremlin can choose.
-    #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock, /run/containers/containers.sock]
+    #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock, /run/containerd/containerd.sock]
     #
     #   docker-linux     =   Provides full integration with Docker containers
     #                        Implies host mounts [/var/run/docker.sock]
     #
     #   containerd-linux =   Provides full integration with Containerd containers
-    #                        Implies host mounts [/run/containers/containers.sock]
+    #                        Implies host mounts [/run/containerd/containerd.sock]
     #
     #   crio-linux       =   Provides full integration with Cri-O containers
     #                        Implies host mounts [/run/crio/crio.sock]
     #
     #   linux            =   Alias for `any`
-    #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock, /run/containers/containers.sock]
+    #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock, /run/containerd/containerd.sock]
     driver: linux
 
   cgroup:
@@ -367,6 +367,12 @@ gremlin:
       volumeMounts: []
 
   secret:
+    # gremlin.secret.name -
+    # Name of the Secret holding the Gremlin credentials. Consumed by the agent DaemonSet and the
+    #   Chao Deployment. Leave unset to use the chart default, which depends on
+    #   `gremlin.secret.managed`: `gremlin-team-cert` when false (the default), `gremlin-secret`
+    #   when true. Set it explicitly when pointing at an externally managed Secret.
+    # name: ""
     # Gremlin supports both `certificate` and `secret` types
     # To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections
     type: certificate
@@ -510,8 +516,10 @@ chao:
   podAnnotations: {}
 
   serviceAccount:
-    # Determines if the `chao` deployment should be installed. This deployment launches an agent that enabled Kubernetes
-    #   targeting for Gremlin attacks
+    # Determines if chao's Kubernetes ServiceAccount, ClusterRole (`gremlin-watcher`) and
+    #   ClusterRoleBinding are created by this chart. This is separate from `chao.create`, which
+    #   controls whether the chao Deployment itself is installed. When false, a ServiceAccount
+    #   named exactly `chao` must already exist in the release namespace.
     create: true
     # Annotations to add to the service account
     annotations: { }
