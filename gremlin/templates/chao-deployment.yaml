@@ -1,4 +1,5 @@
 {{ if .Values.chao.create }}
+{{- include "chaoNamespacesValidate" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -127,6 +128,10 @@ spec:
             {{- if .Values.chao.namespaces }}
             - "-namespaces"
             - "{{ join "," .Values.chao.namespaces }}"
+            {{- end}}
+            {{- if .Values.chao.excludedNamespaces }}
+            - "-excluded_namespaces"
+            - "{{ join "," .Values.chao.excludedNamespaces }}"
             {{- end}}
             {{- if include "chaoTlsIdentityArgs" . }}
             {{- include "chaoTlsIdentityArgs" . | nindent 12 }}
