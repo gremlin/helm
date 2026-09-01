@@ -176,6 +176,18 @@ chaoTlsIdentityValidate fails if more than one identity strategy is fully config
 {{- end -}}
 
 {{/*
+chaoNamespacesValidate fails if both an allowlist and an exclusion list are configured.
+Combining them is ambiguous, and an allowlist fully covered by the exclusion list resolves to
+watching nothing at all. Chao rejects the combination too; failing here means the operator finds
+out at `helm install` instead of from a CrashLoopBackOff.
+*/}}
+{{- define "chaoNamespacesValidate" -}}
+{{- if and .Values.chao.namespaces .Values.chao.excludedNamespaces -}}
+{{- fail "chao.namespaces and chao.excludedNamespaces are mutually exclusive; set one or the other" -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
 gremlinTlsIdentityEnv returns the environment variables needed to configure TLS client identity
 When remoteSecret is configured
   - sets GREMLIN_TLS_IDENTITY_CERTIFICATE and GREMLIN_TLS_IDENTITY_PRIVATE_KEY to their respective `cert` and `key` values

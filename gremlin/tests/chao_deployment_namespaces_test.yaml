@@ -30,22 +30,25 @@ tests:
           path: spec.template.spec.containers[0].args
           content: "kube-system,kube-public"
 
-  - it: should pass both namespace flags when both are set
+  - it: should pass the allowlist when only chao.namespaces is set
     set:
       chao.namespaces:
         - prod
-      chao.excludedNamespaces:
-        - kube-system
+        - staging
     asserts:
       - contains:
           path: spec.template.spec.containers[0].args
           content: "-namespaces"
       - contains:
           path: spec.template.spec.containers[0].args
-          content: "prod"
-      - contains:
-          path: spec.template.spec.containers[0].args
-          content: "-excluded_namespaces"
-      - contains:
-          path: spec.template.spec.containers[0].args
-          content: "kube-system"
+          content: "prod,staging"
+
+  - it: should fail the install when both namespace lists are set
+    set:
+      chao.namespaces:
+        - prod
+      chao.excludedNamespaces:
+        - kube-system
+    asserts:
+      - failedTemplate:
+          errorMessage: chao.namespaces and chao.excludedNamespaces are mutually exclusive; set one or the other

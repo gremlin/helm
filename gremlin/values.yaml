@@ -525,9 +525,9 @@ chao:
   namespaces: []
 
   # chao.excludedNamespaces
-  # list of namespaces Gremlin should never report or attack. Takes precedence over
-  # chao.namespaces. Use this instead of chao.namespaces when the set of namespaces to skip is
-  # short and stable but the set to include changes often.
+  # list of namespaces Gremlin should never report or attack. Use this instead of chao.namespaces
+  # when the set of namespaces to skip is short and stable but the set to include changes often.
+  # Mutually exclusive with chao.namespaces: setting both fails the install.
   excludedNamespaces: []
 
 
