@@ -30,6 +30,38 @@ tests:
           path: spec.template.spec.containers[0].args
           content: "kube-system,kube-public"
 
+  - it: should pass a single excluded namespace without stray separators
+    set:
+      chao.excludedNamespaces:
+        - kube-system
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "kube-system"
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "kube-system,"
+
+  - it: should preserve the order of excluded namespaces
+    set:
+      chao.excludedNamespaces:
+        - zeta
+        - alpha
+        - middle
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "zeta,alpha,middle"
+
+  - it: should not pass the allowlist flag when only exclusions are set
+    set:
+      chao.excludedNamespaces:
+        - kube-system
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-namespaces"
+
   - it: should pass the allowlist when only chao.namespaces is set
     set:
       chao.namespaces:
@@ -42,6 +74,9 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].args
           content: "prod,staging"
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-excluded_namespaces"
 
   - it: should fail the install when both namespace lists are set
     set:
@@ -52,3 +87,42 @@ tests:
     asserts:
       - failedTemplate:
           errorMessage: chao.namespaces and chao.excludedNamespaces are mutually exclusive; set one or the other
+
+  - it: should fail on both lists regardless of how many entries each has
+    set:
+      chao.namespaces:
+        - prod
+        - staging
+      chao.excludedNamespaces:
+        - kube-system
+        - kube-public
+        - kube-node-lease
+    asserts:
+      - failedTemplate:
+          errorMessage: chao.namespaces and chao.excludedNamespaces are mutually exclusive; set one or the other
+
+  - it: should treat an empty list as unset rather than as a conflict
+    set:
+      chao.namespaces: []
+      chao.excludedNamespaces:
+        - kube-system
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-excluded_namespaces"
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-namespaces"
+
+  # chao.create gates the whole deployment, so the values are inert and there is nothing to
+  # validate. Documented here so a future change to the guard is a deliberate one.
+  - it: should render nothing when chao.create is false, even with both lists set
+    set:
+      chao.create: false
+      chao.namespaces:
+        - prod
+      chao.excludedNamespaces:
+        - kube-system
+    asserts:
+      - hasDocuments:
+          count: 0
