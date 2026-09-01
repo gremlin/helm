@@ -1,0 +1,51 @@
+suite: Test Chao deployment namespace scoping
+templates:
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should not pass namespace flags by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-namespaces"
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-excluded_namespaces"
+
+  - it: should pass excluded namespaces as a comma-separated list
+    set:
+      chao.excludedNamespaces:
+        - kube-system
+        - kube-public
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-excluded_namespaces"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "kube-system,kube-public"
+
+  - it: should pass both namespace flags when both are set
+    set:
+      chao.namespaces:
+        - prod
+      chao.excludedNamespaces:
+        - kube-system
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-namespaces"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "prod"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-excluded_namespaces"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "kube-system"

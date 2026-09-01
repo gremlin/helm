@@ -524,6 +524,12 @@ chao:
   # list of namespaces for Gremlin to watch for attacking
   namespaces: []
 
+  # chao.excludedNamespaces
+  # list of namespaces Gremlin should never report or attack. Takes precedence over
+  # chao.namespaces. Use this instead of chao.namespaces when the set of namespaces to skip is
+  # short and stable but the set to include changes often.
+  excludedNamespaces: []
+
 
   # chao.tls -
   # A collection of TLS configurations specific to the Chao Deployment.
