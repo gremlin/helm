@@ -32,6 +32,19 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "chao.features.dynamicQuery is enabled but its allowlist names no resources"
+  - it: should fail if a dynamic query allowlist entry does not name its resources
+    set:
+      chao:
+        features:
+          dynamicQuery:
+            enabled: true
+            allowlist:
+              - apiGroups: [""]
+                resources: ["pods"]
+              - apiGroups: ["apps"]
+    asserts:
+      - failedTemplate:
+          errorPattern: 'entry for apiGroups \["apps"\] does not name its resources'
   - it: should fail if a dynamic query allowlist entry does not name its apiGroups
     set:
       chao:
@@ -69,3 +82,42 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "grants only the read-only verbs get and list"
+  - it: should fail if a dynamic query denylist entry contains a comma
+    set:
+      chao:
+        features:
+          dynamicQuery:
+            enabled: true
+            denylist: ["secrets.,configmaps."]
+    asserts:
+      - failedTemplate:
+          errorPattern: "denylist entries are joined into one -deny_resources flag"
+  - it: should fail if a dynamic query denylist entry contains a space
+    set:
+      chao:
+        features:
+          dynamicQuery:
+            enabled: true
+            denylist: ["secrets. configmaps."]
+    asserts:
+      - failedTemplate:
+          errorPattern: 'Found: "secrets\. configmaps\."'
+  - it: should fail if a dynamic query denylist entry is empty
+    set:
+      chao:
+        features:
+          dynamicQuery:
+            enabled: true
+            denylist: ["secrets.", ""]
+    asserts:
+      - failedTemplate:
+          errorPattern: "denylist entries are joined into one -deny_resources flag"
+  - it: should accept a well-formed dynamic query denylist
+    set:
+      chao:
+        features:
+          dynamicQuery:
+            enabled: true
+            denylist: ["secrets.", "credentials.example.com", "*.vault.example.com"]
+    asserts:
+      - notFailedTemplate: {}

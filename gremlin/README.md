@@ -108,7 +108,7 @@ _note_: Depending on your shell you may need different quoting around `toleratio
 
 By default, Chao reads a fixed set of Kubernetes resources — the ones named in the `gremlin-watcher` ClusterRole. Enabling `chao.features.dynamicQuery` lets Gremlin query resources beyond that set. `allowlist` says which ones: each entry maps directly onto an RBAC rule and accepts `apiGroups`, `resources`, and an optional `verbs`, and is added to the `gremlin-watcher` ClusterRole. Every entry has to name its `apiGroups` and `resources` — nothing is wildcarded on your behalf, and an entry that leaves `apiGroups` out fails the install rather than being granted across every API group.
 
-**The allowlist is the whole boundary, and it lives only in RBAC.** Chao is told the feature is on (the `-dynamic_query` flag) but is never handed the list of resources — it discovers what it may read by being refused, and handles the `403` itself. Anything absent from the allowlist is refused by the API server, so there is nothing Chao has to be trusted to honor. Kubernetes RBAC has no deny rule, so the grant is the only place a limit can be expressed.
+**RBAC is the boundary, and Chao holds a denylist inside it.** Chao is told the feature is on (the `-dynamic_query` flag) but is never handed the allowlist — it discovers what it may read by being refused, and handles the `403` itself. Anything absent from the allowlist is refused by the API server, so the outer limit is not something Chao has to be trusted to honor. Kubernetes RBAC has no deny rule, so a grant is the only place that outer limit can be expressed; `denylist` is the inner one, enforced by Chao, for carving resources back out of a grant that is broader than you want. It is passed as `-deny_resources` and adds to a built-in denylist that always applies and cannot be turned off.
 
 Dynamic queries are **read-only**. `verbs` defaults to `get` and `list` and may narrow to a subset of those two; any other verb — including `watch` and the `"*"` wildcard — fails the install. Chao cannot watch these resources, so it polls them. The base `gremlin-watcher` rules are unaffected and keep their `watch`.
 
@@ -120,7 +120,7 @@ Some things are deliberately left out of it:
 
 | Left out of the default | Why |
 | --- | --- |
-| `secrets`, `configmaps` | ConfigMaps are included because connection strings, tokens, and API keys are commonly stored in them |
+| `secrets`, `configmaps` | Both commonly hold connection strings, tokens, and API keys |
 | `pods/log` | Application logs commonly contain tokens and personal data |
 | `nodes/proxy` | Reaches the kubelet API, exposing every pod spec — and its environment — on a node |
 | `services/proxy` | An HTTP tunnel into any in-cluster service, bypassing NetworkPolicy |
@@ -148,6 +148,27 @@ chao:
 ```
 
 which grants Chao read access to `pods`, `services`, and Argo CD `applications`, plus `get` on `deployments`. Enabling the feature with an allowlist that names no resources fails the install rather than silently deploying a Chao that cannot query anything.
+
+### Denying resources inside the allowlist
+
+`denylist` names resources Chao may never read, as `resource.group` or `*.group`:
+
+```yaml
+chao:
+  features:
+    dynamicQuery:
+      enabled: true
+      allowlist:
+        - apiGroups: ["example.com"]
+          resources: ["*"]
+      denylist:
+        - "credentials.example.com"
+        - "*.vault.example.com"
+```
+
+which grants Chao every resource in `example.com` except `credentials`, and denies the `vault.example.com` group outright. Entries are joined into one `-deny_resources` flag, so each has to be a single name with no commas or spaces. Use the empty group for core resources — `secrets.` rather than `secrets`.
+
+Reach for this when an allowlist entry is broader than you want — a wildcard over a custom API group, say — and RBAC would need the grant enumerated resource by resource to express the same thing. It adds to Chao's built-in denylist, which always applies. Denying something the allowlist never granted is harmless but redundant: RBAC already refuses it.
 
 ## Installation
 

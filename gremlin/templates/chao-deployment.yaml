@@ -130,6 +130,10 @@ spec:
             {{- end}}
             {{- if .Values.chao.features.dynamicQuery.enabled }}
             - "-dynamic_query"
+            {{- with .Values.chao.features.dynamicQuery.denylist }}
+            - "-deny_resources"
+            - "{{ join "," . }}"
+            {{- end }}
             {{- end }}
             {{- if include "chaoTlsIdentityArgs" . }}
             {{- include "chaoTlsIdentityArgs" . | nindent 12 }}
