@@ -129,6 +129,10 @@ spec:
             - "-namespaces"
             - "{{ join "," .Values.chao.namespaces }}"
             {{- end}}
+            {{- if .Values.chao.excludedNamespaces }}
+            - "-excluded_namespaces"
+            - "{{ join "," .Values.chao.excludedNamespaces }}"
+            {{- end}}
             {{- if .Values.chao.features.dynamicQuery.enabled }}
             - "-dynamic_query"
             {{- with .Values.chao.features.dynamicQuery.denylist }}
