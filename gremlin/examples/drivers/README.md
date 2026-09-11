@@ -16,7 +16,7 @@ To use one of the recommended container drivers, set the name in `gremlin.contai
 
 ```shell
 helm install gremlin gremlin/gremlin \
-    --namespace gremlin \
+    --namespace gremlin --create-namespace \
     --set      gremlin.hostPID=true \
     --set      gremlin.container.driver=crio-linux \
     --set      gremlin.secret.managed=true \
