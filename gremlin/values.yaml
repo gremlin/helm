@@ -524,6 +524,71 @@ chao:
   # list of namespaces for Gremlin to watch for attacking
   namespaces: []
 
+  # chao.features
+  features:
+
+    # chao.features.dynamicQuery.enabled
+    # Lets Gremlin query Kubernetes resources beyond the fixed set Chao watches by default. When enabled, the
+    #   ClusterRole bound to Chao's service account is extended with the read-only rules
+    #   described by `allowlist`, and Chao is told the feature is on.
+    dynamicQuery:
+      enabled: false
+
+      # chao.features.dynamicQuery.allowlist
+      # The Kubernetes resources Chao is allowed to query. Each entry maps directly onto an RBAC rule and accepts
+      #   `apiGroups`, `resources`, and an optional `verbs`. Both `apiGroups` and `resources` must be named — there
+      #   is no wildcard default. An entry that omits its `apiGroups` fails the install rather than being granted
+      #   across every group, and an entry that omits its `resources` fails rather than rendering a rule that grants
+      #   nothing. The core API group is the empty string (`""`).
+      #
+      # This list is the outer bound of what Gremlin can read: anything absent from it is refused by the API server,
+      #   not by Chao. `denylist` below narrows it further from inside Chao.
+      #
+      # The default covers the resources that describe a cluster's shape, scheduling, and health, on top of the
+      #   workloads the base `gremlin-watcher` rules already watch. Setting this replaces the default outright, so
+      #   list every resource Gremlin should reach — including any custom resource of your own.
+      #
+      # NOTE: dynamic queries are read-only. `verbs` defaults to `get` and `list`, and may narrow to a subset of
+      #   those two; any other verb (including `watch` and the `"*"` wildcard) fails the install. Chao therefore
+      #   cannot maintain a watch over these resources and must poll them.
+      allowlist:
+        # How workloads are wired together, what they consume, and what has happened to them.
+        - apiGroups: [""]
+          resources: ["endpoints", "events", "limitranges", "persistentvolumeclaims", "persistentvolumes", "resourcequotas"]
+        - apiGroups: ["apps"]
+          resources: ["controllerrevisions"]
+        - apiGroups: ["batch"]
+          resources: ["jobs", "cronjobs"]
+        - apiGroups: ["discovery.k8s.io"]
+          resources: ["endpointslices"]
+        - apiGroups: ["networking.k8s.io"]
+          resources: ["networkpolicies", "ingressclasses"]
+        # Cluster configuration that decides where and how a workload runs.
+        - apiGroups: ["storage.k8s.io"]
+          resources: ["storageclasses", "csidrivers", "csinodes", "volumeattachments"]
+        - apiGroups: ["scheduling.k8s.io"]
+          resources: ["priorityclasses"]
+        - apiGroups: ["node.k8s.io"]
+          resources: ["runtimeclasses"]
+        - apiGroups: ["coordination.k8s.io"]
+          resources: ["leases"]
+        # Live resource usage, and the definitions of whatever custom resources the cluster has installed.
+        - apiGroups: ["metrics.k8s.io"]
+          resources: ["pods", "nodes"]
+        - apiGroups: ["apiextensions.k8s.io"]
+          resources: ["customresourcedefinitions"]
+
+      # chao.features.dynamicQuery.denylist
+      # Resources object queries may never read, named as `resource.group` or `*.group` — for example
+      #   `secrets.` for core Secrets, `secrets.example.com` for a custom resource, or `*.example.com` for every
+      #   resource in a group. Passed to Chao as `-deny_resources` and enforced by Chao itself.
+      #
+      # This adds to Chao's built-in denylist, which always applies and cannot be turned off. Use it to carve out
+      #   resources an allowlist entry would otherwise reach — a broad grant on a custom API group, say, with a
+      #   few of its resources held back. Denying a resource that is not granted in the first place is harmless
+      #   but redundant; RBAC is what actually stops Chao from reading anything absent from `allowlist`.
+      denylist: []
+
 
   # chao.tls -
   # A collection of TLS configurations specific to the Chao Deployment.
