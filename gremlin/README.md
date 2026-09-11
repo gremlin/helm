@@ -33,7 +33,7 @@ their default values. See values.yaml for all available options.
 | `chao.create`                          | Enable kubernetes targeting by installing k8s client           | true                                                                                        |
 | `chao.resources`                       | Set resource requests and limits for the chao deployment       | `{}`                                                                                        |
 | `chao.extraEnv`                        | Specify any arbitrary environment variables to pass to the Chao deployment. | `[]`                                                                                        |
-| `chao.namespaces`                      | List of namespaces for Gremlin to watch for attacking          | `[]`                                                                                        
+| `chao.namespaces`                      | List of namespaces for Gremlin to watch for attacking          | `[]`                                                                                        |
 | `chao.excludedNamespaces`              | List of namespaces Gremlin should never report or attack (mutually exclusive with `chao.namespaces`) | `[]`                                                                                        |
 | `gremlin.podLabels`           | Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods| `{}`                                                                                        |
 | `gremlin.apparmor`                     | Apparmor profile to set for the Gremlin Daemon                 | `""` (When empty, no profile is set)                                                        |
