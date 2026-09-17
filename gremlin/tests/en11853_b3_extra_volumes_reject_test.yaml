@@ -1,0 +1,87 @@
+suite: EN-11853 B3 rejects - extraVolumes / extraVolumeMounts reserved-name collision
+templates:
+  - daemonset.yaml
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should fail the gremlin DaemonSet render when extraVolumes collides with a reserved volume name
+    set:
+      extraVolumes:
+        - name: gremlin-state
+          emptyDir: {}
+    asserts:
+      - failedTemplate:
+          errorMessage: 'extraVolumes: "gremlin-state" collides with a volume name the gremlin chart manages. Rename it.'
+        template: daemonset.yaml
+
+  - it: should fail the gremlin DaemonSet render when extraVolumeMounts collides with a reserved volume name
+    set:
+      extraVolumeMounts:
+        - name: cgroup-root
+          mountPath: /somewhere
+    asserts:
+      - failedTemplate:
+          errorMessage: 'extraVolumeMounts: "cgroup-root" collides with a volume name the gremlin chart manages. Rename it.'
+        template: daemonset.yaml
+
+  - it: should not fail the gremlin DaemonSet render when extraVolumes/extraVolumeMounts do not collide
+    set:
+      extraVolumes:
+        - name: debug-logs
+          hostPath:
+            path: /var/log/debug
+      extraVolumeMounts:
+        - name: debug-logs
+          mountPath: /var/log/debug
+    asserts:
+      - notFailedTemplate: {}
+        template: daemonset.yaml
+
+  - it: should fail the chao Deployment render when extraVolumes collides with a reserved volume name
+    set:
+      chao.extraVolumes:
+        - name: gremlin-cert
+          emptyDir: {}
+    asserts:
+      - failedTemplate:
+          errorMessage: 'chao.extraVolumes: "gremlin-cert" collides with a volume name the gremlin chart manages. Rename it.'
+        template: chao-deployment.yaml
+
+  - it: should fail the chao Deployment render when extraVolumeMounts collides with a reserved volume name
+    set:
+      chao.extraVolumeMounts:
+        - name: ssl-cert-file
+          mountPath: /somewhere
+    asserts:
+      - failedTemplate:
+          errorMessage: 'chao.extraVolumeMounts: "ssl-cert-file" collides with a volume name the gremlin chart manages. Rename it.'
+        template: chao-deployment.yaml
+
+  - it: should not fail the chao Deployment render when extraVolumes/extraVolumeMounts do not collide
+    set:
+      chao.extraVolumes:
+        - name: debug-logs
+          hostPath:
+            path: /var/log/debug
+      chao.extraVolumeMounts:
+        - name: debug-logs
+          mountPath: /var/log/debug
+    asserts:
+      - notFailedTemplate: {}
+        template: chao-deployment.yaml
+
+  - it: should render nothing for chao when chao.create is false, even with a colliding extraVolumes name
+    set:
+      chao.create: false
+      chao.extraVolumes:
+        - name: gremlin-cert
+          emptyDir: {}
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: chao-deployment.yaml

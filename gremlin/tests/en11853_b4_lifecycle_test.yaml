@@ -1,0 +1,52 @@
+suite: EN-11853 B4 - lifecycle hooks
+templates:
+  - daemonset.yaml
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should render a user-supplied lifecycle on the gremlin DaemonSet
+    set:
+      lifecycle:
+        preStop:
+          exec:
+            command: ["sh", "-c", "sleep 5"]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle
+          value:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+        template: daemonset.yaml
+
+  - it: should not render a lifecycle field on the gremlin DaemonSet by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: daemonset.yaml
+
+  - it: should render a user-supplied lifecycle on the chao Deployment
+    set:
+      chao.lifecycle:
+        preStop:
+          exec:
+            command: ["sh", "-c", "sleep 5"]
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].lifecycle
+          value:
+            preStop:
+              exec:
+                command: ["sh", "-c", "sleep 5"]
+        template: chao-deployment.yaml
+
+  - it: should not render a lifecycle field on the chao Deployment by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].lifecycle
+        template: chao-deployment.yaml
