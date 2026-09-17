@@ -1,0 +1,125 @@
+---
+# Source: gremlin/templates/daemonset.yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: my-release-gremlin
+  namespace: default
+  labels:
+    app.kubernetes.io/name: gremlin
+    helm.sh/chart: gremlin-0.28.0
+    app.kubernetes.io/instance: my-release
+    app.kubernetes.io/managed-by: Helm
+    version: v1
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gremlin
+  updateStrategy:
+    rollingUpdate:
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gremlin
+        helm.sh/chart: gremlin-0.28.0
+        app.kubernetes.io/instance: my-release
+        app.kubernetes.io/managed-by: Helm
+        version: v1
+    spec:
+      serviceAccountName: gremlin
+      dnsPolicy: ClusterFirstWithHostNet
+      hostPID: true
+      hostNetwork: true
+      containers:
+      - name: gremlin
+        image: gremlin/gremlin:latest
+        args: [ "daemon" ]
+        imagePullPolicy: Always
+        securityContext:
+          privileged: false
+          allowPrivilegeEscalation: false
+          capabilities:
+            add: 
+              - KILL
+              - NET_ADMIN
+              - SYS_BOOT
+              - SYS_TIME
+              - DAC_READ_SEARCH
+              - SYS_RESOURCE
+              - SYS_ADMIN
+              - SYS_PTRACE
+              - NET_RAW
+          readOnlyRootFilesystem: false
+        env:
+          - name: GREMLIN_TEAM_ID
+            valueFrom:
+              secretKeyRef:
+                name:  gremlin-secret
+                key: GREMLIN_TEAM_ID
+          - name: GREMLIN_TEAM_SECRET
+            valueFrom:
+              secretKeyRef:
+                name: gremlin-secret
+                key: GREMLIN_TEAM_SECRET
+          - name: GREMLIN_IDENTIFIER
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: GREMLIN_CLIENT_TAGS
+            value: 
+          - name: GREMLIN_COLLECT_DNS
+            value: "true"
+          - name: GREMLIN_SERVICE_URL
+            value: https://api.gremlin.com/v1
+        volumeMounts:
+          - name: gremlin-state
+            mountPath: /var/lib/gremlin
+            readOnly: false
+          - name: gremlin-executions
+            mountPath: /var/lib/gremlin/executions
+            readOnly: false
+          - name: gremlin-logs
+            mountPath: /var/log/gremlin
+            readOnly: false
+          - name: cgroup-root
+            mountPath: /sys/fs/cgroup
+            readOnly: false
+          
+          - name: containerd-sock
+            mountPath: /run/containerd/containerd.sock
+            readOnly: true
+          - name: crio-sock
+            mountPath: /run/crio/crio.sock
+            readOnly: true
+          - name: docker-sock
+            mountPath: /var/run/docker.sock
+            readOnly: true
+      volumes:
+        - name: cgroup-root
+          hostPath:
+            path: /sys/fs/cgroup
+        
+        - name: containerd-sock
+          hostPath:
+            path: /run/containerd/containerd.sock
+        - name: crio-sock
+          hostPath:
+            path: /run/crio/crio.sock
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+        # The Gremlin daemon communicates with Gremlin sidecars via its state directory.
+        - name: gremlin-state
+          emptyDir:
+            medium: Memory
+        - name: gremlin-executions
+          hostPath:
+            path: /var/lib/gremlin/executions
+        # The Gremlin daemon forwards logs from the Gremlin sidecars to the Gremlin control plane
+        # These logs should be shared with the host
+        - name: gremlin-logs
+          hostPath:
+            path: /var/log/gremlin
+
