@@ -54,6 +54,21 @@ spec:
       imagePullSecrets:
       - name: {{ .Values.chaoimage.pullSecret }}
       {{- end }}
+      {{- if not (kindIs "invalid" .Values.chao.terminationGracePeriodSeconds) }}
+      terminationGracePeriodSeconds: {{ .Values.chao.terminationGracePeriodSeconds }}
+      {{- end }}
+      {{- with .Values.chao.dnsConfig }}
+      dnsConfig: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.chao.hostAliases }}
+      hostAliases: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.chao.podSecurityContext }}
+      securityContext: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.chao.initContainers }}
+      initContainers: {{ toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - image: {{ .Values.chaoimage.repository }}:{{ .Values.chaoimage.tag }}
         {{- with (default .Values.resources .Values.chao.resources) }}
@@ -107,6 +122,21 @@ spec:
             {{- with .Values.chao.extraEnv }}
               {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- with .Values.chao.envFrom }}
+          envFrom: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.chao.livenessProbe }}
+          livenessProbe: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.chao.readinessProbe }}
+          readinessProbe: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.chao.startupProbe }}
+          startupProbe: {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.chao.lifecycle }}
+          lifecycle: {{ toYaml . | nindent 12 }}
+          {{- end }}
           args:
             - "-api_url"
             - "{{ include "gremlinServiceUrl" . }}/kubernetes"
@@ -146,7 +176,7 @@ spec:
             {{- end }}
           imagePullPolicy: {{ .Values.chaoimage.pullPolicy }}
           name: chao
-{{- if (or ((eq (include "gremlin.secretType" .) "certificate")) .Values.ssl.certFile (include "chaoTlsIdentityVolumeMounts" .)) }}
+{{- if (or ((eq (include "gremlin.secretType" .) "certificate")) .Values.ssl.certFile (include "chaoTlsIdentityVolumeMounts" .) .Values.chao.extraVolumeMounts) }}
           volumeMounts:
 {{- end }}
 {{- if (eq (include "gremlin.secretType" .) "certificate") }}
@@ -162,6 +192,9 @@ spec:
 {{- if include "chaoTlsIdentityVolumeMounts" . }}
           {{- include "chaoTlsIdentityVolumeMounts" . | nindent 10 }}
 {{- end }}
+{{- with .Values.chao.extraVolumeMounts }}
+{{- toYaml . | nindent 10 }}
+{{- end }}
       volumes:
       - name: gremlin-cert
         secret:
@@ -173,6 +206,9 @@ spec:
 {{ end }}
 {{- if include "chaoTlsIdentityVolumes" . }}
       {{- include "chaoTlsIdentityVolumes" . | nindent 6 }}
+{{- end }}
+{{- with .Values.chao.extraVolumes }}
+{{- toYaml . | nindent 6 }}
 {{- end }}
 {{- if .Values.chao.priorityClassName }}
       priorityClassName: {{ .Values.chao.priorityClassName }}
