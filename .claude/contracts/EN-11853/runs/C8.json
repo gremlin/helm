@@ -1,0 +1,17 @@
+{
+  "clause_id": "C8",
+  "tier": "behavior",
+  "kind": "additive",
+  "commit": "d60ebcdfcae51d0ca74f2749d3be02d3085873ba",
+  "ran_at": "2026-09-18T01:19:47+00:00",
+  "frozen_paths_intact": true,
+  "frozen_paths_touched": [],
+  "probe": {
+    "command": "helm unittest gremlin -f 'tests/en11853_b8_hostaliases_test.yaml'",
+    "expect": "exit_zero",
+    "exit_code": 0,
+    "verdict": "PASS",
+    "detail": null,
+    "output_digest": "sha256:9a1a2ce461b31b53b02021997887d305186e94cac109d073a2ca147db2893648"
+  }
+}

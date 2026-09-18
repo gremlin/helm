@@ -84,3 +84,57 @@ stray space would silently become something other than what was written.
 {{- end -}}
 {{- end -}}
 {{- end -}}
+
+{{/*
+Reserved volume names the gremlin chart itself manages, space-separated. Callers turn this into a
+list with splitList " " (include "gremlin.reservedNames.volumes" .). Keeping this in one named
+template means there is exactly one place to edit when a new chart-managed volume name appears.
+*/}}
+{{- define "gremlin.reservedNames.volumes" -}}
+gremlin-state gremlin-executions gremlin-logs cgroup-root seccomp-root seccomp-profile gremlin-cert ssl-cert-file gremlin-tls-identity chao-tls-identity gremlin-opencl-icd docker-sock containerd-sock crio-sock kfd dri opencl-vendors
+{{- end -}}
+
+{{/*
+Reserved container names the gremlin chart itself manages, space-separated. See
+gremlin.reservedNames.volumes for the calling convention.
+*/}}
+{{- define "gremlin.reservedNames.containers" -}}
+seccomp-init gremlin chao
+{{- end -}}
+
+{{/*
+Generic reserved-name collision check. Takes dict "entries" <list> "reserved" <list> "valuePath"
+<string> "kind" <string>, and fails on the first entry whose .name is in the reserved list. An
+entry with no name field does not match and is left to the Kubernetes API to reject.
+*/}}
+{{- define "gremlin.validateReservedNames.check" -}}
+{{- range $entry := .entries -}}
+{{- if $entry.name -}}
+{{- if has $entry.name $.reserved -}}
+{{- fail (printf "%s: %q collides with a %s name the gremlin chart manages. Rename it." $.valuePath $entry.name $.kind) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+Reserved-name collision checks for the Gremlin DaemonSet's user-supplied initContainers,
+extraVolumes, and extraVolumeMounts. Calls fail directly rather than contributing to
+gremlin.validateValues's aggregate message, so it also fires when a single template
+(daemonset.yaml) is rendered on its own.
+*/}}
+{{- define "gremlin.validateReservedNames.daemonset" -}}
+{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.initContainers "reserved" (splitList " " (include "gremlin.reservedNames.containers" .)) "valuePath" "initContainers" "kind" "container") -}}
+{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.extraVolumes "reserved" (splitList " " (include "gremlin.reservedNames.volumes" .)) "valuePath" "extraVolumes" "kind" "volume") -}}
+{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.extraVolumeMounts "reserved" (splitList " " (include "gremlin.reservedNames.volumes" .)) "valuePath" "extraVolumeMounts" "kind" "volume") -}}
+{{- end -}}
+
+{{/*
+Reserved-name collision checks for the Chao deployment's user-supplied initContainers,
+extraVolumes, and extraVolumeMounts. See gremlin.validateReservedNames.daemonset.
+*/}}
+{{- define "gremlin.validateReservedNames.chao" -}}
+{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.chao.initContainers "reserved" (splitList " " (include "gremlin.reservedNames.containers" .)) "valuePath" "chao.initContainers" "kind" "container") -}}
+{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.chao.extraVolumes "reserved" (splitList " " (include "gremlin.reservedNames.volumes" .)) "valuePath" "chao.extraVolumes" "kind" "volume") -}}
+{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.chao.extraVolumeMounts "reserved" (splitList " " (include "gremlin.reservedNames.volumes" .)) "valuePath" "chao.extraVolumeMounts" "kind" "volume") -}}
+{{- end -}}

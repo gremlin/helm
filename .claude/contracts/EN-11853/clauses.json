@@ -1,0 +1,159 @@
+{
+  "$schema": "https://github.com/gremlin/gremlin-ai-skills/ENG/jig/schema/contract.schema.json",
+  "contract": {
+    "slug": "EN-11853",
+    "ticket": "EN-11853",
+    "base_commit": "4279bc29262b73b65027302dbeff5978274a9cdc",
+    "base_branch": "master",
+    "status": "sealed"
+  },
+  "clauses": [
+    {
+      "id": "C1",
+      "tier": "behavior",
+      "kind": "additive",
+      "from": "B1",
+      "claim": "Given a livenessProbe/readinessProbe/startupProbe value (root for the gremlin DaemonSet, chao.* for the chao Deployment), the corresponding container renders that exact Probe object under the matching field.",
+      "probe": { "run": "helm unittest gremlin -f 'tests/en11853_b1_probes_test.yaml'", "expect": "exit_zero" },
+      "base_result": "FAIL",
+      "frozen_paths": ["gremlin/tests/en11853_b1_probes_test.yaml"],
+      "rejects": "not_applicable",
+      "rejects_waiver_approved_by": "Danny Seymour"
+    },
+    {
+      "id": "C2",
+      "tier": "behavior",
+      "kind": "additive",
+      "from": "B2",
+      "claim": "Given user-supplied initContainers (root for gremlin, chao.initContainers for chao), each entry is appended to the rendered initContainers list, after the chart-managed seccomp-init entry when it is present.",
+      "probe": { "run": "helm unittest gremlin -f 'tests/en11853_b2_init_containers_test.yaml'", "expect": "exit_zero" },
+      "base_result": "FAIL",
+      "frozen_paths": ["gremlin/tests/en11853_b2_init_containers_test.yaml"],
+      "rejects": {
+        "claim": "An initContainers entry whose name collides with a chart-reserved container name (seccomp-init, gremlin, chao) fails the template render with a message naming the collision, on both workloads, including when GPU fan-out is enabled.",
+        "probe": { "run": "helm unittest gremlin -f 'tests/en11853_b2_init_containers_reject_test.yaml'", "expect": "exit_zero" },
+        "base_result": "FAIL"
+      }
+    },
+    {
+      "id": "C3",
+      "tier": "behavior",
+      "kind": "additive",
+      "from": "B3",
+      "claim": "Given extraVolumes/extraVolumeMounts values (root for gremlin, chao.* for chao), each entry is appended to the pod's volumes and the target container's volumeMounts, including bringing chao's volumeMounts key into existence when no pre-existing condition already renders it.",
+      "probe": { "run": "helm unittest gremlin -f 'tests/en11853_b3_extra_volumes_test.yaml'", "expect": "exit_zero" },
+      "base_result": "FAIL",
+      "frozen_paths": ["gremlin/tests/en11853_b3_extra_volumes_test.yaml"],
+      "rejects": {
+        "claim": "An extraVolumes or extraVolumeMounts entry whose name collides with a chart-reserved volume name fails the template render with a message naming the collision, on both workloads.",
+        "probe": { "run": "helm unittest gremlin -f 'tests/en11853_b3_extra_volumes_reject_test.yaml'", "expect": "exit_zero" },
+        "base_result": "FAIL"
+      }
+    },
+    {
+      "id": "C4",
+      "tier": "behavior",
+      "kind": "additive",
+      "from": "B4",
+      "claim": "Given a lifecycle value (root for gremlin, chao.lifecycle for chao), the corresponding container renders that exact Lifecycle object.",
+      "probe": { "run": "helm unittest gremlin -f 'tests/en11853_b4_lifecycle_test.yaml'", "expect": "exit_zero" },
+      "base_result": "FAIL",
+      "frozen_paths": ["gremlin/tests/en11853_b4_lifecycle_test.yaml"],
+      "rejects": "not_applicable",
+      "rejects_waiver_approved_by": "Danny Seymour"
+    },
+    {
+      "id": "C5",
+      "tier": "behavior",
+      "kind": "additive",
+      "from": "B5",
+      "claim": "Given an envFrom value (root for gremlin, chao.envFrom for chao), each listed source is appended to the corresponding container's envFrom.",
+      "probe": { "run": "helm unittest gremlin -f 'tests/en11853_b5_envfrom_test.yaml'", "expect": "exit_zero" },
+      "base_result": "FAIL",
+      "frozen_paths": ["gremlin/tests/en11853_b5_envfrom_test.yaml"],
+      "rejects": "not_applicable",
+      "rejects_waiver_approved_by": "Danny Seymour"
+    },
+    {
+      "id": "C6",
+      "tier": "behavior",
+      "kind": "additive",
+      "from": "B6",
+      "claim": "Given a terminationGracePeriodSeconds value (root for gremlin, chao.terminationGracePeriodSeconds for chao), including the value 0, the rendered pod spec carries that exact value.",
+      "probe": { "run": "helm unittest gremlin -f 'tests/en11853_b6_termination_grace_period_test.yaml'", "expect": "exit_zero" },
+      "base_result": "FAIL",
+      "frozen_paths": ["gremlin/tests/en11853_b6_termination_grace_period_test.yaml"],
+      "rejects": "not_applicable",
+      "rejects_waiver_approved_by": "Danny Seymour"
+    },
+    {
+      "id": "C7",
+      "tier": "behavior",
+      "kind": "additive",
+      "from": "B7",
+      "claim": "Given a dnsConfig value (root for gremlin, chao.dnsConfig for chao), the rendered pod spec carries that exact PodDNSConfig object.",
+      "probe": { "run": "helm unittest gremlin -f 'tests/en11853_b7_dnsconfig_test.yaml'", "expect": "exit_zero" },
+      "base_result": "FAIL",
+      "frozen_paths": ["gremlin/tests/en11853_b7_dnsconfig_test.yaml"],
+      "rejects": "not_applicable",
+      "rejects_waiver_approved_by": "Danny Seymour"
+    },
+    {
+      "id": "C8",
+      "tier": "behavior",
+      "kind": "additive",
+      "from": "B8",
+      "claim": "Given a hostAliases value (root for gremlin, chao.hostAliases for chao), the rendered pod spec carries that exact HostAlias list.",
+      "probe": { "run": "helm unittest gremlin -f 'tests/en11853_b8_hostaliases_test.yaml'", "expect": "exit_zero" },
+      "base_result": "FAIL",
+      "frozen_paths": ["gremlin/tests/en11853_b8_hostaliases_test.yaml"],
+      "rejects": "not_applicable",
+      "rejects_waiver_approved_by": "Danny Seymour"
+    },
+    {
+      "id": "C9",
+      "tier": "behavior",
+      "kind": "additive",
+      "from": "B9",
+      "claim": "Given a podSecurityContext value (root for gremlin, chao.podSecurityContext for chao), the rendered pod spec carries that exact SecurityContext at the pod level, alongside the existing container-level securityContext unaffected.",
+      "probe": { "run": "helm unittest gremlin -f 'tests/en11853_b9_podsecuritycontext_test.yaml'", "expect": "exit_zero" },
+      "base_result": "FAIL",
+      "frozen_paths": ["gremlin/tests/en11853_b9_podsecuritycontext_test.yaml"],
+      "rejects": "not_applicable",
+      "rejects_waiver_approved_by": "Danny Seymour"
+    },
+    {
+      "id": "C10",
+      "tier": "property",
+      "kind": "invariant",
+      "from": "Constraints:backward-compatibility",
+      "claim": "With every EN-11853 value left unset, `helm template` output for the gremlin DaemonSet and chao Deployment (secretauth values fixture) is byte-identical to the pre-EN-11853 rendering.",
+      "probe": {
+        "run": "diff <(helm template my-release gremlin -f gremlin/tests/values-secretauth-test.yaml -s templates/daemonset.yaml) gremlin/tests/fixtures/en11853_backward_compat.gremlin.yaml && diff <(helm template my-release gremlin -f gremlin/tests/values-secretauth-test.yaml -s templates/chao-deployment.yaml) gremlin/tests/fixtures/en11853_backward_compat.chao.yaml",
+        "expect": "exit_zero"
+      },
+      "base_result": "PASS",
+      "frozen_paths": [
+        "gremlin/tests/fixtures/en11853_backward_compat.gremlin.yaml",
+        "gremlin/tests/fixtures/en11853_backward_compat.chao.yaml",
+        "gremlin/tests/values-secretauth-test.yaml"
+      ],
+      "perturbation": {
+        "apply": "sed -i 's/^        version: v1$/        version: v1\\n        en11853-canary-label: \"true\"/' gremlin/templates/_daemonset.tpl"
+      }
+    },
+    {
+      "id": "C11",
+      "tier": "property",
+      "kind": "invariant",
+      "from": "Constraints:envFrom-extraEnv-exempt",
+      "claim": "Setting gremlin.extraEnv/chao.extraEnv to a value colliding with a chart-managed name does not fail the template render — extraEnv remains exempt from the reserved-name collision check added by this contract.",
+      "probe": { "run": "helm unittest gremlin -f 'tests/en11853_extraenv_exempt_test.yaml'", "expect": "exit_zero" },
+      "base_result": "PASS",
+      "frozen_paths": ["gremlin/tests/en11853_extraenv_exempt_test.yaml"],
+      "perturbation": {
+        "apply": "sed -i '14a{{- fail \"en11853 perturbation: extraEnv reserved-name check reintroduced\" -}}' gremlin/templates/_daemonset.tpl"
+      }
+    }
+  ]
+}

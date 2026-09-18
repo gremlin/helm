@@ -1,0 +1,17 @@
+{
+  "clause_id": "C7",
+  "tier": "behavior",
+  "kind": "additive",
+  "commit": "d60ebcdfcae51d0ca74f2749d3be02d3085873ba",
+  "ran_at": "2026-09-18T01:19:47+00:00",
+  "frozen_paths_intact": true,
+  "frozen_paths_touched": [],
+  "probe": {
+    "command": "helm unittest gremlin -f 'tests/en11853_b7_dnsconfig_test.yaml'",
+    "expect": "exit_zero",
+    "exit_code": 0,
+    "verdict": "PASS",
+    "detail": null,
+    "output_digest": "sha256:578a2936d845020153fa5f576cf52d761dcedbc0e1c285de41f7821ebc86d25c"
+  }
+}

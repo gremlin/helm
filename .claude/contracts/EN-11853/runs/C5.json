@@ -1,0 +1,17 @@
+{
+  "clause_id": "C5",
+  "tier": "behavior",
+  "kind": "additive",
+  "commit": "d60ebcdfcae51d0ca74f2749d3be02d3085873ba",
+  "ran_at": "2026-09-18T01:19:47+00:00",
+  "frozen_paths_intact": true,
+  "frozen_paths_touched": [],
+  "probe": {
+    "command": "helm unittest gremlin -f 'tests/en11853_b5_envfrom_test.yaml'",
+    "expect": "exit_zero",
+    "exit_code": 0,
+    "verdict": "PASS",
+    "detail": null,
+    "output_digest": "sha256:f81d8266f6f6c188432fbc1a65ccf7620c474f8cb5c5036a1cc36eb78216fab8"
+  }
+}

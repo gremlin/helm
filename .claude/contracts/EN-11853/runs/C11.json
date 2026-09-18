@@ -1,0 +1,17 @@
+{
+  "clause_id": "C11",
+  "tier": "property",
+  "kind": "invariant",
+  "commit": "d60ebcdfcae51d0ca74f2749d3be02d3085873ba",
+  "ran_at": "2026-09-18T01:19:47+00:00",
+  "frozen_paths_intact": true,
+  "frozen_paths_touched": [],
+  "probe": {
+    "command": "helm unittest gremlin -f 'tests/en11853_extraenv_exempt_test.yaml'",
+    "expect": "exit_zero",
+    "exit_code": 0,
+    "verdict": "PASS",
+    "detail": null,
+    "output_digest": "sha256:96dad72f5c35e77b082b9746088c10b6d9facbe020f0e8d6e06a3fd5c4aa7145"
+  }
+}

@@ -1,0 +1,70 @@
+suite: EN-11853 B2 - user-supplied initContainers
+templates:
+  - daemonset.yaml
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should append a user-supplied initContainer on the gremlin DaemonSet when seccomp is off
+    set:
+      initContainers:
+        - name: wait-for-node-ready
+          image: busybox:1.36
+          command: ["sh", "-c", "until [ -f /var/run/node-ready ]; do sleep 1; done"]
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0]
+          value:
+            name: wait-for-node-ready
+            image: busybox:1.36
+            command: ["sh", "-c", "until [ -f /var/run/node-ready ]; do sleep 1; done"]
+        template: daemonset.yaml
+
+  - it: should order a user-supplied initContainer after seccomp-init on the gremlin DaemonSet
+    set:
+      gremlin.podSecurity.seccomp.enabled: true
+      gremlin.podSecurity.seccomp.profile: localhost/gremlin
+      initContainers:
+        - name: wait-for-node-ready
+          image: busybox:1.36
+          command: ["sh", "-c", "until [ -f /var/run/node-ready ]; do sleep 1; done"]
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: seccomp-init
+        template: daemonset.yaml
+      - equal:
+          path: spec.template.spec.initContainers[1].name
+          value: wait-for-node-ready
+        template: daemonset.yaml
+
+  - it: should not render initContainers on the gremlin DaemonSet by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.initContainers
+        template: daemonset.yaml
+
+  - it: should append a user-supplied initContainer on the chao Deployment
+    set:
+      chao.initContainers:
+        - name: debug-network-check
+          image: busybox:1.36
+          command: ["sh", "-c", "nslookup kubernetes.default"]
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0]
+          value:
+            name: debug-network-check
+            image: busybox:1.36
+            command: ["sh", "-c", "nslookup kubernetes.default"]
+        template: chao-deployment.yaml
+
+  - it: should not render initContainers on the chao Deployment by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.initContainers
+        template: chao-deployment.yaml

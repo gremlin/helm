@@ -23,6 +23,97 @@ tolerations: []
 
 affinity: {}
 
+# livenessProbe -
+# A Kubernetes Probe for the Gremlin Agent container. Applies to the Gremlin DaemonSet only;
+# the Chao deployment has its own chao.livenessProbe. Passed through to the rendered manifest
+# as-is. Unset by default, which renders no probe.
+livenessProbe: {}
+
+# readinessProbe -
+# A Kubernetes Probe for the Gremlin Agent container. Applies to the Gremlin DaemonSet only;
+# the Chao deployment has its own chao.readinessProbe. Passed through to the rendered manifest
+# as-is. Unset by default, which renders no probe.
+readinessProbe: {}
+
+# startupProbe -
+# A Kubernetes Probe for the Gremlin Agent container. Applies to the Gremlin DaemonSet only;
+# the Chao deployment has its own chao.startupProbe. Passed through to the rendered manifest
+# as-is. Unset by default, which renders no probe.
+startupProbe: {}
+
+# initContainers -
+# Additional init containers for the Gremlin DaemonSet's pod spec. Applies to the Gremlin
+# DaemonSet only; the Chao deployment has its own chao.initContainers. Appended after any
+# chart-managed init container (e.g. seccomp-init). Passed through to the rendered manifest
+# as-is. A container name colliding with a name the gremlin chart manages (e.g. seccomp-init,
+# gremlin) fails the install. Unset by default, which renders no additional init containers.
+# NOTE: when gremlin.podSecurity.podSecurityPolicy.create (or ...securityContextConstraints.create)
+# is enabled, the chart's own PSP/SCC may reject volumes an init container mounts; see
+# extraVolumes below.
+initContainers: []
+
+# extraVolumes -
+# Additional volumes for the Gremlin DaemonSet's pod spec. Applies to the Gremlin DaemonSet
+# only; the Chao deployment has its own chao.extraVolumes. Passed through to the rendered
+# manifest as-is. A volume name colliding with a name the gremlin chart manages (e.g.
+# gremlin-state, gremlin-cert) fails the install. Unset by default, which renders no additional
+# volumes.
+# NOTE: when gremlin.podSecurity.podSecurityPolicy.create (or ...securityContextConstraints.create)
+# is enabled, a volume type or hostPath outside what gremlin.podSecurity.volumes /
+# allowedHostPaths permits is rejected at admission, not by this chart.
+extraVolumes: []
+
+# extraVolumeMounts -
+# Additional volume mounts for the Gremlin Agent container. Applies to the Gremlin DaemonSet
+# only; the Chao deployment has its own chao.extraVolumeMounts. Passed through to the rendered
+# manifest as-is. A volume name colliding with a name the gremlin chart manages (e.g.
+# gremlin-state, gremlin-cert) fails the install. Unset by default, which renders no additional
+# volume mounts.
+extraVolumeMounts: []
+
+# lifecycle -
+# A Kubernetes Lifecycle object (preStop/postStart hooks) for the Gremlin Agent container.
+# Applies to the Gremlin DaemonSet only; the Chao deployment has its own chao.lifecycle. Passed
+# through to the rendered manifest as-is. Unset by default, which renders no lifecycle hooks.
+lifecycle: {}
+
+# envFrom -
+# Additional sources (ConfigMaps/Secrets) to populate the Gremlin Agent container's environment
+# from. Applies to the Gremlin DaemonSet only; the Chao deployment has its own chao.envFrom.
+# Passed through to the rendered manifest as-is. Unset by default, which renders no envFrom.
+# NOTE: unlike extraEnv, envFrom does NOT override chart-managed environment variables --
+# Kubernetes gives a container's env: precedence over its envFrom: for any key set in both.
+# Use extraEnv (which renders last in env:) to override values such as GREMLIN_SERVICE_URL.
+envFrom: []
+
+# terminationGracePeriodSeconds -
+# The termination grace period, in seconds, for the Gremlin DaemonSet's pods. Applies to the
+# Gremlin DaemonSet only; the Chao deployment has its own chao.terminationGracePeriodSeconds.
+# Passed through to the rendered manifest as-is. Unset by default, which leaves Kubernetes'
+# default (30 seconds) in effect.
+terminationGracePeriodSeconds:
+
+# dnsConfig -
+# A Kubernetes PodDNSConfig object for the Gremlin DaemonSet's pod spec. Applies to the Gremlin
+# DaemonSet only; the Chao deployment has its own chao.dnsConfig. Passed through to the rendered
+# manifest as-is. Unset by default, which renders no dnsConfig.
+dnsConfig: {}
+
+# hostAliases -
+# A list of Kubernetes HostAlias entries for the Gremlin DaemonSet's pod spec. Applies to the
+# Gremlin DaemonSet only; the Chao deployment has its own chao.hostAliases. Passed through to
+# the rendered manifest as-is. Unset by default, which renders no hostAliases.
+# NOTE: has no effect while gremlin.hostNetwork is true (the default), since the kubelet does
+# not manage /etc/hosts for host-network pods.
+hostAliases: []
+
+# podSecurityContext -
+# A Kubernetes pod-level SecurityContext for the Gremlin DaemonSet's pod spec. Applies to the
+# Gremlin DaemonSet only; the Chao deployment has its own chao.podSecurityContext. Renders
+# alongside the existing container-level securityContext, which is unaffected. Passed through
+# to the rendered manifest as-is. Unset by default, which renders no pod-level securityContext.
+podSecurityContext: {}
+
 gremlin:
 
   # gremlin.updateStrategy -
@@ -527,6 +618,95 @@ chao:
   # chao.extraEnv -
   # Specify any arbitrary environment variables to pass to the Chao deployment.
   extraEnv: []
+
+  # chao.livenessProbe -
+  # A Kubernetes Probe for the Chao deployment's container. Applies to the Chao deployment only;
+  # the Gremlin DaemonSet has its own livenessProbe. Passed through to the rendered manifest
+  # as-is. Unset by default, which renders no probe.
+  livenessProbe: {}
+
+  # chao.readinessProbe -
+  # A Kubernetes Probe for the Chao deployment's container. Applies to the Chao deployment only;
+  # the Gremlin DaemonSet has its own readinessProbe. Passed through to the rendered manifest
+  # as-is. Unset by default, which renders no probe.
+  readinessProbe: {}
+
+  # chao.startupProbe -
+  # A Kubernetes Probe for the Chao deployment's container. Applies to the Chao deployment only;
+  # the Gremlin DaemonSet has its own startupProbe. Passed through to the rendered manifest
+  # as-is. Unset by default, which renders no probe.
+  startupProbe: {}
+
+  # chao.initContainers -
+  # Additional init containers for the Chao deployment's pod spec. Applies to the Chao
+  # deployment only; the Gremlin DaemonSet has its own initContainers. Passed through to the
+  # rendered manifest as-is. A container name colliding with a name the gremlin chart manages
+  # (e.g. gremlin, chao) fails the install. Unset by default, which renders no additional init
+  # containers.
+  # NOTE: when gremlin.podSecurity.podSecurityPolicy.create is enabled, the chart's own chao PSP
+  # may reject volumes an init container mounts; see chao.extraVolumes below.
+  initContainers: []
+
+  # chao.extraVolumes -
+  # Additional volumes for the Chao deployment's pod spec. Applies to the Chao deployment only;
+  # the Gremlin DaemonSet has its own extraVolumes. Passed through to the rendered manifest
+  # as-is. A volume name colliding with a name the gremlin chart manages (e.g. gremlin-cert,
+  # chao-tls-identity) fails the install. Unset by default, which renders no additional volumes.
+  # NOTE: when gremlin.podSecurity.podSecurityPolicy.create is enabled, the chart's own chao PSP
+  # only permits the "secret" volume type; any other type is rejected at admission, not by this
+  # chart.
+  extraVolumes: []
+
+  # chao.extraVolumeMounts -
+  # Additional volume mounts for the Chao deployment's container. Applies to the Chao deployment
+  # only; the Gremlin DaemonSet has its own extraVolumeMounts. Passed through to the rendered
+  # manifest as-is. A volume name colliding with a name the gremlin chart manages (e.g.
+  # gremlin-cert, chao-tls-identity) fails the install. Unset by default, which renders no
+  # additional volume mounts.
+  extraVolumeMounts: []
+
+  # chao.lifecycle -
+  # A Kubernetes Lifecycle object (preStop/postStart hooks) for the Chao deployment's container.
+  # Applies to the Chao deployment only; the Gremlin DaemonSet has its own lifecycle. Passed
+  # through to the rendered manifest as-is. Unset by default, which renders no lifecycle hooks.
+  lifecycle: {}
+
+  # chao.envFrom -
+  # Additional sources (ConfigMaps/Secrets) to populate the Chao deployment's container
+  # environment from. Applies to the Chao deployment only; the Gremlin DaemonSet has its own
+  # envFrom. Passed through to the rendered manifest as-is. Unset by default, which renders no
+  # envFrom.
+  # NOTE: unlike extraEnv, envFrom does NOT override chart-managed environment variables --
+  # Kubernetes gives a container's env: precedence over its envFrom: for any key set in both.
+  # Use extraEnv (which renders last in env:) to override chart-managed values.
+  envFrom: []
+
+  # chao.terminationGracePeriodSeconds -
+  # The termination grace period, in seconds, for the Chao deployment's pods. Applies to the
+  # Chao deployment only; the Gremlin DaemonSet has its own terminationGracePeriodSeconds.
+  # Passed through to the rendered manifest as-is. Unset by default, which leaves Kubernetes'
+  # default (30 seconds) in effect.
+  terminationGracePeriodSeconds:
+
+  # chao.dnsConfig -
+  # A Kubernetes PodDNSConfig object for the Chao deployment's pod spec. Applies to the Chao
+  # deployment only; the Gremlin DaemonSet has its own dnsConfig. Passed through to the rendered
+  # manifest as-is. Unset by default, which renders no dnsConfig.
+  dnsConfig: {}
+
+  # chao.hostAliases -
+  # A list of Kubernetes HostAlias entries for the Chao deployment's pod spec. Applies to the
+  # Chao deployment only; the Gremlin DaemonSet has its own hostAliases. Passed through to the
+  # rendered manifest as-is. Unset by default, which renders no hostAliases.
+  hostAliases: []
+
+  # chao.podSecurityContext -
+  # A Kubernetes pod-level SecurityContext for the Chao deployment's pod spec. Applies to the
+  # Chao deployment only; the Gremlin DaemonSet has its own podSecurityContext. Renders
+  # alongside the existing container-level securityContext, which is unaffected. Passed through
+  # to the rendered manifest as-is. Unset by default, which renders no pod-level
+  # securityContext.
+  podSecurityContext: {}
 
   # chao.namespaces
   # list of namespaces for Gremlin to watch for attacking
