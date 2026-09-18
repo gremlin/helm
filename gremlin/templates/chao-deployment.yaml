@@ -55,7 +55,7 @@ spec:
       - name: {{ .Values.chaoimage.pullSecret }}
       {{- end }}
       {{- if not (kindIs "invalid" .Values.chao.terminationGracePeriodSeconds) }}
-      terminationGracePeriodSeconds: {{ .Values.chao.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.chao.terminationGracePeriodSeconds | int }}
       {{- end }}
       {{- with .Values.chao.dnsConfig }}
       dnsConfig: {{ toYaml . | nindent 8 }}
