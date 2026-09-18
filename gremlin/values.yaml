@@ -47,6 +47,9 @@ startupProbe: {}
 # chart-managed init container (e.g. seccomp-init). Passed through to the rendered manifest
 # as-is. A container name colliding with a name the gremlin chart manages (e.g. seccomp-init,
 # gremlin) fails the install. Unset by default, which renders no additional init containers.
+# NOTE: when gremlin.podSecurity.podSecurityPolicy.create (or ...securityContextConstraints.create)
+# is enabled, the chart's own PSP/SCC may reject volumes an init container mounts; see
+# extraVolumes below.
 initContainers: []
 
 # extraVolumes -
@@ -55,6 +58,9 @@ initContainers: []
 # manifest as-is. A volume name colliding with a name the gremlin chart manages (e.g.
 # gremlin-state, gremlin-cert) fails the install. Unset by default, which renders no additional
 # volumes.
+# NOTE: when gremlin.podSecurity.podSecurityPolicy.create (or ...securityContextConstraints.create)
+# is enabled, a volume type or hostPath outside what gremlin.podSecurity.volumes /
+# allowedHostPaths permits is rejected at admission, not by this chart.
 extraVolumes: []
 
 # extraVolumeMounts -
@@ -75,6 +81,9 @@ lifecycle: {}
 # Additional sources (ConfigMaps/Secrets) to populate the Gremlin Agent container's environment
 # from. Applies to the Gremlin DaemonSet only; the Chao deployment has its own chao.envFrom.
 # Passed through to the rendered manifest as-is. Unset by default, which renders no envFrom.
+# NOTE: unlike extraEnv, envFrom does NOT override chart-managed environment variables --
+# Kubernetes gives a container's env: precedence over its envFrom: for any key set in both.
+# Use extraEnv (which renders last in env:) to override values such as GREMLIN_SERVICE_URL.
 envFrom: []
 
 # terminationGracePeriodSeconds -
@@ -94,6 +103,8 @@ dnsConfig: {}
 # A list of Kubernetes HostAlias entries for the Gremlin DaemonSet's pod spec. Applies to the
 # Gremlin DaemonSet only; the Chao deployment has its own chao.hostAliases. Passed through to
 # the rendered manifest as-is. Unset by default, which renders no hostAliases.
+# NOTE: has no effect while gremlin.hostNetwork is true (the default), since the kubelet does
+# not manage /etc/hosts for host-network pods.
 hostAliases: []
 
 # podSecurityContext -
@@ -632,6 +643,8 @@ chao:
   # rendered manifest as-is. A container name colliding with a name the gremlin chart manages
   # (e.g. gremlin, chao) fails the install. Unset by default, which renders no additional init
   # containers.
+  # NOTE: when gremlin.podSecurity.podSecurityPolicy.create is enabled, the chart's own chao PSP
+  # may reject volumes an init container mounts; see chao.extraVolumes below.
   initContainers: []
 
   # chao.extraVolumes -
@@ -639,6 +652,9 @@ chao:
   # the Gremlin DaemonSet has its own extraVolumes. Passed through to the rendered manifest
   # as-is. A volume name colliding with a name the gremlin chart manages (e.g. gremlin-cert,
   # chao-tls-identity) fails the install. Unset by default, which renders no additional volumes.
+  # NOTE: when gremlin.podSecurity.podSecurityPolicy.create is enabled, the chart's own chao PSP
+  # only permits the "secret" volume type; any other type is rejected at admission, not by this
+  # chart.
   extraVolumes: []
 
   # chao.extraVolumeMounts -
@@ -660,6 +676,9 @@ chao:
   # environment from. Applies to the Chao deployment only; the Gremlin DaemonSet has its own
   # envFrom. Passed through to the rendered manifest as-is. Unset by default, which renders no
   # envFrom.
+  # NOTE: unlike extraEnv, envFrom does NOT override chart-managed environment variables --
+  # Kubernetes gives a container's env: precedence over its envFrom: for any key set in both.
+  # Use extraEnv (which renders last in env:) to override chart-managed values.
   envFrom: []
 
   # chao.terminationGracePeriodSeconds -
