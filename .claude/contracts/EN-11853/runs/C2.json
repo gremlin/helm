@@ -1,0 +1,25 @@
+{
+  "clause_id": "C2",
+  "tier": "behavior",
+  "kind": "additive",
+  "commit": "146d3b358fd1d80f40ace397ee9b18b5ec0b00d2",
+  "ran_at": "2026-09-18T00:38:43+00:00",
+  "frozen_paths_intact": true,
+  "frozen_paths_touched": [],
+  "probe": {
+    "command": "helm unittest gremlin -f 'tests/en11853_b2_init_containers_test.yaml'",
+    "expect": "exit_zero",
+    "exit_code": 0,
+    "verdict": "PASS",
+    "detail": null,
+    "output_digest": "sha256:80618a2d3ed84fd6bdb81c2c1a34a6dd75d38e3c8fecac4096af6bd2ad4577dc"
+  },
+  "rejects": {
+    "command": "helm unittest gremlin -f 'tests/en11853_b2_init_containers_reject_test.yaml'",
+    "expect": "exit_zero",
+    "exit_code": 0,
+    "verdict": "PASS",
+    "detail": null,
+    "output_digest": "sha256:d07b63e8e28041f613b027c0dd082996916e559d6f64882414f1d802d5e08c19"
+  }
+}
