@@ -10,6 +10,9 @@ will attempt to determine the correct one.  This can be a good option if you don
 
 In order to use one of the recommended container drivers, you must run the Gremlin Daemonset in the host's PID and network namespaces: `gremlin.hostPID=true`, and `gremlin.hostNetwork=true`. These are both `true` by default.
 
+Gremlin's container integration also depends on the cgroup driver your container runtime uses. See the
+"Supported cgroup drivers" section of the [Targets][cgroup-driver] page.
+
 ## Usage
 
 To use one of the recommended container drivers, set the name in `gremlin.container.driver`
@@ -17,7 +20,6 @@ To use one of the recommended container drivers, set the name in `gremlin.contai
 ```shell
 helm install gremlin gremlin/gremlin \
     --namespace gremlin --create-namespace \
-    --set      gremlin.hostPID=true \
     --set      gremlin.container.driver=crio-linux \
     --set      gremlin.secret.managed=true \
     --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
@@ -26,4 +28,4 @@ helm install gremlin gremlin/gremlin \
     --set-file gremlin.secret.key=$PATH_TO_PRIVATE_KEY
 ```
 
-[cgroup-driver]: https://www.gremlin.com/docs/infrastructure-layer/targets/#supported-cgroup-drivers
+[cgroup-driver]: https://www.gremlin.com/docs/fault-injection-targets
