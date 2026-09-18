@@ -1,7 +1,7 @@
 # Dossier — EN-11853
 
 - **Ticket:** EN-11853
-- **Validated at:** `146d3b358fd1d80f40ace397ee9b18b5ec0b00d2`
+- **Validated at:** `d60ebcdfcae51d0ca74f2749d3be02d3085873ba`
 - **Base commit:** `4279bc29262b73b65027302dbeff5978274a9cdc`
 - **Seal:** verified — clauses unchanged since Gate 2
 - **Signature:** recorded in signature.json, not here — this document is

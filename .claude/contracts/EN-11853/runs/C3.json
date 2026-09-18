@@ -2,8 +2,8 @@
   "clause_id": "C3",
   "tier": "behavior",
   "kind": "additive",
-  "commit": "146d3b358fd1d80f40ace397ee9b18b5ec0b00d2",
-  "ran_at": "2026-09-18T00:38:43+00:00",
+  "commit": "d60ebcdfcae51d0ca74f2749d3be02d3085873ba",
+  "ran_at": "2026-09-18T01:19:47+00:00",
   "frozen_paths_intact": true,
   "frozen_paths_touched": [],
   "probe": {
@@ -12,7 +12,7 @@
     "exit_code": 0,
     "verdict": "PASS",
     "detail": null,
-    "output_digest": "sha256:178ba04022af17d86a19cf733ad097be2807358be484c3d1a1f38fb07901839f"
+    "output_digest": "sha256:d6d4d7abd15b462d2aebbb9a5e8bdce13bdfd66979ce7be0e26ea51399035c85"
   },
   "rejects": {
     "command": "helm unittest gremlin -f 'tests/en11853_b3_extra_volumes_reject_test.yaml'",
@@ -20,6 +20,6 @@
     "exit_code": 0,
     "verdict": "PASS",
     "detail": null,
-    "output_digest": "sha256:c0ca5b4228c179a8490800b3a624c2ab781eb02653b45ca1917de1d9d41e2837"
+    "output_digest": "sha256:5aacfb0ec83fb6a268c1eed79d24b3cfa4b343184a62fa93df4adf9a92d98b0f"
   }
 }

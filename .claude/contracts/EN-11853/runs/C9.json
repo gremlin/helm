@@ -2,8 +2,8 @@
   "clause_id": "C9",
   "tier": "behavior",
   "kind": "additive",
-  "commit": "146d3b358fd1d80f40ace397ee9b18b5ec0b00d2",
-  "ran_at": "2026-09-18T00:38:43+00:00",
+  "commit": "d60ebcdfcae51d0ca74f2749d3be02d3085873ba",
+  "ran_at": "2026-09-18T01:19:47+00:00",
   "frozen_paths_intact": true,
   "frozen_paths_touched": [],
   "probe": {
@@ -12,6 +12,6 @@
     "exit_code": 0,
     "verdict": "PASS",
     "detail": null,
-    "output_digest": "sha256:cd336e377b6fd6a3f27d9d40276297da424a856f2e7366973930c4608cc7a4e8"
+    "output_digest": "sha256:00948250671784285788316435557c85e7ded9f3d9bff6cf03b5323c5ec4404e"
   }
 }
