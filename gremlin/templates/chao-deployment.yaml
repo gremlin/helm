@@ -1,5 +1,6 @@
 {{ if .Values.chao.create }}
 {{- include "chaoNamespacesValidate" . -}}
+{{- include "gremlin.validateReservedNames.chao" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
