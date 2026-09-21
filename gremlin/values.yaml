@@ -366,6 +366,13 @@ gremlin:
       volumes: []
       volumeMounts: []
 
+  # gremlin.serviceUrl -
+  # Base URL of the Gremlin control plane that the agent DaemonSet and the Chao Deployment report to.
+  #
+  # The values file generated at https://app.gremlin.com/getting-started always sets this explicitly,
+  #   so you rarely need to change it here. Override it when running Gremlin Private Edition.
+  serviceUrl: "https://api.gremlin.com/v1"
+
   secret:
     # gremlin.secret.name -
     # Name of the Secret holding the Gremlin credentials. Consumed by the agent DaemonSet and the

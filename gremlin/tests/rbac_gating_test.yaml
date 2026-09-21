@@ -1,0 +1,95 @@
+suite: Test RBAC object naming and chao gating
+templates:
+  - gremlin-service-account.yaml
+  - chao-service-account.yaml
+  - chao-psp.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should give the PSP and SCC RoleBindings distinct names when both are enabled
+    templates:
+      - gremlin-service-account.yaml
+    set:
+      gremlin.podSecurity.podSecurityPolicy.create: true
+      gremlin.podSecurity.securityContextConstraints.create: true
+    asserts:
+      - notEqual:
+          path: metadata.name
+          value: default:gremlin
+      - matchRegex:
+          path: metadata.name
+          pattern: ^(gremlin|gremlin-metadata-reader|psp:gremlin|scc:gremlin)$
+
+  - it: should bind the PSP Role under its own name
+    templates:
+      - gremlin-service-account.yaml
+    documentIndex: 4
+    set:
+      gremlin.podSecurity.podSecurityPolicy.create: true
+    asserts:
+      - equal:
+          path: kind
+          value: RoleBinding
+      - equal:
+          path: metadata.name
+          value: psp:gremlin
+      - equal:
+          path: roleRef.name
+          value: psp:gremlin
+
+  - it: should bind the SCC Role under its own name
+    templates:
+      - gremlin-service-account.yaml
+    documentIndex: 4
+    set:
+      gremlin.podSecurity.securityContextConstraints.create: true
+    asserts:
+      - equal:
+          path: kind
+          value: RoleBinding
+      - equal:
+          path: metadata.name
+          value: scc:gremlin
+      - equal:
+          path: roleRef.name
+          value: scc:gremlin
+
+  - it: should render chao's service account and cluster-scoped RBAC by default
+    templates:
+      - chao-service-account.yaml
+    asserts:
+      - hasDocuments:
+          count: 3
+
+  - it: should render no chao service account or RBAC when chao.create is false
+    templates:
+      - chao-service-account.yaml
+    set:
+      chao.create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should render no chao PodSecurityPolicy or RBAC when chao.create is false
+    templates:
+      - chao-psp.yaml
+    set:
+      chao.create: false
+      gremlin.podSecurity.podSecurityPolicy.create: true
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should still render chao's PodSecurityPolicy and RBAC when chao.create is true
+    templates:
+      - chao-psp.yaml
+    set:
+      chao.create: true
+      gremlin.podSecurity.podSecurityPolicy.create: true
+    asserts:
+      - hasDocuments:
+          count: 3

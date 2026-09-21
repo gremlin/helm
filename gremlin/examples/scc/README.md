@@ -8,7 +8,7 @@ This Helm Chart can create the exact SecurityContextConstraints Gremlin needs wh
 
 ```shell
 helm install gremlin gremlin/gremlin \
-    --namespace gremlin \
+    --namespace gremlin --create-namespace \
     --set      gremlin.podSecurity.securityContextConstraints.create=true \
     --set      gremlin.secret.managed=true \
     --set      gremlin.secret.teamID=$GREMLIN_TEAM_ID \
