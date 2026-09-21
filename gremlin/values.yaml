@@ -553,7 +553,7 @@ chao:
     #   ClusterRole bound to Chao's service account is extended with the read-only rules
     #   described by `allowlist`, and Chao is told the feature is on.
     dynamicQuery:
-      enabled: false
+      enabled: true
 
       # chao.features.dynamicQuery.allowlist
       # The Kubernetes resources Chao is allowed to query. Each entry maps directly onto an RBAC rule and accepts

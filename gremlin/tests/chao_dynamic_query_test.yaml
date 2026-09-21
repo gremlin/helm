@@ -1,0 +1,179 @@
+suite: Test Chao dynamic query feature
+templates:
+  - chao-service-account.yaml
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should not grant dynamic query permissions when the feature is disabled
+    template: chao-service-account.yaml
+    documentIndex: 1
+    set:
+      chao.features.dynamicQuery.enabled: false
+    asserts:
+      - equal:
+          path: metadata.name
+          value: gremlin-watcher
+      - lengthEqual:
+          path: rules
+          count: 7
+
+  - it: should not pass dynamic query arguments when the feature is disabled
+    template: chao-deployment.yaml
+    set:
+      chao.features.dynamicQuery.enabled: false
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-dynamic_query"
+
+  - it: should grant the default allowlist when the feature is enabled
+    template: chao-service-account.yaml
+    documentIndex: 1
+    set:
+      chao.features.dynamicQuery.enabled: true
+    asserts:
+      - lengthEqual:
+          path: rules
+          count: 18
+      - equal:
+          path: rules[7]
+          value:
+            apiGroups:
+              - ""
+            resources:
+              - endpoints
+              - events
+              - limitranges
+              - persistentvolumeclaims
+              - persistentvolumes
+              - resourcequotas
+            verbs:
+              - get
+              - list
+
+  - it: should not grant the resources deliberately left out of the default allowlist
+    template: chao-service-account.yaml
+    documentIndex: 1
+    set:
+      chao.features.dynamicQuery.enabled: true
+    asserts:
+      - notMatchRegexRaw:
+          pattern: "secrets|configmaps|pods/log|nodes/proxy|services/proxy|clusterroles"
+      - notContains:
+          path: rules
+          content:
+            apiGroups: ["*"]
+            resources: ["*"]
+            verbs: ["get", "list"]
+
+  - it: should not pass a resource list when no denylist is set
+    template: chao-deployment.yaml
+    set:
+      chao.features.dynamicQuery.enabled: true
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-dynamic_query"
+      # chao discovers what the allowlist grants by being refused, so the chart never passes it that list
+      - notMatchRegexRaw:
+          pattern: "dynamic_query_(allow|deny)list"
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-deny_resources"
+
+  - it: should grant exactly what an explicit allowlist asks for
+    template: chao-service-account.yaml
+    documentIndex: 1
+    set:
+      chao.features.dynamicQuery.enabled: true
+      chao.features.dynamicQuery.allowlist:
+        - apiGroups: [""]
+          resources: ["pods", "services"]
+        - apiGroups: ["argoproj.io"]
+          resources: ["applications"]
+    asserts:
+      - lengthEqual:
+          path: rules
+          count: 9
+      - equal:
+          path: rules[7]
+          value:
+            apiGroups:
+              - ""
+            resources:
+              - pods
+              - services
+            verbs:
+              - get
+              - list
+      - equal:
+          path: rules[8].apiGroups[0]
+          value: argoproj.io
+
+  - it: should honor custom verbs on an allowlist entry
+    template: chao-service-account.yaml
+    documentIndex: 1
+    set:
+      chao.features.dynamicQuery:
+        enabled: true
+        allowlist:
+          - apiGroups: ["apps"]
+            resources: ["deployments"]
+            verbs: ["get"]
+    asserts:
+      - equal:
+          path: rules[7].verbs
+          value:
+            - get
+
+  - it: should pass the denylist as a comma-separated deny_resources flag
+    template: chao-deployment.yaml
+    set:
+      chao.features.dynamicQuery:
+        enabled: true
+        denylist:
+          - "credentials.example.com"
+          - "*.vault.example.com"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "-deny_resources"
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "credentials.example.com,*.vault.example.com"
+
+  - it: should not pass a denylist when the feature is disabled
+    template: chao-deployment.yaml
+    set:
+      chao.features.dynamicQuery:
+        enabled: false
+        denylist: ["credentials.example.com"]
+    asserts:
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: "-deny_resources"
+
+  - it: should leave the ClusterRole untouched by the denylist
+    template: chao-service-account.yaml
+    documentIndex: 1
+    set:
+      chao.features.dynamicQuery:
+        enabled: true
+        allowlist:
+          - apiGroups: ["example.com"]
+            resources: ["*"]
+        denylist: ["credentials.example.com"]
+    asserts:
+      # the denylist is enforced by chao, not RBAC, so it never narrows the grant
+      - lengthEqual:
+          path: rules
+          count: 8
+      - equal:
+          path: rules[7].resources
+          value:
+            - "*"
