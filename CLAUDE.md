@@ -47,3 +47,17 @@ reserved list to the collision check and extend this file's list above.
 `gremlin.gpu.<vendor>` block (a custom vendor's `volumes`/`volumeMounts` entries) are not covered
 by the check — a collision there surfaces only as a Kubernetes API rejection at apply time, not a
 chart-level failure. Whoever adds a vendor block should add its names to the reserved list above.
+
+## Name test files after the behavior, not the ticket
+
+`gremlin/tests/*.yaml` files (and their `suite:` descriptions) describe what they test, not which
+ticket introduced them — e.g. `extra_volumes_test.yaml` / `suite: extraVolumes / extraVolumeMounts`,
+not `en-12345_extra_volumes_test.yaml` / `suite: EN-12345 - extraVolumes`.
+
+**Why:** a ticket ID tells a future reader nothing about what broke, and outlives its usefulness
+the moment the ticket is closed — the test itself is what has to stay legible.
+
+**How to apply:** when adding tests for a ticket, name the file and suite for the behavior under
+test, matching the existing style (`daemonset_resources_test.yaml`,
+`chao_deployment_namespaces_test.yaml`, ...). Keep ticket context in the commit message and PR
+description instead.
