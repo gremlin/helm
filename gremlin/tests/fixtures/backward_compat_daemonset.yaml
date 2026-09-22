@@ -7,7 +7,7 @@ metadata:
   namespace: default
   labels:
     app.kubernetes.io/name: gremlin
-    helm.sh/chart: gremlin-0.28.0
+    helm.sh/chart: gremlin-0.29.0
     app.kubernetes.io/instance: my-release
     app.kubernetes.io/managed-by: Helm
     version: v1
@@ -23,7 +23,7 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: gremlin
-        helm.sh/chart: gremlin-0.28.0
+        helm.sh/chart: gremlin-0.29.0
         app.kubernetes.io/instance: my-release
         app.kubernetes.io/managed-by: Helm
         version: v1
@@ -68,7 +68,7 @@ spec:
               fieldRef:
                 fieldPath: spec.nodeName
           - name: GREMLIN_CLIENT_TAGS
-            value: 
+            value: ""
           - name: GREMLIN_COLLECT_DNS
             value: "true"
           - name: GREMLIN_SERVICE_URL

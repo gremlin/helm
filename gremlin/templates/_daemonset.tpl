@@ -193,7 +193,7 @@ spec:
               fieldRef:
                 fieldPath: spec.nodeName
           - name: GREMLIN_CLIENT_TAGS
-            value: {{ $root.Values.gremlin.client.tags }}
+            value: {{ $root.Values.gremlin.client.tags | quote }}
           - name: GREMLIN_COLLECT_DNS
             value: {{ $root.Values.gremlin.collect.dns | quote }}
           - name: GREMLIN_SERVICE_URL

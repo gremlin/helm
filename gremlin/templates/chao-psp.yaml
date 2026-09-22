@@ -1,4 +1,4 @@
-{{ if .Values.gremlin.podSecurity.podSecurityPolicy.create }}
+{{ if and .Values.chao.create .Values.gremlin.podSecurity.podSecurityPolicy.create }}
 ---
 apiVersion: {{ include "pspApiVersion" . }}
 kind: PodSecurityPolicy

@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/instance: chao
     app.kubernetes.io/name: chao
-    helm.sh/chart: gremlin-0.28.0
+    helm.sh/chart: gremlin-0.29.0
     app.kubernetes.io/version: "1"
   name: chao
   namespace: default
@@ -27,7 +27,7 @@ spec:
       labels:
         app.kubernetes.io/instance: chao
         app.kubernetes.io/name: chao
-        helm.sh/chart: gremlin-0.28.0
+        helm.sh/chart: gremlin-0.29.0
         app.kubernetes.io/version: "1"
     spec:
       serviceAccountName: chao
@@ -54,6 +54,7 @@ spec:
           args:
             - "-api_url"
             - "https://api.gremlin.com/v1/kubernetes"
+            - "-dynamic_query"
           imagePullPolicy: Always
           name: chao
       volumes:

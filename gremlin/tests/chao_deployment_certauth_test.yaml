@@ -52,6 +52,7 @@ tests:
             - /var/lib/gremlin/cert/gremlin.cert
             - -key_path
             - /var/lib/gremlin/cert/gremlin.key
+            - -dynamic_query
       - equal:
           path: spec.template.spec.containers[0].volumeMounts[0]
           value:
@@ -80,6 +81,7 @@ tests:
             - /var/lib/gremlin/cert/gremlin.cert
             - -key_path
             - /var/lib/gremlin/cert/gremlin.key
+            - -dynamic_query
       - equal:
           path: spec.template.spec.containers[0].volumeMounts[0]
           value:
