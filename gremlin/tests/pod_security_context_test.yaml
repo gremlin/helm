@@ -1,4 +1,4 @@
-suite: EN-11853 B9 - pod-level securityContext
+suite: pod-level securityContext
 templates:
   - daemonset.yaml
   - chao-deployment.yaml
