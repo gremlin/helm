@@ -1,0 +1,52 @@
+suite: hostAliases
+templates:
+  - daemonset.yaml
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should render user-supplied hostAliases on the gremlin DaemonSet
+    set:
+      hostAliases:
+        - ip: "10.0.0.5"
+          hostnames:
+            - internal.gremlin.example
+    asserts:
+      - equal:
+          path: spec.template.spec.hostAliases
+          value:
+            - ip: "10.0.0.5"
+              hostnames:
+                - internal.gremlin.example
+        template: daemonset.yaml
+
+  - it: should not render a hostAliases field on the gremlin DaemonSet by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.hostAliases
+        template: daemonset.yaml
+
+  - it: should render user-supplied hostAliases on the chao Deployment
+    set:
+      chao.hostAliases:
+        - ip: "10.0.0.5"
+          hostnames:
+            - internal.gremlin.example
+    asserts:
+      - equal:
+          path: spec.template.spec.hostAliases
+          value:
+            - ip: "10.0.0.5"
+              hostnames:
+                - internal.gremlin.example
+        template: chao-deployment.yaml
+
+  - it: should not render a hostAliases field on the chao Deployment by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.hostAliases
+        template: chao-deployment.yaml

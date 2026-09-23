@@ -1,0 +1,77 @@
+suite: terminationGracePeriodSeconds
+templates:
+  - daemonset.yaml
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should render a user-supplied terminationGracePeriodSeconds on the gremlin DaemonSet
+    set:
+      terminationGracePeriodSeconds: 45
+    asserts:
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 45
+        template: daemonset.yaml
+
+  - it: should render terminationGracePeriodSeconds of 0 on the gremlin DaemonSet without being dropped as falsy
+    set:
+      terminationGracePeriodSeconds: 0
+    asserts:
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 0
+        template: daemonset.yaml
+
+  - it: should not render terminationGracePeriodSeconds on the gremlin DaemonSet by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.terminationGracePeriodSeconds
+        template: daemonset.yaml
+
+  - it: should render a non-numeric terminationGracePeriodSeconds on the gremlin DaemonSet as its literal value, not silently coerce it to 0
+    set:
+      terminationGracePeriodSeconds: not-a-number
+    asserts:
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: not-a-number
+        template: daemonset.yaml
+
+  - it: should not let a multiline terminationGracePeriodSeconds string inject a sibling pod-spec field on the gremlin DaemonSet
+    set:
+      terminationGracePeriodSeconds: |-
+        45
+        hostIPC: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.hostIPC
+        template: daemonset.yaml
+
+  - it: should render a user-supplied terminationGracePeriodSeconds on the chao Deployment
+    set:
+      chao.terminationGracePeriodSeconds: 45
+    asserts:
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 45
+        template: chao-deployment.yaml
+
+  - it: should render terminationGracePeriodSeconds of 0 on the chao Deployment without being dropped as falsy
+    set:
+      chao.terminationGracePeriodSeconds: 0
+    asserts:
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: 0
+        template: chao-deployment.yaml
+
+  - it: should not render terminationGracePeriodSeconds on the chao Deployment by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.terminationGracePeriodSeconds
+        template: chao-deployment.yaml

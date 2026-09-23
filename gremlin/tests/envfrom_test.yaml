@@ -1,0 +1,56 @@
+suite: envFrom
+templates:
+  - daemonset.yaml
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should render user-supplied envFrom sources on the gremlin DaemonSet
+    set:
+      envFrom:
+        - configMapRef:
+            name: gremlin-extra-config
+        - secretRef:
+            name: gremlin-extra-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - configMapRef:
+                name: gremlin-extra-config
+            - secretRef:
+                name: gremlin-extra-secret
+        template: daemonset.yaml
+
+  - it: should not render an envFrom field on the gremlin DaemonSet by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].envFrom
+        template: daemonset.yaml
+
+  - it: should render user-supplied envFrom sources on the chao Deployment
+    set:
+      chao.envFrom:
+        - configMapRef:
+            name: chao-extra-config
+        - secretRef:
+            name: chao-extra-secret
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].envFrom
+          value:
+            - configMapRef:
+                name: chao-extra-config
+            - secretRef:
+                name: chao-extra-secret
+        template: chao-deployment.yaml
+
+  - it: should not render an envFrom field on the chao Deployment by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].envFrom
+        template: chao-deployment.yaml

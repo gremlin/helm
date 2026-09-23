@@ -1,0 +1,140 @@
+suite: probes (liveness/readiness/startup)
+templates:
+  - daemonset.yaml
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should render a user-supplied livenessProbe on the gremlin DaemonSet
+    set:
+      livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds: 5
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+        template: daemonset.yaml
+
+  - it: should render a user-supplied readinessProbe on the gremlin DaemonSet
+    set:
+      readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        periodSeconds: 5
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /ready
+              port: 8080
+            periodSeconds: 5
+        template: daemonset.yaml
+
+  - it: should render a user-supplied startupProbe on the gremlin DaemonSet
+    set:
+      startupProbe:
+        exec:
+          command: ["cat", "/tmp/gremlin-ready"]
+        failureThreshold: 30
+        periodSeconds: 10
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            exec:
+              command: ["cat", "/tmp/gremlin-ready"]
+            failureThreshold: 30
+            periodSeconds: 10
+        template: daemonset.yaml
+
+  - it: should not render any probe fields on the gremlin DaemonSet by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+        template: daemonset.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe
+        template: daemonset.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe
+        template: daemonset.yaml
+
+  - it: should render a user-supplied livenessProbe on the chao Deployment
+    set:
+      chao.livenessProbe:
+        httpGet:
+          path: /healthz
+          port: 8080
+        initialDelaySeconds: 10
+        periodSeconds: 5
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe
+          value:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+        template: chao-deployment.yaml
+
+  - it: should render a user-supplied readinessProbe on the chao Deployment
+    set:
+      chao.readinessProbe:
+        httpGet:
+          path: /ready
+          port: 8080
+        periodSeconds: 5
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe
+          value:
+            httpGet:
+              path: /ready
+              port: 8080
+            periodSeconds: 5
+        template: chao-deployment.yaml
+
+  - it: should render a user-supplied startupProbe on the chao Deployment
+    set:
+      chao.startupProbe:
+        exec:
+          command: ["cat", "/tmp/chao-ready"]
+        failureThreshold: 30
+        periodSeconds: 10
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].startupProbe
+          value:
+            exec:
+              command: ["cat", "/tmp/chao-ready"]
+            failureThreshold: 30
+            periodSeconds: 10
+        template: chao-deployment.yaml
+
+  - it: should not render any probe fields on the chao Deployment by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].livenessProbe
+        template: chao-deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].readinessProbe
+        template: chao-deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].startupProbe
+        template: chao-deployment.yaml

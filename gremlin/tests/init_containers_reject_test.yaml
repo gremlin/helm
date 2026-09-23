@@ -1,0 +1,70 @@
+suite: initContainers reserved-name collision
+templates:
+  - daemonset.yaml
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should fail the gremlin DaemonSet render when initContainers collides with a reserved container name
+    set:
+      initContainers:
+        - name: seccomp-init
+          image: busybox:1.36
+    asserts:
+      - failedTemplate:
+          errorMessage: 'initContainers: "seccomp-init" collides with a container name the gremlin chart manages. Rename it.'
+        template: daemonset.yaml
+
+  - it: should still fail exactly once and render the fan-out when GPU is enabled and initContainers collides
+    set:
+      gremlin.gpu.enabled: true
+      initContainers:
+        - name: gremlin
+          image: busybox:1.36
+    asserts:
+      - failedTemplate:
+          errorMessage: 'initContainers: "gremlin" collides with a container name the gremlin chart manages. Rename it.'
+        template: daemonset.yaml
+
+  - it: should not fail the gremlin DaemonSet render when initContainers does not collide
+    set:
+      initContainers:
+        - name: wait-for-node-ready
+          image: busybox:1.36
+    asserts:
+      - notFailedTemplate: {}
+        template: daemonset.yaml
+
+  - it: should fail the chao Deployment render when initContainers collides with a reserved container name
+    set:
+      chao.initContainers:
+        - name: chao
+          image: busybox:1.36
+    asserts:
+      - failedTemplate:
+          errorMessage: 'chao.initContainers: "chao" collides with a container name the gremlin chart manages. Rename it.'
+        template: chao-deployment.yaml
+
+  - it: should not fail the chao Deployment render when initContainers does not collide
+    set:
+      chao.initContainers:
+        - name: debug-network-check
+          image: busybox:1.36
+    asserts:
+      - notFailedTemplate: {}
+        template: chao-deployment.yaml
+
+  - it: should render nothing for chao when chao.create is false, even with a colliding initContainers name
+    set:
+      chao.create: false
+      chao.initContainers:
+        - name: chao
+          image: busybox:1.36
+    asserts:
+      - hasDocuments:
+          count: 0
+        template: chao-deployment.yaml

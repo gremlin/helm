@@ -2,3 +2,6 @@
 .iml
 
 **/tests/__snapshot__/
+
+.serena/cache/
+reviews/

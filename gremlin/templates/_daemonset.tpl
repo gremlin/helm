@@ -21,6 +21,7 @@ Context: dict
 {{- /* CDI device: global gremlin.gpu.cdiDevice, optionally overridden per vendor block */ -}}
 {{- $cdiDevice := "" -}}
 {{- with $gpu -}}{{- $cdiDevice = default $root.Values.gremlin.gpu.cdiDevice .cdiDevice -}}{{- end -}}
+{{- $seccompInit := and $root.Values.gremlin.podSecurity.seccomp.enabled (eq "localhost/gremlin" $root.Values.gremlin.podSecurity.seccomp.profile) -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -100,12 +101,25 @@ spec:
       dnsPolicy: {{ $root.Values.gremlin.dnsPolicy }}
       hostPID: {{ $root.Values.gremlin.hostPID }}
       hostNetwork: {{ $root.Values.gremlin.hostNetwork }}
+      {{- if not (kindIs "invalid" $root.Values.terminationGracePeriodSeconds) }}
+      terminationGracePeriodSeconds: {{ $root.Values.terminationGracePeriodSeconds | toJson }}
+      {{- end }}
+      {{- with $root.Values.dnsConfig }}
+      dnsConfig: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.hostAliases }}
+      hostAliases: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $root.Values.podSecurityContext }}
+      securityContext: {{ toYaml . | nindent 8 }}
+      {{- end }}
       {{- if $root.Values.image.pullSecret }}
       imagePullSecrets:
         - name: {{ $root.Values.image.pullSecret }}
       {{- end }}
-      {{- if and $root.Values.gremlin.podSecurity.seccomp.enabled (eq "localhost/gremlin" $root.Values.gremlin.podSecurity.seccomp.profile) }}
+      {{- if or $seccompInit $root.Values.initContainers }}
       initContainers:
+        {{- if $seccompInit }}
         - name: seccomp-init
           image: {{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}
           imagePullPolicy: {{ $root.Values.image.pullPolicy }}
@@ -118,6 +132,10 @@ spec:
             - cp
             - /gremlin/seccomp.json
             - {{ $root.Values.gremlin.podSecurity.seccomp.root }}/gremlin
+        {{- end }}
+        {{- with $root.Values.initContainers }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
       containers:
       - name: {{ $root.Chart.Name }}
@@ -207,6 +225,21 @@ spec:
           {{- with $root.Values.gremlin.extraEnv }}
             {{- toYaml . | nindent 10 }}
           {{- end }}
+        {{- with $root.Values.envFrom }}
+        envFrom: {{ toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with $root.Values.livenessProbe }}
+        livenessProbe: {{ toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with $root.Values.readinessProbe }}
+        readinessProbe: {{ toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with $root.Values.startupProbe }}
+        startupProbe: {{ toYaml . | nindent 10 }}
+        {{- end }}
+        {{- with $root.Values.lifecycle }}
+        lifecycle: {{ toYaml . | nindent 10 }}
+        {{- end }}
         volumeMounts:
           - name: gremlin-state
             mountPath: /var/lib/gremlin
@@ -244,6 +277,9 @@ spec:
             mountPath: /etc/OpenCL/vendors/{{ $gpu.openclIcd.filename }}
             subPath: {{ $gpu.openclIcd.filename }}
             readOnly: true
+          {{- end }}
+          {{- with $root.Values.extraVolumeMounts }}
+          {{- toYaml . | nindent 10 }}
           {{- end }}
       volumes:
         - name: cgroup-root
@@ -292,6 +328,9 @@ spec:
         - name: gremlin-opencl-icd
           configMap:
             name: {{ include "gremlin.fullname" $root }}-opencl-icd
+        {{- end }}
+        {{- with $root.Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
 {{- if $root.Values.gremlin.priorityClassName }}
       priorityClassName: {{ $root.Values.gremlin.priorityClassName }}

@@ -1,0 +1,56 @@
+suite: dnsConfig
+templates:
+  - daemonset.yaml
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should render a user-supplied dnsConfig on the gremlin DaemonSet
+    set:
+      dnsConfig:
+        nameservers:
+          - 10.0.0.10
+        searches:
+          - svc.cluster.local
+    asserts:
+      - equal:
+          path: spec.template.spec.dnsConfig
+          value:
+            nameservers:
+              - 10.0.0.10
+            searches:
+              - svc.cluster.local
+        template: daemonset.yaml
+
+  - it: should not render a dnsConfig field on the gremlin DaemonSet by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.dnsConfig
+        template: daemonset.yaml
+
+  - it: should render a user-supplied dnsConfig on the chao Deployment
+    set:
+      chao.dnsConfig:
+        nameservers:
+          - 10.0.0.10
+        searches:
+          - svc.cluster.local
+    asserts:
+      - equal:
+          path: spec.template.spec.dnsConfig
+          value:
+            nameservers:
+              - 10.0.0.10
+            searches:
+              - svc.cluster.local
+        template: chao-deployment.yaml
+
+  - it: should not render a dnsConfig field on the chao Deployment by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.dnsConfig
+        template: chao-deployment.yaml

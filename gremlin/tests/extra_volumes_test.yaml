@@ -1,0 +1,100 @@
+suite: extraVolumes / extraVolumeMounts
+templates:
+  - daemonset.yaml
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should append a user-supplied volume and mount on the gremlin DaemonSet
+    set:
+      extraVolumes:
+        - name: debug-logs
+          hostPath:
+            path: /var/log/debug
+      extraVolumeMounts:
+        - name: debug-logs
+          mountPath: /var/log/debug
+          readOnly: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: debug-logs
+            hostPath:
+              path: /var/log/debug
+        template: daemonset.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: debug-logs
+            mountPath: /var/log/debug
+            readOnly: true
+        template: daemonset.yaml
+
+  - it: should not render the extra volume or mount on the gremlin DaemonSet by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: debug-logs
+        template: daemonset.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: debug-logs
+        template: daemonset.yaml
+
+  - it: should append a user-supplied volume and mount on the chao Deployment
+    set:
+      chao.extraVolumes:
+        - name: debug-logs
+          hostPath:
+            path: /var/log/debug
+      chao.extraVolumeMounts:
+        - name: debug-logs
+          mountPath: /var/log/debug
+          readOnly: true
+    asserts:
+      - contains:
+          path: spec.template.spec.volumes
+          content:
+            name: debug-logs
+            hostPath:
+              path: /var/log/debug
+        template: chao-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: debug-logs
+            mountPath: /var/log/debug
+            readOnly: true
+        template: chao-deployment.yaml
+
+  - it: should bring the volumeMounts key into existence on chao when no other volumeMounts gate condition holds
+    set:
+      gremlin.secret.managed: true
+      gremlin.secret.type: secret
+      gremlin.secret.teamID: test-team-id
+      gremlin.secret.teamSecret: test-team-secret
+      chao.extraVolumeMounts:
+        - name: debug-logs
+          mountPath: /var/log/debug
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: debug-logs
+            mountPath: /var/log/debug
+        template: chao-deployment.yaml
+
+  - it: should not render the extra volume or mount on the chao Deployment by default
+    asserts:
+      - notContains:
+          path: spec.template.spec.volumes
+          content:
+            name: debug-logs
+        template: chao-deployment.yaml

@@ -1,0 +1,62 @@
+suite: pod-level securityContext
+templates:
+  - daemonset.yaml
+  - chao-deployment.yaml
+release:
+  name: my-release
+  namespace: my-namespace
+  revision: 1
+  upgrade: true
+
+tests:
+  - it: should render a user-supplied pod-level securityContext on the gremlin DaemonSet
+    set:
+      podSecurityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+        template: daemonset.yaml
+      # container-level securityContext is untouched by the pod-level value
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.privileged
+          value: false
+        template: daemonset.yaml
+
+  - it: should not render a pod-level securityContext on the gremlin DaemonSet by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext
+        template: daemonset.yaml
+
+  - it: should render a user-supplied pod-level securityContext on the chao Deployment
+    set:
+      chao.podSecurityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            runAsUser: 1000
+            fsGroup: 1000
+        template: chao-deployment.yaml
+      # container-level securityContext is untouched by the pod-level value
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+        template: chao-deployment.yaml
+
+  - it: should not render a pod-level securityContext on the chao Deployment by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext
+        template: chao-deployment.yaml
