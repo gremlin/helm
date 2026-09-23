@@ -102,7 +102,7 @@ spec:
       hostPID: {{ $root.Values.gremlin.hostPID }}
       hostNetwork: {{ $root.Values.gremlin.hostNetwork }}
       {{- if not (kindIs "invalid" $root.Values.terminationGracePeriodSeconds) }}
-      terminationGracePeriodSeconds: {{ $root.Values.terminationGracePeriodSeconds | int }}
+      terminationGracePeriodSeconds: {{ $root.Values.terminationGracePeriodSeconds | toJson }}
       {{- end }}
       {{- with $root.Values.dnsConfig }}
       dnsConfig: {{ toYaml . | nindent 8 }}

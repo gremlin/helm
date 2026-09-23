@@ -86,20 +86,62 @@ stray space would silently become something other than what was written.
 {{- end -}}
 
 {{/*
-Reserved volume names the gremlin chart itself manages, space-separated. Callers turn this into a
-list with splitList " " (include "gremlin.reservedNames.volumes" .). Keeping this in one named
-template means there is exactly one place to edit when a new chart-managed volume name appears.
+Reserved volume names the Gremlin DaemonSet itself manages, one per line (flush left -- no leading
+whitespace, no comment lines; splitList "\n" turns a leading/trailing blank into an empty entry
+that never matches a real name, but keep entries flush left anyway since indentation would
+otherwise become part of the name). Includes the container-driver socket volumes, derived from
+.Values.containerDrivers.*.name rather than hardcoded, so a renamed driver stays covered. Callers
+turn this into a list with splitList "\n" (include "gremlin.reservedNames.daemonsetVolumes" .).
+Keeping this in one named template means there is exactly one place to edit when a new
+chart-managed volume name appears.
 */}}
-{{- define "gremlin.reservedNames.volumes" -}}
-gremlin-state gremlin-executions gremlin-logs cgroup-root seccomp-root seccomp-profile gremlin-cert ssl-cert-file gremlin-tls-identity chao-tls-identity gremlin-opencl-icd docker-sock containerd-sock crio-sock kfd dri opencl-vendors
+{{- define "gremlin.reservedNames.daemonsetVolumes" -}}
+gremlin-state
+gremlin-executions
+gremlin-logs
+cgroup-root
+seccomp-root
+seccomp-profile
+gremlin-cert
+ssl-cert-file
+gremlin-tls-identity
+gremlin-opencl-icd
+kfd
+dri
+opencl-vendors
+{{- range $key, $val := .Values.containerDrivers }}
+{{ $val.name }}-sock
+{{- end }}
 {{- end -}}
 
 {{/*
-Reserved container names the gremlin chart itself manages, space-separated. See
-gremlin.reservedNames.volumes for the calling convention.
+Reserved container names the Gremlin DaemonSet itself manages, one per line. See
+gremlin.reservedNames.daemonsetVolumes for the calling convention and formatting rules.
 */}}
-{{- define "gremlin.reservedNames.containers" -}}
-seccomp-init gremlin chao
+{{- define "gremlin.reservedNames.daemonsetContainers" -}}
+seccomp-init
+gremlin
+{{- end -}}
+
+{{/*
+Reserved volume names the Chao deployment itself manages, one per line. Deliberately a separate,
+narrower list from the DaemonSet's -- Chao renders only gremlin-cert (unconditional),
+ssl-cert-file (when ssl.certFile is set), and chao-tls-identity (when chao.tls.identity is
+configured); reusing the DaemonSet's list here would reject chao.extraVolumes/extraVolumeMounts
+entries that don't actually collide with anything Chao renders.
+*/}}
+{{- define "gremlin.reservedNames.chaoVolumes" -}}
+gremlin-cert
+ssl-cert-file
+chao-tls-identity
+{{- end -}}
+
+{{/*
+Reserved container names the Chao deployment itself manages, one per line. Chao's pod has a single
+container (chao) and no chart-managed init container, unlike the DaemonSet's seccomp-init.
+*/}}
+{{- define "gremlin.reservedNames.chaoContainers" -}}
+chao
 {{- end -}}
 
 {{/*
@@ -124,9 +166,11 @@ gremlin.validateValues's aggregate message, so it also fires when a single templ
 (daemonset.yaml) is rendered on its own.
 */}}
 {{- define "gremlin.validateReservedNames.daemonset" -}}
-{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.initContainers "reserved" (splitList " " (include "gremlin.reservedNames.containers" .)) "valuePath" "initContainers" "kind" "container") -}}
-{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.extraVolumes "reserved" (splitList " " (include "gremlin.reservedNames.volumes" .)) "valuePath" "extraVolumes" "kind" "volume") -}}
-{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.extraVolumeMounts "reserved" (splitList " " (include "gremlin.reservedNames.volumes" .)) "valuePath" "extraVolumeMounts" "kind" "volume") -}}
+{{- $volumes := splitList "\n" (include "gremlin.reservedNames.daemonsetVolumes" .) -}}
+{{- $containers := splitList "\n" (include "gremlin.reservedNames.daemonsetContainers" .) -}}
+{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.initContainers "reserved" $containers "valuePath" "initContainers" "kind" "container") -}}
+{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.extraVolumes "reserved" $volumes "valuePath" "extraVolumes" "kind" "volume") -}}
+{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.extraVolumeMounts "reserved" $volumes "valuePath" "extraVolumeMounts" "kind" "volume") -}}
 {{- end -}}
 
 {{/*
@@ -134,7 +178,9 @@ Reserved-name collision checks for the Chao deployment's user-supplied initConta
 extraVolumes, and extraVolumeMounts. See gremlin.validateReservedNames.daemonset.
 */}}
 {{- define "gremlin.validateReservedNames.chao" -}}
-{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.chao.initContainers "reserved" (splitList " " (include "gremlin.reservedNames.containers" .)) "valuePath" "chao.initContainers" "kind" "container") -}}
-{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.chao.extraVolumes "reserved" (splitList " " (include "gremlin.reservedNames.volumes" .)) "valuePath" "chao.extraVolumes" "kind" "volume") -}}
-{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.chao.extraVolumeMounts "reserved" (splitList " " (include "gremlin.reservedNames.volumes" .)) "valuePath" "chao.extraVolumeMounts" "kind" "volume") -}}
+{{- $volumes := splitList "\n" (include "gremlin.reservedNames.chaoVolumes" .) -}}
+{{- $containers := splitList "\n" (include "gremlin.reservedNames.chaoContainers" .) -}}
+{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.chao.initContainers "reserved" $containers "valuePath" "chao.initContainers" "kind" "container") -}}
+{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.chao.extraVolumes "reserved" $volumes "valuePath" "chao.extraVolumes" "kind" "volume") -}}
+{{- include "gremlin.validateReservedNames.check" (dict "entries" .Values.chao.extraVolumeMounts "reserved" $volumes "valuePath" "chao.extraVolumeMounts" "kind" "volume") -}}
 {{- end -}}

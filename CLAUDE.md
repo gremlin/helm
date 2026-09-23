@@ -18,34 +18,44 @@ This also does not apply to `envFrom`: it *references* an existing ConfigMap/Sec
 than defining a new object, and the chart cannot see that object's keys at render time, so there
 is nothing to statically collide-check.
 
+**The DaemonSet and Chao Deployment each get their own reserved list, not one shared list.** They
+render different chart-managed resources, and checking a workload's `extraVolumes`/`initContainers`
+against the *other* workload's names produces false rejections (Chao doesn't render `gremlin-state`,
+the DaemonSet doesn't render `chao-tls-identity`, and so on).
+
 Reserved names as of this writing:
 
-- Volumes: `gremlin-state`, `gremlin-executions`, `gremlin-logs`, `cgroup-root`, `seccomp-root`,
-  `seccomp-profile`, `gremlin-cert`, `ssl-cert-file`, `gremlin-tls-identity`, `chao-tls-identity`,
-  `gremlin-opencl-icd`, plus the container-driver socket volumes (`docker-sock`,
-  `containerd-sock`, `crio-sock`) and any GPU vendor volume names (`kfd`, `dri`,
-  `opencl-vendors`, ...).
-- Env vars: `GREMLIN_TEAM_ID`, `GREMLIN_TEAM_SECRET`, `GREMLIN_TEAM_CERTIFICATE_OR_FILE`,
-  `GREMLIN_TEAM_PRIVATE_KEY_OR_FILE`, `GREMLIN_IDENTIFIER`, `GREMLIN_CLIENT_TAGS`,
-  `GREMLIN_COLLECT_DNS`, `GREMLIN_SERVICE_URL`, `GREMLIN_PUSH_POD_CIDR_TAGS`,
-  `GREMLIN_PUSH_ZONE_CIDR_TAGS`, `https_proxy`, `no_proxy`, `SSL_CERT_FILE`, `SSL_CERT_DIR`,
-  `GREMLIN_TLS_IDENTITY_CERTIFICATE`, `GREMLIN_TLS_IDENTITY_PRIVATE_KEY`,
-  `GREMLIN_CLUSTER_ID`, and any GPU vendor env vars (e.g. `NVIDIA_VISIBLE_DEVICES`,
-  `NVIDIA_DRIVER_CAPABILITIES`).
-- Container names (for `initContainers`): `seccomp-init`, and each workload's own container name
-  (`gremlin`, `chao`).
+- DaemonSet volumes: `gremlin-state`, `gremlin-executions`, `gremlin-logs`, `cgroup-root`,
+  `seccomp-root`, `seccomp-profile`, `gremlin-cert`, `ssl-cert-file`, `gremlin-tls-identity`,
+  `gremlin-opencl-icd`, `kfd`, `dri`, `opencl-vendors`, plus the container-driver socket volumes
+  (derived from `.Values.containerDrivers.*.name` at render time, not hardcoded — currently
+  `docker-sock`, `containerd-sock`, `crio-sock`).
+- DaemonSet container names (for `initContainers`): `seccomp-init`, `gremlin`.
+- Chao volumes: `gremlin-cert`, `ssl-cert-file`, `chao-tls-identity`.
+- Chao container names (for `initContainers`): `chao`.
+- Env vars (not currently checked — see `envFrom`/`extraEnv` above): `GREMLIN_TEAM_ID`,
+  `GREMLIN_TEAM_SECRET`, `GREMLIN_TEAM_CERTIFICATE_OR_FILE`, `GREMLIN_TEAM_PRIVATE_KEY_OR_FILE`,
+  `GREMLIN_IDENTIFIER`, `GREMLIN_CLIENT_TAGS`, `GREMLIN_COLLECT_DNS`, `GREMLIN_SERVICE_URL`,
+  `GREMLIN_PUSH_POD_CIDR_TAGS`, `GREMLIN_PUSH_ZONE_CIDR_TAGS`, `https_proxy`, `no_proxy`,
+  `SSL_CERT_FILE`, `SSL_CERT_DIR`, `GREMLIN_TLS_IDENTITY_CERTIFICATE`,
+  `GREMLIN_TLS_IDENTITY_PRIVATE_KEY`, `GREMLIN_CLUSTER_ID`, and any GPU vendor env vars (e.g.
+  `NVIDIA_VISIBLE_DEVICES`, `NVIDIA_DRIVER_CAPABILITIES`).
 
 **Why:** a silent name collision either gets rejected by the Kubernetes API with an opaque error,
 or silently shadows/duplicates a chart-managed resource — both are worse than a clear failure at
 `helm template`/`helm install` time naming the conflicting value path.
 
 **How to apply:** whenever a new chart value accepts user-supplied names in this shape, add its
-reserved list to the collision check and extend this file's list above.
+name to the correct workload's reserved list (`gremlin.reservedNames.daemonset*` /
+`.chao*` in `_validation.tpl`) and to this file's list above. Prefer deriving a reserved name from
+its source value (as the container-driver sockets do) over hardcoding it, when the source is a
+small, fixed-shape values block — hardcoding only the GPU vendor gap below because that block's
+shape is genuinely open-ended.
 
-**Known gap:** the reserved lists above are static. Names introduced by a hand-configured
-`gremlin.gpu.<vendor>` block (a custom vendor's `volumes`/`volumeMounts` entries) are not covered
-by the check — a collision there surfaces only as a Kubernetes API rejection at apply time, not a
-chart-level failure. Whoever adds a vendor block should add its names to the reserved list above.
+**Known gap:** `gremlin.gpu.<vendor>` blocks are still static. A hand-configured vendor's
+`volumes`/`volumeMounts` entries are not covered by the check — a collision there surfaces only as
+a Kubernetes API rejection at apply time, not a chart-level failure. Whoever adds a vendor block
+should add its names to the reserved list above.
 
 ## Name test files after the behavior, not the ticket
 

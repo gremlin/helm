@@ -33,6 +33,25 @@ tests:
           path: spec.template.spec.terminationGracePeriodSeconds
         template: daemonset.yaml
 
+  - it: should render a non-numeric terminationGracePeriodSeconds on the gremlin DaemonSet as its literal value, not silently coerce it to 0
+    set:
+      terminationGracePeriodSeconds: not-a-number
+    asserts:
+      - equal:
+          path: spec.template.spec.terminationGracePeriodSeconds
+          value: not-a-number
+        template: daemonset.yaml
+
+  - it: should not let a multiline terminationGracePeriodSeconds string inject a sibling pod-spec field on the gremlin DaemonSet
+    set:
+      terminationGracePeriodSeconds: |-
+        45
+        hostIPC: true
+    asserts:
+      - notExists:
+          path: spec.template.spec.hostIPC
+        template: daemonset.yaml
+
   - it: should render a user-supplied terminationGracePeriodSeconds on the chao Deployment
     set:
       chao.terminationGracePeriodSeconds: 45
