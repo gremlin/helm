@@ -12,8 +12,7 @@ This does not apply retroactively to `extraEnv`. It's pre-existing, and `extraEn
 both containers' `env:` lists, so a collision there is Kubernetes' documented last-wins override
 behavior — a real, working use case (e.g. overriding `GREMLIN_SERVICE_URL` or `https_proxy`), not
 a bug. Retrofitting a hard failure onto it would break existing installs on their next
-`helm upgrade` with no opt-in. (Considered and rejected during EN-11853 design — see that
-contract's `design.md` for the full reasoning.)
+`helm upgrade` with no opt-in.
 
 This also does not apply to `envFrom`: it *references* an existing ConfigMap/Secret by name rather
 than defining a new object, and the chart cannot see that object's keys at render time, so there
@@ -61,3 +60,20 @@ the moment the ticket is closed — the test itself is what has to stay legible.
 test, matching the existing style (`daemonset_resources_test.yaml`,
 `chao_deployment_namespaces_test.yaml`, ...). Keep ticket context in the commit message and PR
 description instead.
+
+## Don't reference internal tickets or design docs in repo-committed files
+
+This repo (and this file) is public-facing. Don't cite a Jira ticket key, an internal contract
+slug, or a path like `.claude/contracts/<slug>/design.md` in `CLAUDE.md`, `README.md`, code
+comments, or `values.yaml` doc comments — describe the reasoning in prose instead of pointing at
+where it was decided.
+
+**Why:** a ticket or internal-tooling reference is meaningless to anyone outside the team, and it
+rots the moment that tooling's working state is cleaned up or the ticket is closed — a design
+rationale should stand on its own, not depend on a link that may not resolve for the reader, or at
+all.
+
+**How to apply:** when explaining *why* a decision was made, restate the reasoning directly (as
+this file already does above for the `extraEnv` exemption). Ticket numbers and links to
+in-progress design artifacts belong in the commit message and PR description, not in
+repo-committed files.
