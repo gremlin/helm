@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gremlin-integrations",
+  "title": "Gremlin Integrations Chart Schema",
+  "description": "Schema for the Gremlin integrations Helm values",
+  "type": "object",
+  "properties": {
+    "affinity": {
+      "type": "object"
+    },
+    "fullnameOverride": {
+      "type": "string"
+    },
+    "gremlin": {
+      "type": "object",
+      "properties": {
+        "allowList": {
+          "type": "string"
+        },
+        "client": {
+          "type": "object",
+          "properties": {
+            "tags": {
+              "type": "string"
+            }
+          }
+        },
+        "extraEnv": {
+          "type": "array"
+        },
+        "proxy": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "resources": {
+          "type": "object"
+        },
+        "secret": {
+          "type": "object",
+          "properties": {
+            "certificate": {
+              "type": "string"
+            },
+            "key": {
+              "type": "string"
+            },
+            "managed": {
+              "type": "boolean"
+            },
+            "teamID": {
+              "type": "string"
+            },
+            "teamSecret": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          }
+        },
+        "tls": {
+          "type": "object",
+          "properties": {
+            "identity": {
+              "type": "object",
+              "properties": {
+                "createSecret": {
+                  "type": "object",
+                  "properties": {
+                    "cert": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "existingSecret": {
+                  "type": "object",
+                  "properties": {
+                    "cert": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "remoteSecret": {
+                  "type": "object",
+                  "properties": {
+                    "cert": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "pullPolicy": {
+          "type": "string"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "imagePullSecrets": {
+      "type": "array"
+    },
+    "nameOverride": {
+      "type": "string"
+    },
+    "nodeSelector": {
+      "type": "object"
+    },
+    "podAnnotations": {
+      "type": "object"
+    },
+    "podSecurityContext": {
+      "type": "object"
+    },
+    "replicaCount": {
+      "type": "integer"
+    },
+    "securityContext": {
+      "type": "object"
+    },
+    "serviceAccount": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "type": "object"
+        },
+        "create": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "ssl": {
+      "type": "object",
+      "properties": {
+        "certDir": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "certFile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "tolerations": {
+      "type": "array"
+    }
+  }
+}

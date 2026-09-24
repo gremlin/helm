@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "selinuxoptions.json",
+  "title": "SELinuxOptions",
+  "description": "SELinux options applied to the Gremlin agent container's securityContext. Only `type` is recommended; the others may relabel paths on the host filesystem, including container runtime sockets and container state directories.",
+  "type": ["object", "null"],
+  "additionalProperties": false,
+  "properties": {
+    "user":  { "type": ["string", "null"], "description": "SELinux user label." },
+    "role":  { "type": ["string", "null"], "description": "SELinux role label." },
+    "type":  { "type": ["string", "null"], "description": "SELinux type label — the process label gremlind runs under. On BottleRocket, `super_t`." },
+    "level": { "type": ["string", "null"], "description": "SELinux level label (MLS/MCS)." }
+  }
+}

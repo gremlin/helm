@@ -33,24 +33,23 @@ tests:
           path: spec.template.spec.terminationGracePeriodSeconds
         template: daemonset.yaml
 
-  - it: should render a non-numeric terminationGracePeriodSeconds on the gremlin DaemonSet as its literal value, not silently coerce it to 0
+  - it: should reject a non-numeric terminationGracePeriodSeconds on the gremlin DaemonSet via the values schema
     set:
       terminationGracePeriodSeconds: not-a-number
     asserts:
-      - equal:
-          path: spec.template.spec.terminationGracePeriodSeconds
-          value: not-a-number
-        template: daemonset.yaml
+      # Helm 3.17 and Helm 4.x word this rejection differently (design.md 7.5) - match only on
+      # the value path, which both phrasings name, never on the surrounding wording.
+      - failedTemplate:
+          errorPattern: terminationGracePeriodSeconds
 
-  - it: should not let a multiline terminationGracePeriodSeconds string inject a sibling pod-spec field on the gremlin DaemonSet
+  - it: should reject a multiline terminationGracePeriodSeconds string on the gremlin DaemonSet via the values schema, rather than letting it inject a sibling pod-spec field
     set:
       terminationGracePeriodSeconds: |-
         45
         hostIPC: true
     asserts:
-      - notExists:
-          path: spec.template.spec.hostIPC
-        template: daemonset.yaml
+      - failedTemplate:
+          errorPattern: terminationGracePeriodSeconds
 
   - it: should render a user-supplied terminationGracePeriodSeconds on the chao Deployment
     set:

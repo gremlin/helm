@@ -6,13 +6,13 @@ image:
   repository: gremlin/gremlin
   tag: latest
   pullPolicy: Always
-  pullSecret:
+  pullSecret: # @schema type:[string, null]
 
 chaoimage:
   repository: gremlin/chao
   tag: latest
   pullPolicy: Always
-  pullSecret:
+  pullSecret: # @schema type:[string, null]
 
 nameOverride: ""
 fullnameOverride: ""
@@ -91,7 +91,7 @@ envFrom: []
 # Gremlin DaemonSet only; the Chao deployment has its own chao.terminationGracePeriodSeconds.
 # Passed through to the rendered manifest as-is. Unset by default, which leaves Kubernetes'
 # default (30 seconds) in effect.
-terminationGracePeriodSeconds:
+terminationGracePeriodSeconds: # @schema type:[integer, null]
 
 # dnsConfig -
 # A Kubernetes PodDNSConfig object for the Gremlin DaemonSet's pod spec. Applies to the Gremlin
@@ -121,7 +121,7 @@ gremlin:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 1
+      maxUnavailable: 1 # @schema type:[integer, string]
 
   # gremlin.priorityClassName -
   # The name of the priority class to use for the Gremlin daemonset
@@ -141,7 +141,7 @@ gremlin:
   #
   # NOTE: Gremlin requires a privileged apparmor profile such as `unconfined` to carry out Process Killer attacks
   #   at the host-level (e.g. any root-owned process)
-  apparmor:
+  apparmor: # @schema type:[string, null]
 
   collect:
     # gremlin.collect.dns -
@@ -240,7 +240,10 @@ gremlin:
     # WARNING: Setting anything other than seLinuxOptions.type should be done with caution as these options may relabel paths on the host filesystem,
     # including container runtime socket files and container state directories. Only the `type` value is recommended to be set here, such as in the
     # case of using BottleRocket, this should be set to `type: super_t`.
-    seLinuxOptions:
+    # The fragment and the sibling type: below must each independently read as "object or
+    # null" - Helm 3's validator ignores a $ref's sibling keywords and Helm 4's applies them
+    # as an AND, so both halves are load-bearing, each for a different Helm major.
+    seLinuxOptions: # @schema $ref: schemas/selinuxoptions.json;type:[object, null]
       # gremlin.podSecurity.seLinuxOptions.type -
       # Specifies the process label gremlind processes should run under. When running BottleRocket for example, this should be set to `super_t`
       # type: super_t
@@ -594,7 +597,7 @@ chao:
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
-      maxUnavailable: 25%
+      maxUnavailable: 25% # @schema type:[integer, string]
       maxSurge: 25%
 
   # chao.priorityClassName -
@@ -693,7 +696,7 @@ chao:
   # Chao deployment only; the Gremlin DaemonSet has its own terminationGracePeriodSeconds.
   # Passed through to the rendered manifest as-is. Unset by default, which leaves Kubernetes'
   # default (30 seconds) in effect.
-  terminationGracePeriodSeconds:
+  terminationGracePeriodSeconds: # @schema type:[integer, null]
 
   # chao.dnsConfig -
   # A Kubernetes PodDNSConfig object for the Chao deployment's pod spec. Applies to the Chao
@@ -849,11 +852,11 @@ ssl:
   # Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the
   # certificate(s) you wish to add. When set, this chart creates secret (`ssl-cert-file`) with the contents and passes
   # it to both agents. This value is ignored when blank or absent.
-  certFile:
+  certFile: # @schema type:[string, null]
   # ssl.certDir -
   # sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a
   # path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent.
-  certDir:
+  certDir: # @schema type:[string, null]
 
 containerDrivers:
   docker-linux:

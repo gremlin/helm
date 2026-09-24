@@ -41,11 +41,11 @@ ssl:
   # Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the
   # certificate(s) you wish to add. When set, this chart creates secret (`ssl-cert-file`) with the contents and passes
   # it to both agents. This value is ignored when blank or absent.
-  certFile:
+  certFile: # @schema type:[string, null]
   # ssl.certDir -
   # sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a
   # path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent.
-  certDir:
+  certDir: # @schema type:[string, null]
 
 gremlin:
   # gremlin.resources -
@@ -77,7 +77,7 @@ gremlin:
     # gremlin.proxy.url -
     # Specifies the http proxy that the Gremlin Agent and Gremlin Kubernetes agent should use to communicate with
     # api.gremlin.com. This value is ignored when blank or absent.
-    url:
+    url: # @schema type:[string, null]
 
   # gremlin.tls -
   # A collection of TLS configurations specific to the Gremlin Integrations Deployment.

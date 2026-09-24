@@ -1,0 +1,888 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gremlin",
+  "title": "Gremlin Agent Chart Schema",
+  "description": "Schema for the Gremlin agent Helm values",
+  "type": "object",
+  "properties": {
+    "affinity": {
+      "type": "object"
+    },
+    "chao": {
+      "type": "object",
+      "properties": {
+        "affinity": {
+          "type": "object"
+        },
+        "create": {
+          "type": "boolean"
+        },
+        "dnsConfig": {
+          "type": "object"
+        },
+        "envFrom": {
+          "type": "array"
+        },
+        "excludedNamespaces": {
+          "type": "array"
+        },
+        "extraEnv": {
+          "type": "array"
+        },
+        "extraVolumeMounts": {
+          "type": "array"
+        },
+        "extraVolumes": {
+          "type": "array"
+        },
+        "features": {
+          "type": "object",
+          "properties": {
+            "dynamicQuery": {
+              "type": "object",
+              "properties": {
+                "allowlist": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "apiGroups": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "resources": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "denylist": {
+                  "type": "array"
+                },
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "hostAliases": {
+          "type": "array"
+        },
+        "initContainers": {
+          "type": "array"
+        },
+        "lifecycle": {
+          "type": "object"
+        },
+        "livenessProbe": {
+          "type": "object"
+        },
+        "namespaces": {
+          "type": "array"
+        },
+        "nodeSelector": {
+          "type": "object"
+        },
+        "podAnnotations": {
+          "type": "object"
+        },
+        "podLabels": {
+          "type": "object"
+        },
+        "podSecurityContext": {
+          "type": "object"
+        },
+        "priorityClassName": {
+          "type": "string"
+        },
+        "readinessProbe": {
+          "type": "object"
+        },
+        "resources": {
+          "type": "object"
+        },
+        "serviceAccount": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "type": "object"
+            },
+            "create": {
+              "type": "boolean"
+            }
+          }
+        },
+        "startupProbe": {
+          "type": "object"
+        },
+        "terminationGracePeriodSeconds": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "tls": {
+          "type": "object",
+          "properties": {
+            "identity": {
+              "type": "object",
+              "properties": {
+                "createSecret": {
+                  "type": "object",
+                  "properties": {
+                    "cert": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "existingSecret": {
+                  "type": "object",
+                  "properties": {
+                    "cert": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "remoteSecret": {
+                  "type": "object",
+                  "properties": {
+                    "cert": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tolerations": {
+          "type": "array"
+        },
+        "updateStrategy": {
+          "type": "object",
+          "properties": {
+            "rollingUpdate": {
+              "type": "object",
+              "properties": {
+                "maxSurge": {
+                  "type": "string"
+                },
+                "maxUnavailable": {
+                  "type": [
+                    "integer",
+                    "string"
+                  ]
+                }
+              }
+            },
+            "type": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "chaoimage": {
+      "type": "object",
+      "properties": {
+        "pullPolicy": {
+          "type": "string"
+        },
+        "pullSecret": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repository": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "containerDrivers": {
+      "type": "object",
+      "properties": {
+        "containerd-linux": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "runtimeSocket": {
+              "type": "string"
+            }
+          }
+        },
+        "crio-linux": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "runtimeSocket": {
+              "type": "string"
+            }
+          }
+        },
+        "docker-linux": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "runtimeSocket": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "dnsConfig": {
+      "type": "object"
+    },
+    "envFrom": {
+      "type": "array"
+    },
+    "extraVolumeMounts": {
+      "type": "array"
+    },
+    "extraVolumes": {
+      "type": "array"
+    },
+    "fullnameOverride": {
+      "type": "string"
+    },
+    "gremlin": {
+      "type": "object",
+      "properties": {
+        "apparmor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cgroup": {
+          "type": "object",
+          "properties": {
+            "root": {
+              "type": "string"
+            }
+          }
+        },
+        "client": {
+          "type": "object",
+          "properties": {
+            "tags": {
+              "type": "string"
+            }
+          }
+        },
+        "collect": {
+          "type": "object",
+          "properties": {
+            "dns": {
+              "type": "boolean"
+            }
+          }
+        },
+        "container": {
+          "type": "object",
+          "properties": {
+            "driver": {
+              "type": "string"
+            }
+          }
+        },
+        "dnsPolicy": {
+          "type": "string"
+        },
+        "extraEnv": {
+          "type": "array"
+        },
+        "features": {
+          "type": "object",
+          "properties": {
+            "discoverDestinationService": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "pushCIDRTags": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "gpu": {
+          "type": "object",
+          "properties": {
+            "amd": {
+              "type": "object",
+              "properties": {
+                "env": {
+                  "type": "array"
+                },
+                "nodeSelector": {
+                  "type": "object",
+                  "properties": {
+                    "amd.com/gpu.present": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "runtimeClassName": {
+                  "type": "string"
+                },
+                "volumeMounts": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "mountPath": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "readOnly": {
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                },
+                "volumes": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "hostPath": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "cdiDevice": {
+              "type": "string"
+            },
+            "custom": {
+              "type": "object",
+              "properties": {
+                "env": {
+                  "type": "array"
+                },
+                "runtimeClassName": {
+                  "type": "string"
+                },
+                "volumeMounts": {
+                  "type": "array"
+                },
+                "volumes": {
+                  "type": "array"
+                }
+              }
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "nvidia": {
+              "description": "- Vendor configuration blocks -------------------------------------------------------- Each block is the full, native-shaped GPU configuration for one vendor. Fields: nodeSelector   - node label(s) that identify AND schedule this vendor's nodes runtimeClassName - the RuntimeClass the Gremlin pods run under (\"\" for none) env            - environment variables added to the Gremlin container (native env entries). For the NVIDIA container toolkit the capabilities value MUST include `compute` (or `all`) for OpenCL. volumes        - pod volumes added to the Gremlin DaemonSet (native volume entries) volumeMounts   - container volumeMounts added to the Gremlin container (native mount entries) openclIcd      - optional {filename, library}. When set (and projectOpenclIcd is true) the chart projects an /etc/OpenCL/vendors/\u003cfilename\u003e file containing \u003clibrary\u003e, for runtimes that inject the driver library but not its ICD registry file. cdiDevice      - optional per-vendor override of gremlin.gpu.cdiDevice  NOTE: GPU device nodes (/dev/nvidia*, /dev/kfd, /dev/dri) require the container to have device access. This generally means running privileged (gremlin.podSecurity.privileged: true) or otherwise granting the pod cgroup device permissions. Device access is not required when the NVIDIA container toolkit injects the devices for you. ",
+              "type": "object",
+              "properties": {
+                "env": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "nodeSelector": {
+                  "type": "object",
+                  "properties": {
+                    "nvidia.com/gpu.present": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "openclIcd": {
+                  "type": "object",
+                  "properties": {
+                    "filename": {
+                      "type": "string"
+                    },
+                    "library": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "runtimeClassName": {
+                  "type": "string"
+                },
+                "volumeMounts": {
+                  "type": "array"
+                },
+                "volumes": {
+                  "type": "array"
+                }
+              }
+            },
+            "projectOpenclIcd": {
+              "type": "boolean"
+            },
+            "vendors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "hostNetwork": {
+          "type": "boolean"
+        },
+        "hostPID": {
+          "type": "boolean"
+        },
+        "installApparmorProfile": {
+          "type": "boolean"
+        },
+        "podAnnotations": {
+          "type": "object"
+        },
+        "podLabels": {
+          "type": "object"
+        },
+        "podSecurity": {
+          "type": "object",
+          "properties": {
+            "allowPrivilegeEscalation": {
+              "type": "boolean"
+            },
+            "capabilities": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "fsGroup": {
+              "type": "object",
+              "properties": {
+                "rule": {
+                  "type": "string"
+                }
+              }
+            },
+            "podSecurityPolicy": {
+              "type": "object",
+              "properties": {
+                "create": {
+                  "type": "boolean"
+                },
+                "runAsUser": {
+                  "type": "object",
+                  "properties": {
+                    "rule": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "seLinux": {
+                  "type": "object",
+                  "properties": {
+                    "rule": {
+                      "type": "string"
+                    },
+                    "seLinuxOptions": {
+                      "type": "object",
+                      "properties": {
+                        "level": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "privileged": {
+              "type": "boolean"
+            },
+            "readOnlyRootFilesystem": {
+              "type": "boolean"
+            },
+            "seLinuxOptions": {
+              "$ref": "schemas/selinuxoptions.json",
+              "type": [
+                "object",
+                "null"
+              ]
+            },
+            "seccomp": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                },
+                "profile": {
+                  "type": "string"
+                },
+                "root": {
+                  "type": "string"
+                }
+              }
+            },
+            "securityContextConstraints": {
+              "type": "object",
+              "properties": {
+                "allowHostDirVolumePlugin": {
+                  "type": "boolean"
+                },
+                "create": {
+                  "type": "boolean"
+                },
+                "runAsUser": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "seLinuxContext": {
+                  "type": "object",
+                  "properties": {
+                    "seLinuxOptions": {
+                      "type": "object",
+                      "properties": {
+                        "level": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "supplementalGroups": {
+              "type": "object",
+              "properties": {
+                "rule": {
+                  "type": "string"
+                }
+              }
+            },
+            "volumes": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "priorityClassName": {
+          "type": "string"
+        },
+        "proxy": {
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string"
+            }
+          }
+        },
+        "resources": {
+          "type": "object"
+        },
+        "secret": {
+          "type": "object",
+          "properties": {
+            "certificate": {
+              "type": "string"
+            },
+            "clusterID": {
+              "type": "string"
+            },
+            "key": {
+              "type": "string"
+            },
+            "managed": {
+              "type": "boolean"
+            },
+            "teamID": {
+              "type": "string"
+            },
+            "teamSecret": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          }
+        },
+        "serviceAccount": {
+          "type": "object",
+          "properties": {
+            "annotations": {
+              "type": "object"
+            },
+            "create": {
+              "type": "boolean"
+            }
+          }
+        },
+        "serviceUrl": {
+          "type": "string"
+        },
+        "tls": {
+          "type": "object",
+          "properties": {
+            "identity": {
+              "type": "object",
+              "properties": {
+                "createSecret": {
+                  "type": "object",
+                  "properties": {
+                    "cert": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "existingSecret": {
+                  "type": "object",
+                  "properties": {
+                    "cert": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "remoteSecret": {
+                  "type": "object",
+                  "properties": {
+                    "cert": {
+                      "type": "string"
+                    },
+                    "key": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "updateStrategy": {
+          "type": "object",
+          "properties": {
+            "rollingUpdate": {
+              "type": "object",
+              "properties": {
+                "maxUnavailable": {
+                  "type": [
+                    "integer",
+                    "string"
+                  ]
+                }
+              }
+            },
+            "type": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "hostAliases": {
+      "type": "array"
+    },
+    "image": {
+      "type": "object",
+      "properties": {
+        "pullPolicy": {
+          "type": "string"
+        },
+        "pullSecret": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repository": {
+          "type": "string"
+        },
+        "tag": {
+          "type": "string"
+        }
+      }
+    },
+    "initContainers": {
+      "type": "array"
+    },
+    "lifecycle": {
+      "type": "object"
+    },
+    "livenessProbe": {
+      "type": "object"
+    },
+    "nameOverride": {
+      "type": "string"
+    },
+    "nodeSelector": {
+      "type": "object"
+    },
+    "podSecurityContext": {
+      "type": "object"
+    },
+    "readinessProbe": {
+      "type": "object"
+    },
+    "ssl": {
+      "type": "object",
+      "properties": {
+        "certDir": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "certFile": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "startupProbe": {
+      "type": "object"
+    },
+    "terminationGracePeriodSeconds": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "tolerations": {
+      "type": "array"
+    }
+  },
+  "$defs": {
+    "selinuxoptions.json": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "schemas/selinuxoptions.json",
+      "title": "SELinuxOptions",
+      "description": "SELinux options applied to the Gremlin agent container's securityContext. Only `type` is recommended; the others may relabel paths on the host filesystem, including container runtime sockets and container state directories.",
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "level": {
+          "description": "SELinux level label (MLS/MCS).",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "role": {
+          "description": "SELinux role label.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "type": {
+          "description": "SELinux type label — the process label gremlind runs under. On BottleRocket, `super_t`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "user": {
+          "description": "SELinux user label.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
