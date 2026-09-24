@@ -1,0 +1,28 @@
+# hooks/helm-lint.sh's second pass for the gremlin-integrations chart.
+# Exercises the paths stock defaults leave dark: a managed secret, the
+# client mTLS identity Secret, and the ssl.certFile Secret.
+#
+# The cert/key values below are deliberately NOT real PEM. The chart only
+# base64-encodes them into a Secret without parsing them, so a placeholder
+# exercises the "material supplied" render path identically - and keeps a
+# private key, throwaway or not, out of a public repository.
+gremlin:
+  secret:
+    managed: true
+    type: secret
+    teamID: "11111111-1111-1111-1111-111111111111"
+    teamSecret: "00000000-0000-0000-0000-000000000000"
+
+  tls:
+    identity:
+      enabled: true
+      createSecret:
+        name: gremlin-tls-identity
+        cert: |
+          lint-placeholder-certificate-not-real-pem
+        key: |
+          lint-placeholder-key-not-real-pem
+
+ssl:
+  certFile: |
+    lint-placeholder-certificate-not-real-pem

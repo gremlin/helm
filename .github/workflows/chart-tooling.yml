@@ -1,0 +1,68 @@
+name: Chart tooling
+
+on: pull_request
+
+permissions:
+  contents: read
+
+env:
+  HELM_DOCS_VERSION: 1.14.2
+  SCHEMA_PLUGIN_VERSION: v2.2.0
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        helm: ["v3.17.0", "v4.3.0"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ matrix.helm }}
+
+      - run: hooks/assert-helm-version.sh ${{ matrix.helm }}
+
+      - run: hooks/helm-lint.sh
+
+  schema:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        helm: ["v3.17.0", "v4.3.0"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: ${{ matrix.helm }}
+
+      - run: hooks/assert-helm-version.sh ${{ matrix.helm }}
+
+      - run: hooks/install-schema-plugin.sh ${{ env.SCHEMA_PLUGIN_VERSION }}
+
+      - run: hooks/helm-schema.sh
+
+      - run: |
+          hooks/check-drift.sh "values.schema.json" "make schema" \
+            --tool "helm schema $(helm plugin list | awk '$1=="schema"{print $2}') (repo pins ${SCHEMA_PLUGIN_VERSION#v})" \
+            gremlin/values.schema.json gremlin-integrations/values.schema.json
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - run: |
+          curl -fsSL "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_Linux_x86_64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin helm-docs
+
+      - run: hooks/helm-docs.sh
+
+      - run: |
+          hooks/check-drift.sh "README.md" "make docs" \
+            --tool "helm-docs $(helm-docs --version | awk '{print $NF}') (repo pins ${HELM_DOCS_VERSION})" \
+            gremlin/README.md gremlin-integrations/README.md

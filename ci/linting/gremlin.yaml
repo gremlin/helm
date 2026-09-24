@@ -1,0 +1,62 @@
+# hooks/helm-lint.sh's second pass for the gremlin chart. Exercises the
+# paths stock defaults leave dark: a managed secret, the PodSecurityPolicy
+# and SecurityContextConstraints objects, the seccomp profile ConfigMap, the
+# client mTLS identity Secrets, the apparmor ConfigMap, and the per-vendor
+# GPU DaemonSets.
+#
+# The cert/key values below are deliberately NOT real PEM. The chart only
+# base64-encodes them into a Secret without parsing them, so a placeholder
+# exercises the "material supplied" render path identically - and keeps a
+# private key, throwaway or not, out of a public repository.
+gremlin:
+  secret:
+    managed: true
+    type: secret
+    teamID: "11111111-1111-1111-1111-111111111111"
+    clusterID: "lint-cluster"
+    teamSecret: "00000000-0000-0000-0000-000000000000"
+
+  # installApparmorProfile is deliberately left at its default (false) here:
+  # gremlin/templates/_helpers.tpl's pspApiVersion helper hard-fails a
+  # render that combines it with podSecurity.podSecurityPolicy.create
+  # (verified - helm template exits 1, though helm lint does not surface
+  # that failure). apparmor alone still exercises the blank-sentinel
+  # hazard (design.md 7.2, #5) without tripping that combination.
+  apparmor: unconfined
+
+  podSecurity:
+    podSecurityPolicy:
+      create: true
+    securityContextConstraints:
+      create: true
+    seccomp:
+      enabled: true
+      profile: "localhost/gremlin"
+
+  tls:
+    identity:
+      enabled: true
+      createSecret:
+        name: gremlin-tls-identity
+        cert: |
+          lint-placeholder-certificate-not-real-pem
+        key: |
+          lint-placeholder-key-not-real-pem
+
+  gpu:
+    enabled: true
+
+chao:
+  tls:
+    identity:
+      enabled: true
+      createSecret:
+        name: chao-tls-identity
+        cert: |
+          lint-placeholder-certificate-not-real-pem
+        key: |
+          lint-placeholder-key-not-real-pem
+
+ssl:
+  certFile: |
+    lint-placeholder-certificate-not-real-pem
