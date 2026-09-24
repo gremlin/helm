@@ -37,7 +37,7 @@ tests:
     set:
       terminationGracePeriodSeconds: not-a-number
     asserts:
-      # Helm 3.17 and Helm 4.x word this rejection differently (design.md 7.5) - match only on
+      # Helm 3.17 and Helm 4.x word this rejection differently - match only on
       # the value path, which both phrasings name, never on the surrounding wording.
       - failedTemplate:
           errorPattern: terminationGracePeriodSeconds

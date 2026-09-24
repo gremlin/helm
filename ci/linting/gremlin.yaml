@@ -21,7 +21,7 @@ gremlin:
   # render that combines it with podSecurity.podSecurityPolicy.create
   # (verified - helm template exits 1, though helm lint does not surface
   # that failure). apparmor alone still exercises the blank-sentinel
-  # hazard (design.md 7.2, #5) without tripping that combination.
+  # hazard without tripping that combination.
   apparmor: unconfined
 
   podSecurity:

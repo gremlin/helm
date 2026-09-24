@@ -7,7 +7,7 @@
 #   fix    - the command that regenerates it, e.g. "make docs"
 #   --tool - optional; the generator name+version that produced today's
 #            output, printed above the diff in the failure BODY, never in
-#            the ::error title and never asserted on (design.md 4.4) - a
+#            the ::error title and never asserted on - a
 #            version mismatch is a rare cause of drift, not the likely one,
 #            and asserting on it would re-impose through CI the tolerance
 #            B5 deliberately grants a contributor's unpinned local tool.
