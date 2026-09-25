@@ -87,3 +87,30 @@ all.
 this file already does above for the `extraEnv` exemption). Ticket numbers and links to
 in-progress design artifacts belong in the commit message and PR description, not in
 repo-committed files.
+
+## Contract working files stay out of this repository
+
+Agent workflows that produce a contract, design document, requirements document or validation
+records under `.claude/contracts/` must keep those files **local and untracked here**.
+`.gitignore` excludes the directory; do not re-include it, and do not commit its contents.
+
+This overrides the default those workflows ship with, which is to commit the contract as a
+shared audit trail. That default is right for a private repository and wrong for this one.
+
+**Why:** those documents are dense with exactly what the section above forbids — Jira keys,
+internal tooling paths, and design rationale written for people inside the team. Committing
+them here publishes all of it, and the audit-trail argument for doing so does not outweigh
+that when the repository is public. The evidence that matters to an outside reader is the
+tests in `tests/`, which stand on their own.
+
+**How to apply:** let the contract live at `.claude/contracts/<slug>/` on disk so the tooling
+keeps working unchanged, and carry any reasoning a future reader needs into the commit message,
+the pull request description, or this file — restated in prose, never as a pointer to a path
+that does not exist in the repository.
+
+The same applies to the executable probes those workflows generate, which live under
+`tests/contract/` and are gitignored alongside the contract. They are machinery for grading one
+piece of work against one agreement, not a suite this repository runs: nothing invokes them, they
+need two Helm majors on `PATH` to run at all, and their headers are written in the contract's own
+vocabulary. `tests/` otherwise remains the right place for tests this repository does run —
+`helm unittest` suites under `<chart>/tests/` are committed and are what CI executes.

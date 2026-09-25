@@ -1,0 +1,13 @@
+# SHA-256 checksums for the helm-docs release this repo pins
+# (HELM_DOCS_VERSION in the Makefile), for the platforms `make setup` and the
+# `docs` CI job actually install onto. Sourced from the upstream release's
+# own checksums.txt:
+# https://github.com/norwoodj/helm-docs/releases/download/v1.14.2/checksums.txt
+#
+# Bumping HELM_DOCS_VERSION means replacing this whole file from that same
+# URL for the new version - hooks/setup.sh and the docs CI job both fail
+# loudly with a clear message if an asset they need isn't listed here.
+a8cf72ada34fad93285ba2a452b38bdc5bd52cc9a571236244ec31022928d6cc  helm-docs_1.14.2_Linux_x86_64.tar.gz
+c3787212332386dcd122debef7848feb165aa701467ae3e3442df7638f3ac4e4  helm-docs_1.14.2_Linux_arm64.tar.gz
+b2f1ffd0feef8dc0901a38a2053481d1d67b63ca30da4ac774166c6b52fa2245  helm-docs_1.14.2_Darwin_x86_64.tar.gz
+2d8399db5b33d240d5f8985241bcf5483563150b968e3229823822979f3e4b8b  helm-docs_1.14.2_Darwin_arm64.tar.gz
