@@ -6,32 +6,38 @@
   "type": "object",
   "properties": {
     "affinity": {
+      "description": "Map of node/pod affinities for the `gremlin-integrations` container",
       "type": "object"
     },
     "fullnameOverride": {
+      "description": "Overrides the full, generated name of the release's resources.",
       "type": "string"
     },
     "gremlin": {
       "type": "object",
       "properties": {
         "allowList": {
+          "description": "Whitelist URLs in order to allow access only to specific set of endpoints",
           "type": "string"
         },
         "client": {
           "type": "object",
           "properties": {
             "tags": {
+              "description": "A string of comma separated key=value pairs that are used to decorate the Gremlin agent with tags.",
               "type": "string"
             }
           }
         },
         "extraEnv": {
+          "description": "Specify any arbitrary environment variables to pass to the Gremlin Integrations Agent deployment.",
           "type": "array"
         },
         "proxy": {
           "type": "object",
           "properties": {
             "url": {
+              "description": "Specifies the http proxy the agent should use to communicate with api.gremlin.com.",
               "type": [
                 "string",
                 "null"
@@ -40,30 +46,41 @@
           }
         },
         "resources": {
+          "description": "Set resource requests and limits See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers",
           "type": "object"
         },
         "secret": {
           "type": "object",
           "properties": {
             "certificate": {
+              "description": "Contents of the certificate. Required if using managed secrets of `type=certificate`",
               "type": "string"
             },
             "key": {
+              "description": "Contents of the private key. Required if using managed secrets of `type=certificate`",
               "type": "string"
             },
             "managed": {
+              "description": "Specifies whether Gremlin should manage its secrets with Helm",
               "type": "boolean"
             },
             "teamID": {
+              "description": "Gremlin Team ID to authenticate with team identifier (e.g. 11111111-1111-1111-1111-111111111111)",
               "type": "string"
             },
             "teamSecret": {
+              "description": "Gremlin's team secret. Required if using managed secrets of `type=secret` team secret (e.g. 00000000-0000-0000-0000-000000000000)",
               "type": "string"
             },
             "type": {
+              "description": "The type of certificate to use, can be either `certificate` or `secret` Gremlin supports both `certificate` and `secret` types To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections",
               "type": "string"
             }
           }
+        },
+        "serviceUrl": {
+          "description": "Base URL of the Gremlin control plane that the gremlin-integrations Deployment reports to. Override this when running Gremlin Private Edition.",
+          "type": "string"
         },
         "tls": {
           "type": "object",
@@ -75,29 +92,36 @@
                   "type": "object",
                   "properties": {
                     "cert": {
+                      "description": "The PEM-encoded certificate (expected to be a multi-line string)",
                       "type": "string"
                     },
                     "key": {
+                      "description": "The PEM-encoded private key (expected to be a multi-line string)",
                       "type": "string"
                     },
                     "name": {
+                      "description": "The name of the new secret",
                       "type": "string"
                     }
                   }
                 },
                 "enabled": {
+                  "description": "Decides whether the Gremlin Integrations Deployment should be configured for a TLS identity",
                   "type": "boolean"
                 },
                 "existingSecret": {
                   "type": "object",
                   "properties": {
                     "cert": {
+                      "description": "The name of the key inside the existing secret that maps to the certificate value",
                       "type": "string"
                     },
                     "key": {
+                      "description": "The name of the key inside the existing secret that maps to the private key value",
                       "type": "string"
                     },
                     "name": {
+                      "description": "The name of the existing secret",
                       "type": "string"
                     }
                   }
@@ -106,9 +130,11 @@
                   "type": "object",
                   "properties": {
                     "cert": {
+                      "description": "The ARN for the identity certificate",
                       "type": "string"
                     },
                     "key": {
+                      "description": "The ARN for the identity private key",
                       "type": "string"
                     }
                   }
@@ -123,12 +149,15 @@
       "type": "object",
       "properties": {
         "pullPolicy": {
+          "description": "Container pull policy",
           "type": "string"
         },
         "repository": {
+          "description": "Container image to use",
           "type": "string"
         },
         "tag": {
+          "description": "Container image tag to deploy",
           "type": [
             "string",
             "integer",
@@ -138,39 +167,49 @@
       }
     },
     "imagePullSecrets": {
+      "description": "List of Secret names used as image pull secrets for the gremlin-integrations Deployment.",
       "type": "array"
     },
     "nameOverride": {
+      "description": "Overrides the chart name used when computing the release's derived resource names.",
       "type": "string"
     },
     "nodeSelector": {
+      "description": "Map of node labels for pod assignment for the `gremlin-integrations` container",
       "type": "object"
     },
     "podAnnotations": {
+      "description": "Additional annotations applied to the gremlin-integrations Deployment's pods.",
       "type": "object"
     },
     "podSecurityContext": {
+      "description": "A Kubernetes pod-level SecurityContext for the gremlin-integrations Deployment's pod spec.",
       "type": "object"
     },
     "replicaCount": {
+      "description": "Number of gremlin-integrations Deployment replicas to run.",
       "type": [
         "integer",
         "string"
       ]
     },
     "securityContext": {
+      "description": "A Kubernetes container-level SecurityContext for the gremlin-integrations container.",
       "type": "object"
     },
     "serviceAccount": {
       "type": "object",
       "properties": {
         "annotations": {
+          "description": "Annotations to add to the service account",
           "type": "object"
         },
         "create": {
+          "description": "Specifies whether the gremlin-integrations Kubernetes service account should be created by this Helm chart.",
           "type": "boolean"
         },
         "name": {
+          "description": "The name of the service account to use. If not set and create is true, a name is generated using the fullname template",
           "type": "string"
         }
       }
@@ -179,12 +218,14 @@
       "type": "object",
       "properties": {
         "certDir": {
+          "description": "sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent.",
           "type": [
             "string",
             "null"
           ]
         },
         "certFile": {
+          "description": "Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the certificate(s) you wish to add. When set, this chart creates secret (`integrations-ssl-cert-file`) with the contents and passes it to both agents. This value is ignored when blank or absent.",
           "type": [
             "string",
             "null"
@@ -193,6 +234,7 @@
       }
     },
     "tolerations": {
+      "description": "List of node taints to tolerate for the `gremlin-integrations` container",
       "type": "array"
     }
   }

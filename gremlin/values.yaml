@@ -3,226 +3,153 @@
 # Declare variables to be passed into your templates.
 
 image:
+  # image.repository -- Container image to use
   repository: gremlin/gremlin
+  # image.tag -- Container image tag to deploy. [See below](#pinning-the-agent-version)
   tag: latest # @schema type:[string, integer, number]
+  # image.pullPolicy -- Container pull policy
   pullPolicy: Always
+  # image.pullSecret -- Pull secret for a private registry
+  # @default -- `""` (When empty, no authentication is used)
   pullSecret: # @schema type:[string, null]
 
 chaoimage:
+  # chaoimage.repository -- Container image to use for the `chao` container
   repository: gremlin/chao
+  # chaoimage.tag -- Container image tag to deploy for the `chao` container. [See below](#pinning-the-agent-version)
   tag: latest # @schema type:[string, integer, number]
+  # chaoimage.pullPolicy -- Container pull policy for the `chao` container
   pullPolicy: Always
+  # chaoimage.pullSecret -- Pull secret for a private registry for the `chao` container
+  # @default -- `""` (When empty, no authentication is used)
   pullSecret: # @schema type:[string, null]
 
+# nameOverride -- Overrides the chart name used when computing the release's derived resource names.
 nameOverride: ""
+# fullnameOverride -- Overrides the full, generated name of the release's resources.
 fullnameOverride: ""
 
+# nodeSelector -- Map of node labels for pod assignment for the `gremlin` container
 nodeSelector: {}
 
+# tolerations -- List of node taints to tolerate for the `gremlin` container
 tolerations: []
 
+# affinity -- Map of node/pod affinities for the `gremlin` container
 affinity: {}
 
-# livenessProbe -
-# A Kubernetes Probe for the Gremlin Agent container. Applies to the Gremlin DaemonSet only;
-# the Chao deployment has its own chao.livenessProbe. Passed through to the rendered manifest
-# as-is. Unset by default, which renders no probe.
+# livenessProbe -- A Kubernetes `Probe` for the `gremlin` container
 livenessProbe: {}
 
-# readinessProbe -
-# A Kubernetes Probe for the Gremlin Agent container. Applies to the Gremlin DaemonSet only;
-# the Chao deployment has its own chao.readinessProbe. Passed through to the rendered manifest
-# as-is. Unset by default, which renders no probe.
+# readinessProbe -- A Kubernetes `Probe` for the `gremlin` container
 readinessProbe: {}
 
-# startupProbe -
-# A Kubernetes Probe for the Gremlin Agent container. Applies to the Gremlin DaemonSet only;
-# the Chao deployment has its own chao.startupProbe. Passed through to the rendered manifest
-# as-is. Unset by default, which renders no probe.
+# startupProbe -- A Kubernetes `Probe` for the `gremlin` container
 startupProbe: {}
 
-# initContainers -
-# Additional init containers for the Gremlin DaemonSet's pod spec. Applies to the Gremlin
-# DaemonSet only; the Chao deployment has its own chao.initContainers. Appended after any
-# chart-managed init container (e.g. seccomp-init). Passed through to the rendered manifest
-# as-is. A container name colliding with a name the gremlin chart manages (e.g. seccomp-init,
-# gremlin) fails the install. Unset by default, which renders no additional init containers.
+# initContainers -- Additional init containers for the `gremlin` DaemonSet, appended after
+# `seccomp-init` when enabled. A name colliding with one the chart manages fails the install
 # NOTE: when gremlin.podSecurity.podSecurityPolicy.create (or ...securityContextConstraints.create)
 # is enabled, the chart's own PSP/SCC may reject volumes an init container mounts; see
 # extraVolumes below.
 initContainers: []
 
-# extraVolumes -
-# Additional volumes for the Gremlin DaemonSet's pod spec. Applies to the Gremlin DaemonSet
-# only; the Chao deployment has its own chao.extraVolumes. Passed through to the rendered
-# manifest as-is. A volume name colliding with a name the gremlin chart manages (e.g.
-# gremlin-state, gremlin-cert) fails the install. Unset by default, which renders no additional
-# volumes.
+# extraVolumes -- Additional volumes for the `gremlin` DaemonSet. A name colliding with one the
+# chart manages fails the install
 # NOTE: when gremlin.podSecurity.podSecurityPolicy.create (or ...securityContextConstraints.create)
 # is enabled, a volume type or hostPath outside what gremlin.podSecurity.volumes /
 # allowedHostPaths permits is rejected at admission, not by this chart.
 extraVolumes: []
 
-# extraVolumeMounts -
-# Additional volume mounts for the Gremlin Agent container. Applies to the Gremlin DaemonSet
-# only; the Chao deployment has its own chao.extraVolumeMounts. Passed through to the rendered
-# manifest as-is. A volume name colliding with a name the gremlin chart manages (e.g.
-# gremlin-state, gremlin-cert) fails the install. Unset by default, which renders no additional
-# volume mounts.
+# extraVolumeMounts -- Additional volume mounts for the `gremlin` container. A name colliding with
+# one the chart manages fails the install
 extraVolumeMounts: []
 
-# lifecycle -
-# A Kubernetes Lifecycle object (preStop/postStart hooks) for the Gremlin Agent container.
-# Applies to the Gremlin DaemonSet only; the Chao deployment has its own chao.lifecycle. Passed
-# through to the rendered manifest as-is. Unset by default, which renders no lifecycle hooks.
+# lifecycle -- A Kubernetes `Lifecycle` object (`preStop`/`postStart`) for the `gremlin` container
 lifecycle: {}
 
-# envFrom -
-# Additional sources (ConfigMaps/Secrets) to populate the Gremlin Agent container's environment
-# from. Applies to the Gremlin DaemonSet only; the Chao deployment has its own chao.envFrom.
-# Passed through to the rendered manifest as-is. Unset by default, which renders no envFrom.
-# NOTE: unlike extraEnv, envFrom does NOT override chart-managed environment variables --
-# Kubernetes gives a container's env: precedence over its envFrom: for any key set in both.
-# Use extraEnv (which renders last in env:) to override values such as GREMLIN_SERVICE_URL.
+# envFrom -- Additional `ConfigMap`/`Secret` sources for the `gremlin` container's environment.
+# Unlike `gremlin.extraEnv`, does not override chart-managed env vars (Kubernetes gives `env:`
+# precedence over `envFrom:`)
 envFrom: []
 
-# terminationGracePeriodSeconds -
-# The termination grace period, in seconds, for the Gremlin DaemonSet's pods. Applies to the
-# Gremlin DaemonSet only; the Chao deployment has its own chao.terminationGracePeriodSeconds.
-# Passed through to the rendered manifest as-is. Unset by default, which leaves Kubernetes'
-# default (30 seconds) in effect.
+# terminationGracePeriodSeconds -- Termination grace period, in seconds, for the `gremlin`
+# DaemonSet's pods
+# @default -- (Kubernetes default: `30`)
 terminationGracePeriodSeconds: # @schema type:[integer, string, null];pattern:^[0-9]+$
 
-# dnsConfig -
-# A Kubernetes PodDNSConfig object for the Gremlin DaemonSet's pod spec. Applies to the Gremlin
-# DaemonSet only; the Chao deployment has its own chao.dnsConfig. Passed through to the rendered
-# manifest as-is. Unset by default, which renders no dnsConfig.
+# dnsConfig -- A Kubernetes `PodDNSConfig` for the `gremlin` DaemonSet's pod spec
 dnsConfig: {}
 
-# hostAliases -
-# A list of Kubernetes HostAlias entries for the Gremlin DaemonSet's pod spec. Applies to the
-# Gremlin DaemonSet only; the Chao deployment has its own chao.hostAliases. Passed through to
-# the rendered manifest as-is. Unset by default, which renders no hostAliases.
-# NOTE: has no effect while gremlin.hostNetwork is true (the default), since the kubelet does
-# not manage /etc/hosts for host-network pods.
+# hostAliases -- A list of Kubernetes `HostAlias` entries for the `gremlin` DaemonSet's pod spec.
+# No effect while `gremlin.hostNetwork` is `true` (the default)
 hostAliases: []
 
-# podSecurityContext -
-# A Kubernetes pod-level SecurityContext for the Gremlin DaemonSet's pod spec. Applies to the
-# Gremlin DaemonSet only; the Chao deployment has its own chao.podSecurityContext. Renders
-# alongside the existing container-level securityContext, which is unaffected. Passed through
-# to the rendered manifest as-is. Unset by default, which renders no pod-level securityContext.
+# podSecurityContext -- A Kubernetes pod-level `SecurityContext` for the `gremlin` DaemonSet,
+# alongside the existing container-level `gremlin.podSecurity.*` settings
 podSecurityContext: {}
 
 gremlin:
 
-  # gremlin.updateStrategy -
-  # The rollout strategy Kubernetes will use when updating the Gremlin daemonset
+  # gremlin.updateStrategy -- The rollout strategy Kubernetes will use when updating the Gremlin daemonset
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1 # @schema type:[integer, string]
 
-  # gremlin.priorityClassName -
-  # The name of the priority class to use for the Gremlin daemonset
+  # gremlin.priorityClassName -- The priority class to use for the agent DaemonSet
   priorityClassName: ""
 
-  # gremlin.podLabels -
-  # Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods
+  # gremlin.podLabels -- Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods
   podLabels: {}
 
-  # gremlin.podAnnotations -
-  # Additional annotations applied to the Gremlin Agent's DaemonSet pods
+  # gremlin.podAnnotations -- Additional annotations applied to the Gremlin Agent's DaemonSet pods
   podAnnotations: {}
 
-  # gremlin.apparmor -
-  # Gremlin assumes apparmor is not enabled by default and so it will not specify any apparmor profile to use
-  # You may need to provide a specific profile if your environment requires it.
-  #
-  # NOTE: Gremlin requires a privileged apparmor profile such as `unconfined` to carry out Process Killer attacks
-  #   at the host-level (e.g. any root-owned process)
+  # gremlin.apparmor -- Apparmor profile to set for the Gremlin Daemon
+  # @default -- `""` (When empty, no profile is set)
   apparmor: # @schema type:[string, null]
 
   collect:
-    # gremlin.collect.dns -
-    # Specifies whether Gremlin should collect DNS call information
+    # gremlin.collect.dns -- Specifies whether Gremlin should collect DNS call information
     dns: true
 
-  # gremlin.hostPID -
-  # This must be true for all Gremlin container drivers. It is also required for any Gremlin
-  #   installation that wishes to carry out Process Killer or attacks at the host-level
-  #
+  # gremlin.hostPID -- Enable host-level process killing
   hostPID: true
 
-  # gremlin.dnsPolicy -
-  # A Kubernetes DNS policy that determines how the Gremlin Daemonset should resolve DNS queries.
-  #  Possible values are:
-  #   ClusterFirstWithHostNet - The default. This will use the cluster DNS service first, but will also
-  #                             use the host's DNS configuration as a fallback. Use this to resolve
-  #                             hostnames of Kubernetes services defined in the cluster.
-  #   ClusterFirst - Uses only the cluster DNS service.
+  # gremlin.dnsPolicy -- The DNS policy to use for the Gremlin DaemonSet
   dnsPolicy: ClusterFirstWithHostNet
 
-  # gremlin.hostNetwork -
-  # This must be true for any Gremlin installation that wishes to carry out network attacks at the host-level. It
-  #   is also required for Gremlin's dependency discovery features.
+  # gremlin.hostNetwork -- Enable host-level network attacks
   hostNetwork: true
 
-  # gremlin.installApparmorProfile -
-  # This controls if gremlin installs its own apparmor profile.  This is only necessary if you're running apparmor
+  # gremlin.installApparmorProfile -- Have Gremlin install their own [Apparmor Profile](agent_apparmor.profile) (NOTE: `gremlin.apparmor` overrides this)
   installApparmorProfile: false
   client:
-    # gremlin.client.tags -
-    # A string of comma separated key=value pairs that are used to decorate the Gremlin agent with tags.
-    #
-    # NOTE: This value's commas must be escaped. See the Example Usage section of README.md
+    # gremlin.client.tags -- Comma-separated list of `key=value` tag pairs to assign to this client.
+    # Commas must be backslash-escaped when using `--set`; see [Example Usage](#example-usage)
     tags: ""
 
   container:
-    # gremlin.container.driver -
-    # Specifies which container driver with which to run Gremlin. Possible values and their meanings:
-    #   any              =   Useful when the Cluster's container runtime is not known.
-    #                        Helm will provide file access to all drivers so that Gremlin can choose.
-    #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock, /run/containerd/containerd.sock]
-    #
-    #   docker-linux     =   Provides full integration with Docker containers
-    #                        Implies host mounts [/var/run/docker.sock]
-    #
-    #   containerd-linux =   Provides full integration with Containerd containers
-    #                        Implies host mounts [/run/containerd/containerd.sock]
-    #
-    #   crio-linux       =   Provides full integration with Cri-O containers
-    #                        Implies host mounts [/run/crio/crio.sock]
-    #
-    #   linux            =   Alias for `any`
-    #                        Implies host mounts [/var/run/docker.sock, /run/crio/crio.sock, /run/containerd/containerd.sock]
+    # gremlin.container.driver -- Specifies which container driver with which to run Gremlin. [See example][driverexample]
     driver: any
 
   cgroup:
-    # gremlin.cgroup.root -
-    # Specifies the absolute path for the cgroup controller root on target host systems
+    # gremlin.cgroup.root -- Specifies the absolute path for the cgroup controller root on target host systems
     root: /sys/fs/cgroup
 
   serviceAccount:
-    # gremlin.serviceAccount.create -
-    # Specifies whether Gremlin's kubernetes service account should be created by this helm chart. When true, this
-    #   creates a service account with the name `gremlin`, along with ClusterRole and ClusterRole bindings that enable
-    #   Gremlin's requirements (see gremlin.podSecurity.podSecurityPolicy and
-    #   gremlin.podSecurity.securityContextConstraints)
+    # gremlin.serviceAccount.create -- Specifies whether Gremlin's kubernetes service account should be created by this helm chart
     create: true
     # Annotations to add to the service account
     annotations: { }
 
   podSecurity:
 
-    # gremlin.podSecurity.allowPrivilegeEscalation -
-    # Allows Gremlin containers privilege escalation powers
+    # gremlin.podSecurity.allowPrivilegeEscalation -- Allows Gremlin containers privilege escalation powers
     allowPrivilegeEscalation: false
 
-    # gremlin.podSecurity.capabilities -
-    # Specifies which Linux capabilities should be granted to Gremlin. Each capability is provided to the Gremlin
-    #   Daemonset as well as any pod security resource that governs it. Capabilities that are required for specific
-    #   attacks can be removed from this list if running such attacks are not desired.
+    # gremlin.podSecurity.capabilities -- Specifies which Linux capabilities should be granted to Gremlin
     capabilities:
       - KILL            # Required to run Process Killer attacks
       - NET_ADMIN       # Required to run network attacks
@@ -234,12 +161,8 @@ gremlin:
       - SYS_PTRACE      # Required to to identify charactistics of container processes (such as associated network)
       - NET_RAW         # Required to discover dependencies
 
-    # gremlin.podSecurity.seLinuxOptions -
-    # Specifies SELinux options to apply to the Gremlin Daemonset container securityContext.
-    #
-    # WARNING: Setting anything other than seLinuxOptions.type should be done with caution as these options may relabel paths on the host filesystem,
-    # including container runtime socket files and container state directories. Only the `type` value is recommended to be set here, such as in the
-    # case of using BottleRocket, this should be set to `type: super_t`.
+    # gremlin.podSecurity.seLinuxOptions -- Specifies SELinux options to apply to the Gremlin Daemonset container securityContext. WARNING: This option should be enabled with caution as it is likely to break the GremlinAgent or your Kubernetes installation. Gremlin recommends users instead install a custom SELinux policy that provides integration with the labels already defined on the target system so that paths do not need to be relabeled. See https://github.com/gremlin/selinux-policies
+    # @default -- `{}`
     # The fragment and the sibling type: below must each independently read as "object or
     # null" - Helm 3's validator ignores a $ref's sibling keywords and Helm 4's applies them
     # as an AND, so both halves are load-bearing, each for a different Helm major.
@@ -248,23 +171,23 @@ gremlin:
       # Specifies the process label gremlind processes should run under. When running BottleRocket for example, this should be set to `super_t`
       # type: super_t
 
-    # gremlin.podSecurity.readOnlyRootFilesystem -
-    # Forces the Gremlin Daemonset containers to run with a read-only root filesystem
+    # gremlin.podSecurity.readOnlyRootFilesystem -- Forces the Gremlin Daemonset containers to run with a read-only root filesystem
     # NOTE: When true, Disk and IO experiments against the host will fail unless they target an external volume
     readOnlyRootFilesystem: false
 
     # gremlin.podSecurity.supplementalGroups -
     # Specifies the Linux groups the Gremlin Daemonset containers should run as
     supplementalGroups:
+      # gremlin.podSecurity.supplementalGroups.rule -- Specifies the Linux groups the Gremlin Daemonset containers should run as
       rule: RunAsAny
 
     # gremlin.podSecurity.fsGroup -
     # Specifies the Linux groups applied to mounted volumes
     fsGroup:
+      # gremlin.podSecurity.fsGroup.rule -- Specifies the Linux groups applied to mounted volumes
       rule: RunAsAny
 
-    # gremlin.podSecurity.volumes -
-    # Specifies the volume types the Gremlin Daemonset is allowed to use
+    # gremlin.podSecurity.volumes -- Specifies the volume types the Gremlin Daemonset is allowed to use
     volumes:
       - configMap   # Required when the Gremlin Daemonset installs a seccomp profile (see gremlin.podSecurity.seccomp)
       - secret      # Required to store and load secret information like certificates that authenticate Gremlin
@@ -272,11 +195,9 @@ gremlin:
       - emptyDir    # Required by Gremlin to store transient files, such as `/var/lib/gremlin/.credentials`
 
     podSecurityPolicy:
-      # gremlin.podSecurity.podSecurityPolicy.create -
-      # When true, Gremlin creates and uses a custom PodSecurityPolicy, granting all behaviors Gremlin needs
+      # gremlin.podSecurity.podSecurityPolicy.create -- When true, Gremlin creates and uses a custom PodSecurityPolicy, granting all behaviors Gremlin needs
       create: false
-      # gremlin.podSecurity.podSecurityPolicy.seLinux
-      # Sets the SecurityContext for the PSP used by the Gremlin Daemonset
+      # gremlin.podSecurity.podSecurityPolicy.seLinux -- Sets the SecurityContext for the PSP used by the Gremlin Daemonset
       seLinux:
         rule: MustRunAs
         seLinuxOptions:
@@ -285,17 +206,15 @@ gremlin:
       # gremlin.podSecurity.podSecurityPolicy.runAsUser -
       # Specifies the Linux user the Gremlin Daemonset containers should run as
       runAsUser:
+        # gremlin.podSecurity.podSecurityPolicy.runAsUser.rule -- Specifies the Linux user the Gremlin Daemonset containers should run as
         rule: RunAsAny
 
     securityContextConstraints:
-      # gremlin.podSecurity.securityContextConstraints.create -
-      # When true, Gremlin creates and uses a custom SecurityContextConstraints, granting all behaviors Gremlin needs
+      # gremlin.podSecurity.securityContextConstraints.create -- When true, Gremlin creates and uses a custom SecurityContextConstraints, granting all behaviors Gremlin needs
       create: false
-      # gremlin.podSecurity.securityContextConstraints.allowHostDirVolumePlugin -
-      # Specifies whether the Gremlin Daemonset has access to host path directories as mounted volumes
+      # gremlin.podSecurity.securityContextConstraints.allowHostDirVolumePlugin -- Specifies whether the Gremlin Daemonset has access to host path directories as mounted volumes
       allowHostDirVolumePlugin: true
-      # gremlin.podSecurity.securityContextConstraints.seLinuxContext
-      # Sets the SecurityContext for the SCC used by the Gremlin Daemonset
+      # gremlin.podSecurity.securityContextConstraints.seLinuxContext -- Sets the SecurityContext for the SCC used by the Gremlin Daemonset
       seLinuxContext:
         type: MustRunAs
         seLinuxOptions:
@@ -306,22 +225,20 @@ gremlin:
       # gremlin.podSecurity.securityContextConstraints.runAsUser -
       # Specifies the Linux user the Gremlin Daemonset containers should run as
       runAsUser:
+        # gremlin.podSecurity.securityContextConstraints.runAsUser.type -- Specifies the Linux user the Gremlin Daemonset containers should run as
         type: RunAsAny
 
-    # gremlin.podSecurity.privileged -
-    # Determines whether the Gremlin Daemonset should run privileged containers
+    # gremlin.podSecurity.privileged -- Determines whether the Gremlin Daemonset should run privileged containers
     privileged: false
 
     # gremlin.podSecurity.seccomp -
     # All of Gremlin's behavior runs under Docker's default seccomp profile. For systems with a more restrictive
     #   runtime/default profile, Gremlin can create and the specific seccomp profile it needs.
     seccomp:
-      # gremlin.podSecurity.seccomp.enabled -
-      # Determines whether the Gremlin Daemonset should be annotated with the seccomp profile specified by
+      # gremlin.podSecurity.seccomp.enabled -- Determines whether the Gremlin Daemonset should be annotated with the seccomp profile specified by
       #   gremlin.podSecurity.seccomp.profile
       enabled: false
-      # gremlin.podSecurity.seccomp.profile -
-      # Describes the name of the seccomp profile to use
+      # gremlin.podSecurity.seccomp.profile -- Describes the name of the seccomp profile to use
       #
       # NOTE: When this value is `localhost/gremlin`, Gremlin will create its own custom seccomp profile
       profile: localhost/gremlin
@@ -329,12 +246,8 @@ gremlin:
       # The absolute path pointing to the seccomp profile root on cluster nodes
       root: /var/lib/kubelet/seccomp
 
-  # gremlin.resources -
-  # Set resource requests and limits
+  # gremlin.resources -- Set resource requests and limits
   # See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
-  #
-  # NOTE: This resource specification affects the Gremlin agent which is used for host attacks. This resource
-  # Attacks targeting other Kubernetes pods will use the resource specification of their target.
   resources: {}
 
   # gremlin.gpu -
@@ -345,8 +258,7 @@ gremlin:
   #   (e.g. "nvidia" or "amd"). Each vendor's full configuration lives in a same-named block below.
   #   To customize, edit that vendor's block, or copy it to `custom` and add "custom" to `vendors`.
   gpu:
-    # gremlin.gpu.enabled -
-    # When true, the chart renders one DaemonSet per `vendors` entry, each carrying that vendor's GPU
+    # gremlin.gpu.enabled -- When true, the chart renders one DaemonSet per `vendors` entry, each carrying that vendor's GPU
     #   configuration, plus a `-gpu-none` DaemonSet for the cluster's non-GPU nodes. When false, none
     #   of the GPU settings have any effect and a single DaemonSet is rendered.
     enabled: false
@@ -355,8 +267,7 @@ gremlin:
     #   cluster (typically created by the GPU Operator or your platform). This chart does NOT create
     #   RuntimeClass objects; a missing RuntimeClass will cause the Gremlin pod to fail to start.
 
-    # gremlin.gpu.cdiDevice -
-    # For nodes using the Nvidia Container Device Interface (CDI) rather than the Nvidia container-toolkit
+    # gremlin.gpu.cdiDevice -- For nodes using the Nvidia Container Device Interface (CDI) rather than the Nvidia container-toolkit
     #   runtime hook. When set, the chart adds a `cdi.k8s.io/gremlin-gpu: <cdiDevice>` pod annotation
     #   so the CRI injects the named CDI device(s). Use this when NVIDIA_VISIBLE_DEVICES is NOT
     #   honored by your runtime (pure Kubernetes-native CDI). A vendor block may override this with
@@ -365,25 +276,13 @@ gremlin:
     # Requires containerd >= 1.7 or CRI-O with CDI enabled.
     cdiDevice: ""
 
-    # gremlin.gpu.projectOpenclIcd -
-    # Whether to project a vendor's `openclIcd` file (e.g. /etc/OpenCL/vendors/nvidia.icd) into the
+    # gremlin.gpu.projectOpenclIcd -- Whether to project a vendor's `openclIcd` file (e.g. /etc/OpenCL/vendors/nvidia.icd) into the
     #   container, when that vendor block defines one. Defaults to true, which fixes runtimes
     #   that inject the OpenCL driver library but not the ICD file. Set to false when your CDI spec
     #   (or another mechanism) already creates the ICD file, to avoid a conflicting mount.
     projectOpenclIcd: true
 
-    # gremlin.gpu.vendors -
-    # The vendor blocks to target, which handles a hybrid / mixed cluster where only some nodes have
-    #   GPUs and different nodes may have different vendors. Whenever GPU access is enabled the chart
-    #   renders one DaemonSet per vendor listed here, scheduled only onto that vendor's nodes and
-    #   carrying that vendor's GPU config, plus one `-gpu-none` DaemonSet for every remaining node, so
-    #   each node runs exactly one agent matching its capabilities. Trim this list to the vendors your
-    #   cluster actually has.
-    #
-    # Each name must reference a vendor block below defining a `nodeSelector`: those labels are what
-    #   pin the vendor's DaemonSet to its nodes (and keep it off the `-gpu-none` DaemonSet's nodes), so
-    #   GPU nodes must carry them (the NVIDIA GPU Operator / Node Feature Discovery and the AMD GPU
-    #   labeller set them).
+    # gremlin.gpu.vendors -- Vendor blocks to target; one DaemonSet is created per entry
     vendors:
       - nvidia
       - amd
@@ -415,6 +314,7 @@ gremlin:
       nodeSelector:
         nvidia.com/gpu.present: "true"
       runtimeClassName: nvidia
+      # gremlin.gpu.nvidia.env -- Environment variables added to the Gremlin container for the NVIDIA container toolkit
       env:
         - name: NVIDIA_VISIBLE_DEVICES
           value: "all"
@@ -434,6 +334,7 @@ gremlin:
         amd.com/gpu.present: "true"
       runtimeClassName: ""
       env: []
+      # gremlin.gpu.amd.volumes -- Pod volumes added to the Gremlin DaemonSet for the AMD GPU device nodes and OpenCL ICD registry
       volumes:
         - name: kfd
           hostPath: { path: /dev/kfd, type: CharDevice }
@@ -441,6 +342,7 @@ gremlin:
           hostPath: { path: /dev/dri, type: Directory }
         - name: opencl-vendors
           hostPath: { path: /etc/OpenCL/vendors, type: DirectoryOrCreate }
+      # gremlin.gpu.amd.volumeMounts -- Container volumeMounts added to the Gremlin container for the AMD GPU device nodes and OpenCL ICD registry
       volumeMounts:
         - name: kfd
           mountPath: /dev/kfd
@@ -460,62 +362,52 @@ gremlin:
       volumes: []
       volumeMounts: []
 
-  # gremlin.serviceUrl -
-  # Base URL of the Gremlin control plane that the agent DaemonSet and the Chao Deployment report to.
-  #
-  # The values file generated at https://app.gremlin.com/getting-started always sets this explicitly,
-  #   so you rarely need to change it here. Override it when running Gremlin Private Edition.
+  # gremlin.serviceUrl -- Base URL of the Gremlin API the agent and Chao report to. The values file generated at https://app.gremlin.com/getting-started always sets this explicitly, so you rarely need to change it; override it for Gremlin Private Edition
   serviceUrl: "https://api.gremlin.com/v1"
 
   secret:
-    # gremlin.secret.name -
-    # Name of the Secret holding the Gremlin credentials. Consumed by the agent DaemonSet and the
-    #   Chao Deployment. Leave unset to use the chart default, which depends on
-    #   `gremlin.secret.managed`: `gremlin-team-cert` when false (the default), `gremlin-secret`
-    #   when true. Set it explicitly when pointing at an externally managed Secret.
-    # name: ""
-    # Gremlin supports both `certificate` and `secret` types
+    # gremlin.secret.name -- Name of the Secret holding the credentials, for example when pointing at an externally managed secret
+    # @default -- `gremlin-team-cert` when `gremlin.secret.managed=false`, `gremlin-secret` when `true`
+    name: ""
+    # gremlin.secret.type -- The type of certificate to use, can be either `certificate` or `secret`
     # To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections
     type: certificate
+    # gremlin.secret.managed -- Specifies whether Gremlin should manage its secrets with Helm
     managed: false
-    # team identifier (e.g. 11111111-1111-1111-1111-111111111111)
+    # gremlin.secret.teamID -- Gremlin Team ID to authenticate with
     teamID: ""
-    # string uniquely identifying this kubernetes cluster in Gremlin (e.g. my-cluster)
+    # gremlin.secret.clusterID -- Arbitrary string that uniquely identifies your cluster (e.g. `my-production-cluster`)
     clusterID: ""
 
     ## Certificate auth requires: `certificate` and `key`
-    # team certificate (e.g. -----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----)
+    # gremlin.secret.certificate -- Contents of the certificate. Required if using managed secrets of `type=certificate`
     certificate: ""
-    # team private key (e.g. -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----)
+    # gremlin.secret.key -- Contents of the private key. Required if using managed secrets of `type=certificate`
     key: ""
 
     ## Secret auth requires: `teamSecret`
-    # team secret (e.g. 00000000-0000-0000-0000-000000000000)
+    # gremlin.secret.teamSecret -- Gremlin's team secret. Required if using managed secrets of `type=secret`
     teamSecret: ""
 
   proxy:
-    # gremlin.proxy.url -
-    # Specifies the http proxy that the Gremlin Agent and Gremlin Kubernetes agent should use to communicate with
-    # api.gremlin.com. This value is ignored when blank or absent.
+    # gremlin.proxy.url -- Specifies the http proxy the agent should use to communicate with api.gremlin.com.
+    # @default -- `""` (ignored)
     url: ""
 
-  # gremlin.extraEnv -
-  # Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset.
+  # gremlin.extraEnv -- Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset.
   extraEnv: []
 
   # gremlin.features
   features:
 
-    # gremlin.features.discoverDestinationService.enabled
-    # Give gremlin permissions to discover any supported destination services such has linkerd-dst, and Kubernetes EndpointSlices
+    # gremlin.features.discoverDestinationService.enabled -- Enable discovery of a destination service in a service mesh to resolve hostnames
     #   The ClusterRole associated with Gremlin's service account receives the following access
     #     - Services: get
     #     - discover.k8s.io/EndpointSlices: watch, list
     discoverDestinationService:
       enabled: false
 
-    # gremlin.features.pushCIDRTags.enabled
-    # Tell Gremlin to push tag values that describe CIDR values associated with the host on which Gremlin is installed.
+    # gremlin.features.pushCIDRTags.enabled -- Push tags describing the CIDR ranges associated with the host the agent runs on
     #   When enabled, this helm chart does nothing, as the default behavior is to push these tags.
     #   When disabled, this helm chart passes `GREMLIN_PUSH_POD_CIDR_TAGS=false` and `GREMLIN_PUSH_ZONE_CIDR_TAGS=false` to
     #   the environment of the gremlind Daemonset.
@@ -540,8 +432,7 @@ gremlin:
     #
     # Only one of the above strategies should be fully configured. A strategy is not used until all of its fields are configured.
     identity:
-      # gremlin.tls.identity.enabled -
-      # Decides whether the Gremlin Daemonset should be configured for a TLS identity
+      # gremlin.tls.identity.enabled -- Decides whether the Gremlin Daemonset should be configured for a TLS identity. [See below](#client-mtls-identity)
       enabled: false
       # gremlin.tls.identity.remoteSecret -
       # The remoteSecret strategy accepts `cert` and `key` strings in the form of ARN values for AWS Secrets Manager
@@ -579,41 +470,37 @@ gremlin:
 
 chao:
 
-  # chao.create
-  # Determines if the `chao` deployment should be installed. This deployment launches an agent that enabled Kubernetes
-  #   targeting for Gremlin attacks
+  # chao.create -- Enable kubernetes targeting by installing k8s client
   create: true
 
-  # chao.resources -
-  # Set resource requests and limits for the Chao deployment.
-  # See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
-  #
+  # chao.resources -- Set resource requests and limits for the chao deployment
   # NOTE: For backwards compatibility, a top-level `resources` block is still honored when `chao.resources`
   # is unset, but `chao.resources` is preferred and takes precedence.
   resources: {}
 
-  # chao.updateStrategy -
-  # The rollout strategy Kubernetes will use when updating the Chao deployment
+  # chao.updateStrategy -- The rollout strategy Kubernetes will use when updating the Chao deployment
   updateStrategy:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 25% # @schema type:[integer, string]
       maxSurge: 25% # @schema type:[integer, string]
 
-  # chao.priorityClassName -
-  # The name of the priority class to use for the Chao deployment
+  # chao.priorityClassName -- The name of the priority class to use for the Chao deployment
   priorityClassName: ""
 
+  # chao.nodeSelector -- Map of node labels for pod assignment for the `chao` container
   nodeSelector: {}
 
+  # chao.tolerations -- List of node taints to tolerate for the `chao` container
   tolerations: []
 
+  # chao.affinity -- Map of node/pod affinities for the `chao` container
   affinity: {}
 
+  # chao.podLabels -- Kubernetes labels applied to the chao deployment and it's Pods
   podLabels: {}
 
-  # chao.podAnnotations -
-  # Additional annotations applied to Chao pods
+  # chao.podAnnotations -- Additional annotations applied to Chao pods
   podAnnotations: {}
 
   serviceAccount:
@@ -625,136 +512,74 @@ chao:
     # Annotations to add to the service account
     annotations: { }
 
-  # chao.extraEnv -
-  # Specify any arbitrary environment variables to pass to the Chao deployment.
+  # chao.extraEnv -- Specify any arbitrary environment variables to pass to the Chao deployment.
   extraEnv: []
 
-  # chao.livenessProbe -
-  # A Kubernetes Probe for the Chao deployment's container. Applies to the Chao deployment only;
-  # the Gremlin DaemonSet has its own livenessProbe. Passed through to the rendered manifest
-  # as-is. Unset by default, which renders no probe.
+  # chao.livenessProbe -- A Kubernetes `Probe` for the `chao` container
   livenessProbe: {}
 
-  # chao.readinessProbe -
-  # A Kubernetes Probe for the Chao deployment's container. Applies to the Chao deployment only;
-  # the Gremlin DaemonSet has its own readinessProbe. Passed through to the rendered manifest
-  # as-is. Unset by default, which renders no probe.
+  # chao.readinessProbe -- A Kubernetes `Probe` for the `chao` container
   readinessProbe: {}
 
-  # chao.startupProbe -
-  # A Kubernetes Probe for the Chao deployment's container. Applies to the Chao deployment only;
-  # the Gremlin DaemonSet has its own startupProbe. Passed through to the rendered manifest
-  # as-is. Unset by default, which renders no probe.
+  # chao.startupProbe -- A Kubernetes `Probe` for the `chao` container
   startupProbe: {}
 
-  # chao.initContainers -
-  # Additional init containers for the Chao deployment's pod spec. Applies to the Chao
-  # deployment only; the Gremlin DaemonSet has its own initContainers. Passed through to the
-  # rendered manifest as-is. A container name colliding with a name the gremlin chart manages
-  # (e.g. gremlin, chao) fails the install. Unset by default, which renders no additional init
-  # containers.
+  # chao.initContainers -- Additional init containers for the `chao` deployment. A name colliding with
+  # one the chart manages fails the install
   # NOTE: when gremlin.podSecurity.podSecurityPolicy.create is enabled, the chart's own chao PSP
   # may reject volumes an init container mounts; see chao.extraVolumes below.
   initContainers: []
 
-  # chao.extraVolumes -
-  # Additional volumes for the Chao deployment's pod spec. Applies to the Chao deployment only;
-  # the Gremlin DaemonSet has its own extraVolumes. Passed through to the rendered manifest
-  # as-is. A volume name colliding with a name the gremlin chart manages (e.g. gremlin-cert,
-  # chao-tls-identity) fails the install. Unset by default, which renders no additional volumes.
+  # chao.extraVolumes -- Additional volumes for the `chao` deployment. A name colliding with one the
+  # chart manages fails the install
   # NOTE: when gremlin.podSecurity.podSecurityPolicy.create is enabled, the chart's own chao PSP
   # only permits the "secret" volume type; any other type is rejected at admission, not by this
   # chart.
   extraVolumes: []
 
-  # chao.extraVolumeMounts -
-  # Additional volume mounts for the Chao deployment's container. Applies to the Chao deployment
-  # only; the Gremlin DaemonSet has its own extraVolumeMounts. Passed through to the rendered
-  # manifest as-is. A volume name colliding with a name the gremlin chart manages (e.g.
-  # gremlin-cert, chao-tls-identity) fails the install. Unset by default, which renders no
-  # additional volume mounts.
+  # chao.extraVolumeMounts -- Additional volume mounts for the `chao` container. A name colliding with
+  # one the chart manages fails the install
   extraVolumeMounts: []
 
-  # chao.lifecycle -
-  # A Kubernetes Lifecycle object (preStop/postStart hooks) for the Chao deployment's container.
-  # Applies to the Chao deployment only; the Gremlin DaemonSet has its own lifecycle. Passed
-  # through to the rendered manifest as-is. Unset by default, which renders no lifecycle hooks.
+  # chao.lifecycle -- A Kubernetes `Lifecycle` object (`preStop`/`postStart`) for the `chao` container
   lifecycle: {}
 
-  # chao.envFrom -
-  # Additional sources (ConfigMaps/Secrets) to populate the Chao deployment's container
-  # environment from. Applies to the Chao deployment only; the Gremlin DaemonSet has its own
-  # envFrom. Passed through to the rendered manifest as-is. Unset by default, which renders no
-  # envFrom.
-  # NOTE: unlike extraEnv, envFrom does NOT override chart-managed environment variables --
-  # Kubernetes gives a container's env: precedence over its envFrom: for any key set in both.
-  # Use extraEnv (which renders last in env:) to override chart-managed values.
+  # chao.envFrom -- Additional `ConfigMap`/`Secret` sources for the `chao` container's environment.
+  # Unlike `chao.extraEnv`, does not override chart-managed env vars (Kubernetes gives `env:`
+  # precedence over `envFrom:`)
   envFrom: []
 
-  # chao.terminationGracePeriodSeconds -
-  # The termination grace period, in seconds, for the Chao deployment's pods. Applies to the
-  # Chao deployment only; the Gremlin DaemonSet has its own terminationGracePeriodSeconds.
-  # Passed through to the rendered manifest as-is. Unset by default, which leaves Kubernetes'
-  # default (30 seconds) in effect.
+  # chao.terminationGracePeriodSeconds -- Termination grace period, in seconds, for the `chao`
+  # deployment's pods
+  # @default -- (Kubernetes default: `30`)
   terminationGracePeriodSeconds: # @schema type:[integer, string, null];pattern:^[0-9]+$
 
-  # chao.dnsConfig -
-  # A Kubernetes PodDNSConfig object for the Chao deployment's pod spec. Applies to the Chao
-  # deployment only; the Gremlin DaemonSet has its own dnsConfig. Passed through to the rendered
-  # manifest as-is. Unset by default, which renders no dnsConfig.
+  # chao.dnsConfig -- A Kubernetes `PodDNSConfig` for the `chao` deployment's pod spec
   dnsConfig: {}
 
-  # chao.hostAliases -
-  # A list of Kubernetes HostAlias entries for the Chao deployment's pod spec. Applies to the
-  # Chao deployment only; the Gremlin DaemonSet has its own hostAliases. Passed through to the
-  # rendered manifest as-is. Unset by default, which renders no hostAliases.
+  # chao.hostAliases -- A list of Kubernetes `HostAlias` entries for the `chao` deployment's pod spec
   hostAliases: []
 
-  # chao.podSecurityContext -
-  # A Kubernetes pod-level SecurityContext for the Chao deployment's pod spec. Applies to the
-  # Chao deployment only; the Gremlin DaemonSet has its own podSecurityContext. Renders
-  # alongside the existing container-level securityContext, which is unaffected. Passed through
-  # to the rendered manifest as-is. Unset by default, which renders no pod-level
-  # securityContext.
+  # chao.podSecurityContext -- A Kubernetes pod-level `SecurityContext` for the `chao` deployment's
+  # pod spec
   podSecurityContext: {}
 
-  # chao.namespaces
-  # list of namespaces for Gremlin to watch for attacking
+  # chao.namespaces -- List of namespaces for Gremlin to watch for attacking
   namespaces: []
 
-  # chao.excludedNamespaces
-  # list of namespaces Gremlin should never report or attack. Use this instead of chao.namespaces
-  # when the set of namespaces to skip is short and stable but the set to include changes often.
-  # Mutually exclusive with chao.namespaces when chao.create is true: setting both fails the install.
+  # chao.excludedNamespaces -- List of namespaces Gremlin should never report or attack (mutually
+  # exclusive with `chao.namespaces`)
   excludedNamespaces: []
 
   # chao.features
   features:
 
-    # chao.features.dynamicQuery.enabled
-    # Lets Gremlin query Kubernetes resources beyond the fixed set Chao watches by default. When enabled, the
-    #   ClusterRole bound to Chao's service account is extended with the read-only rules
-    #   described by `allowlist`, and Chao is told the feature is on.
+    # chao.features.dynamicQuery.enabled -- Let Gremlin query Kubernetes resources beyond the fixed set Chao watches by default. [See below](#chao-dynamic-queries)
     dynamicQuery:
       enabled: true
 
-      # chao.features.dynamicQuery.allowlist
-      # The Kubernetes resources Chao is allowed to query. Each entry maps directly onto an RBAC rule and accepts
-      #   `apiGroups`, `resources`, and an optional `verbs`. Both `apiGroups` and `resources` must be named — there
-      #   is no wildcard default. An entry that omits its `apiGroups` fails the install rather than being granted
-      #   across every group, and an entry that omits its `resources` fails rather than rendering a rule that grants
-      #   nothing. The core API group is the empty string (`""`).
-      #
-      # This list is the outer bound of what Gremlin can read: anything absent from it is refused by the API server,
-      #   not by Chao. `denylist` below narrows it further from inside Chao.
-      #
-      # The default covers the resources that describe a cluster's shape, scheduling, and health, on top of the
-      #   workloads the base `gremlin-watcher` rules already watch. Setting this replaces the default outright, so
-      #   list every resource Gremlin should reach — including any custom resource of your own.
-      #
-      # NOTE: dynamic queries are read-only. `verbs` defaults to `get` and `list`, and may narrow to a subset of
-      #   those two; any other verb (including `watch` and the `"*"` wildcard) fails the install. Chao therefore
-      #   cannot maintain a watch over these resources and must poll them.
+      # chao.features.dynamicQuery.allowlist -- RBAC rules describing the resources Chao may query. [See below](#chao-dynamic-queries)
+      # @default -- The resources describing a cluster's shape, scheduling, and health (see values.yaml)
       allowlist:
         # How workloads are wired together, what they consume, and what has happened to them.
         - apiGroups: [""]
@@ -782,15 +607,9 @@ chao:
         - apiGroups: ["apiextensions.k8s.io"]
           resources: ["customresourcedefinitions"]
 
-      # chao.features.dynamicQuery.denylist
-      # Resources object queries may never read, named as `resource.group` or `*.group` — for example
-      #   `secrets.` for core Secrets, `secrets.example.com` for a custom resource, or `*.example.com` for every
-      #   resource in a group. Passed to Chao as `-deny_resources` and enforced by Chao itself.
-      #
-      # This adds to Chao's built-in denylist, which always applies and cannot be turned off. Use it to carve out
-      #   resources an allowlist entry would otherwise reach — a broad grant on a custom API group, say, with a
-      #   few of its resources held back. Denying a resource that is not granted in the first place is harmless
-      #   but redundant; RBAC is what actually stops Chao from reading anything absent from `allowlist`.
+      # chao.features.dynamicQuery.denylist -- Resources object queries may never read, named as
+      # `resource.group` or `*.group`. Passed to Chao as `-deny_resources` and enforced by Chao itself;
+      # adds to Chao's built-in denylist, which always applies.
       denylist: []
 
 
@@ -810,8 +629,7 @@ chao:
     #
     # Only one of the above strategies should be fully configured. A strategy is not used until all of its fields are configured.
     identity:
-      # chao.tls.identity.enabled -
-      # Decides whether the Chao Deployment should be configured for a TLS identity
+      # chao.tls.identity.enabled -- Decides whether the Chao Deployment should be configured for a TLS identity. [See below](#client-mtls-identity)
       enabled: false
       # chao.tls.identity.remoteSecret -
       # The remoteSecret strategy accepts `cert` and `key` strings in the form of ARN values for AWS Secrets Manager
@@ -848,14 +666,14 @@ chao:
         key: "tls.key"
 
 ssl:
-  # ssl.certFile -
-  # Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the
+  # ssl.certFile -- Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the
   # certificate(s) you wish to add. When set, this chart creates secret (`ssl-cert-file`) with the contents and passes
   # it to both agents. This value is ignored when blank or absent.
+  # @default -- `""` (ignored)
   certFile: # @schema type:[string, null]
-  # ssl.certDir -
-  # sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a
+  # ssl.certDir -- sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a
   # path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent.
+  # @default -- `""` (ignored)
   certDir: # @schema type:[string, null]
 
 containerDrivers:

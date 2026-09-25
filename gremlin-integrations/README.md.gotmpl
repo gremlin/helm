@@ -10,47 +10,7 @@ This chart will install the gremlin integrations client on the specified namespa
 
 The following table lists every configurable parameter of the chart and its default value.
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| affinity | object | `{}` | Map of node/pod affinities for the `gremlin-integrations` container |
-| fullnameOverride | string | `""` | Overrides the full, generated name of the release's resources. |
-| gremlin.allowList | string | `""` | Whitelist URLs in order to allow access only to specific set of endpoints |
-| gremlin.client.tags | string | `""` | A string of comma separated key=value pairs that are used to decorate the Gremlin agent with tags. |
-| gremlin.extraEnv | list | `[]` | Specify any arbitrary environment variables to pass to the Gremlin Integrations Agent deployment. |
-| gremlin.proxy.url | string | `""` (ignored) | Specifies the http proxy the agent should use to communicate with api.gremlin.com. |
-| gremlin.resources | object | `{}` | Set resource requests and limits See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers |
-| gremlin.secret.certificate | string | `""` | Contents of the certificate. Required if using managed secrets of `type=certificate` team certificate (e.g. -----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----) |
-| gremlin.secret.key | string | `""` | Contents of the private key. Required if using managed secrets of `type=certificate` team private key (e.g. -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----) |
-| gremlin.secret.managed | bool | `false` | Specifies whether Gremlin should manage its secrets with Helm |
-| gremlin.secret.teamID | string | `""` | Gremlin Team ID to authenticate with team identifier (e.g. 11111111-1111-1111-1111-111111111111) |
-| gremlin.secret.teamSecret | string | `""` | Gremlin's team secret. Required if using managed secrets of `type=secret` team secret (e.g. 00000000-0000-0000-0000-000000000000) |
-| gremlin.secret.type | string | `"certificate"` | The type of certificate to use, can be either `certificate` or `secret` Gremlin supports both `certificate` and `secret` types To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections |
-| gremlin.serviceUrl | string | `"https://api.gremlin.com/v1"` | Base URL of the Gremlin control plane that the gremlin-integrations Deployment reports to. Override this when running Gremlin Private Edition. |
-| gremlin.tls.identity.createSecret.cert | string | `""` | The PEM-encoded certificate (expected to be a multi-line string) |
-| gremlin.tls.identity.createSecret.key | string | `""` | The PEM-encoded private key (expected to be a multi-line string) |
-| gremlin.tls.identity.createSecret.name | string | `"gremlin-tls-identity"` | The name of the new secret |
-| gremlin.tls.identity.enabled | bool | `false` | Decides whether the Gremlin Integrations Deployment should be configured for a TLS identity |
-| gremlin.tls.identity.existingSecret.cert | string | `"tls.crt"` | The name of the key inside the existing secret that maps to the certificate value |
-| gremlin.tls.identity.existingSecret.key | string | `"tls.key"` | The name of the key inside the existing secret that maps to the private key value |
-| gremlin.tls.identity.existingSecret.name | string | `""` | The name of the existing secret |
-| gremlin.tls.identity.remoteSecret.cert | string | `""` | The ARN for the identity certificate |
-| gremlin.tls.identity.remoteSecret.key | string | `""` | The ARN for the identity private key |
-| image.pullPolicy | string | `"Always"` | Container pull policy |
-| image.repository | string | `"gremlin/gremlin-integrations"` | Container image to use |
-| image.tag | string | `"latest"` | Container image tag to deploy |
-| imagePullSecrets | list | `[]` | List of Secret names used as image pull secrets for the gremlin-integrations Deployment. |
-| nameOverride | string | `""` | Overrides the chart name used when computing the release's derived resource names. |
-| nodeSelector | object | `{}` | Map of node labels for pod assignment for the `gremlin-integrations` container |
-| podAnnotations | object | `{}` | Additional annotations applied to the gremlin-integrations Deployment's pods. |
-| podSecurityContext | object | `{}` | A Kubernetes pod-level SecurityContext for the gremlin-integrations Deployment's pod spec. |
-| replicaCount | int | `1` | Number of gremlin-integrations Deployment replicas to run. |
-| securityContext | object | `{}` | A Kubernetes container-level SecurityContext for the gremlin-integrations container. |
-| serviceAccount.annotations | object | `{}` | Annotations to add to the service account |
-| serviceAccount.create | bool | `true` | Specifies whether the gremlin-integrations Kubernetes service account should be created by this Helm chart. |
-| serviceAccount.name | string | `"gremlin-integrations"` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
-| ssl.certDir | string | `""` (ignored) | sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent. |
-| ssl.certFile | string | `""` (ignored) | Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the certificate(s) you wish to add. When set, this chart creates secret (`integrations-ssl-cert-file`) with the contents and passes it to both agents. This value is ignored when blank or absent. |
-| tolerations | list | `[]` | List of node taints to tolerate for the `gremlin-integrations` container |
+{{ template "chart.valuesTable" . }}
 
 Specify each parameter using the `--set[-file] key=value[,key=value]` argument to `helm install`.
 

@@ -2,81 +2,117 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# replicaCount -- Number of gremlin-integrations Deployment replicas to run.
 replicaCount: 1 # @schema type:[integer, string]
 
 image:
+  # image.repository -- Container image to use
   repository: gremlin/gremlin-integrations
+  # image.pullPolicy -- Container pull policy
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
+  # image.tag -- Container image tag to deploy
   tag: latest # @schema type:[string, integer, number]
 
+# imagePullSecrets -- List of Secret names used as image pull secrets for the
+# gremlin-integrations Deployment.
 imagePullSecrets: [ ]
+# nameOverride -- Overrides the chart name used when computing the release's
+# derived resource names.
 nameOverride: ""
+# fullnameOverride -- Overrides the full, generated name of the release's
+# resources.
 fullnameOverride: ""
 
 serviceAccount:
-  # Specifies whether a service account should be created
+  # serviceAccount.create -- Specifies whether the gremlin-integrations Kubernetes
+  # service account should be created by this Helm chart.
   create: true
-  # Annotations to add to the service account
+  # serviceAccount.annotations -- Annotations to add to the service account
   annotations: { }
-  # The name of the service account to use.
+  # serviceAccount.name -- The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
   name: "gremlin-integrations"
 
+# podAnnotations -- Additional annotations applied to the gremlin-integrations
+# Deployment's pods.
 podAnnotations: { }
 
+# podSecurityContext -- A Kubernetes pod-level SecurityContext for the
+# gremlin-integrations Deployment's pod spec.
 podSecurityContext: { }
 # fsGroup: 2000
 
+# securityContext -- A Kubernetes container-level SecurityContext for the
+# gremlin-integrations container.
 securityContext: { }
 
+# nodeSelector -- Map of node labels for pod assignment for the
+# `gremlin-integrations` container
 nodeSelector: { }
 
+# tolerations -- List of node taints to tolerate for the `gremlin-integrations`
+# container
 tolerations: [ ]
 
+# affinity -- Map of node/pod affinities for the `gremlin-integrations` container
 affinity: { }
 
 ssl:
-  # ssl.certFile -
-  # Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the
-  # certificate(s) you wish to add. When set, this chart creates secret (`ssl-cert-file`) with the contents and passes
+  # ssl.certFile -- Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the
+  # certificate(s) you wish to add. When set, this chart creates secret (`integrations-ssl-cert-file`) with the contents and passes
   # it to both agents. This value is ignored when blank or absent.
+  # @default -- `""` (ignored)
   certFile: # @schema type:[string, null]
-  # ssl.certDir -
-  # sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a
+  # ssl.certDir -- sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a
   # path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent.
+  # @default -- `""` (ignored)
   certDir: # @schema type:[string, null]
 
 gremlin:
-  # gremlin.resources -
-  # Set resource requests and limits
+  # gremlin.resources -- Set resource requests and limits
   # See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers
-  #
-  # NOTE: This resource specification affects the Gremlin agent which is used for host attacks. This resource
-  # Attacks targeting other Kubernetes pods will use the resource specification of their target.
   resources: {}
+
+  # gremlin.serviceUrl -- Base URL of the Gremlin control plane that the
+  # gremlin-integrations Deployment reports to. Override this when running
+  # Gremlin Private Edition.
+  serviceUrl: "https://api.gremlin.com/v1"
+
   secret:
+    # gremlin.secret.type -- The type of certificate to use, can be either
+    # `certificate` or `secret`
     # Gremlin supports both `certificate` and `secret` types
     # To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections
     type: certificate
+    # gremlin.secret.managed -- Specifies whether Gremlin should manage its
+    # secrets with Helm
     managed: false
+    # gremlin.secret.teamID -- Gremlin Team ID to authenticate with
     # team identifier (e.g. 11111111-1111-1111-1111-111111111111)
     teamID: ""
 
     ## Certificate auth requires: `certificate` and `key`
+    # gremlin.secret.certificate -- Contents of the certificate. Required if
+    # using managed secrets of `type=certificate`
     # team certificate (e.g. -----BEGIN CERTIFICATE-----...-----END CERTIFICATE-----)
     certificate: ""
+    # gremlin.secret.key -- Contents of the private key. Required if using
+    # managed secrets of `type=certificate`
     # team private key (e.g. -----BEGIN EC PRIVATE KEY-----...-----END EC PRIVATE KEY-----)
     key: ""
 
     ## Secret auth requires: `teamSecret`
+    # gremlin.secret.teamSecret -- Gremlin's team secret. Required if using
+    # managed secrets of `type=secret`
     # team secret (e.g. 00000000-0000-0000-0000-000000000000)
     teamSecret: ""
+  # gremlin.allowList -- Whitelist URLs in order to allow access only to
+  # specific set of endpoints
   allowList: ""
   proxy:
-    # gremlin.proxy.url -
-    # Specifies the http proxy that the Gremlin Agent and Gremlin Kubernetes agent should use to communicate with
-    # api.gremlin.com. This value is ignored when blank or absent.
+    # gremlin.proxy.url -- Specifies the http proxy the agent should use to communicate with api.gremlin.com.
+    # @default -- `""` (ignored)
     url: # @schema type:[string, null]
 
   # gremlin.tls -
@@ -84,61 +120,45 @@ gremlin:
   tls:
     # gremlin.tls.identity -
     # Configuration items for configuring the TLS identity of the Gremlin HTTP client for mTLS.
-    # Identity values are made up of
-    #   - `cert` portion, containing the leaf certificate for the client (plus any intermediate certificates)
-    #   - `key` portion, containing the private key for the client
-    #
-    # These values can be supplied in three different strategies:
-    #   - `remoteSecret`: a collection of ARN values for AWS Secrets Manager
-    #   - `createSecret`: content supplied directly to this chart for which a new Kubernetes secret will be created
-    #   - `existingSecret`: a reference to an existing Kubernetes secret (e.g. created from cert-manager)
-    #
-    # Only one of the above strategies should be fully configured. A strategy is not used until all of its fields are configured.
+    # Identity values are made up of a `cert` portion (the leaf certificate for the client, plus any
+    # intermediate certificates) and a `key` portion (the private key for the client). These values can be
+    # supplied in three different strategies: `remoteSecret` (ARN values for AWS Secrets Manager),
+    # `createSecret` (content supplied directly to this chart, which creates a new Kubernetes secret), or
+    # `existingSecret` (a reference to an existing Kubernetes secret, e.g. created from cert-manager). Only
+    # one of the above strategies should be fully configured. A strategy is not used until all of its fields
+    # are configured.
     identity:
-      # gremlin.tls.identity.enabled -
-      # Decides whether the Gremlin Integrations Deployment should be configured for a TLS identity
+      # gremlin.tls.identity.enabled -- Decides whether the Gremlin Integrations Deployment should be configured for a TLS identity
       enabled: false
       # gremlin.tls.identity.remoteSecret -
       # The remoteSecret strategy accepts `cert` and `key` strings in the form of ARN values for AWS Secrets Manager
       remoteSecret:
-        # gremlin.tls.identity.remoteSecret.cert -
-        # The ARN for the identity certificate
+        # gremlin.tls.identity.remoteSecret.cert -- The ARN for the identity certificate
         cert: ""
-        # gremlin.tls.identity.remoteSecret.key -
-        # The ARN for the identity private key
+        # gremlin.tls.identity.remoteSecret.key -- The ARN for the identity private key
         key: ""
       # gremlin.tls.identity.createSecret -
       # The createSecret strategy accepts PEM encoded certificate and private key content to create a new Kubernetes secret
       createSecret:
-        # gremlin.tls.identity.createSecret.name -
-        # The name of the new secret
+        # gremlin.tls.identity.createSecret.name -- The name of the new secret
         name: "gremlin-tls-identity"
-        # gremlin.tls.identity.createSecret.cert -
-        # The PEM-encoded certificate (expected to be a multi-line string)
+        # gremlin.tls.identity.createSecret.cert -- The PEM-encoded certificate (expected to be a multi-line string)
         cert: ""
-        # gremlin.tls.identity.createSecret.key -
-        # The PEM-encoded private key (expected to be a multi-line string)
+        # gremlin.tls.identity.createSecret.key -- The PEM-encoded private key (expected to be a multi-line string)
         key: ""
       # gremlin.tls.identity.existingSecret -
       # The existingSecret strategy accepts a reference to an existing Kubernetes secret
       existingSecret:
-        # gremlin.tls.identity.existingSecret.name -
-        # The name of the existing secret
+        # gremlin.tls.identity.existingSecret.name -- The name of the existing secret
         name: ""
-        # gremlin.tls.identity.existingSecret.cert -
-        # The name of the key inside the existing secret that maps to the certificate value
+        # gremlin.tls.identity.existingSecret.cert -- The name of the key inside the existing secret that maps to the certificate value
         cert: "tls.crt"
-        # gremlin.tls.identity.existingSecret.key -
-        # The name of the key inside the existing secret that maps to the private key value
+        # gremlin.tls.identity.existingSecret.key -- The name of the key inside the existing secret that maps to the private key value
         key: "tls.key"
 
-  # gremlin.extraEnv
-  # Specify any arbitrary environment variables to pass to the Gremlin Integrations Agent deployment
+  # gremlin.extraEnv -- Specify any arbitrary environment variables to pass to the Gremlin Integrations Agent deployment.
   extraEnv: []
 
   client:
-    # gremlin.client.tags -
-    # A string of comma separated key=value pairs that are used to decorate the Gremlin agent with tags.
-    #
-    # NOTE: This value's commas must be escaped. See https://github.com/gremlin/helm/issues/8
+    # gremlin.client.tags -- A string of comma separated key=value pairs that are used to decorate the Gremlin agent with tags.
     tags: ""

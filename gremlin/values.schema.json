@@ -6,33 +6,42 @@
   "type": "object",
   "properties": {
     "affinity": {
+      "description": "Map of node/pod affinities for the `gremlin` container",
       "type": "object"
     },
     "chao": {
       "type": "object",
       "properties": {
         "affinity": {
+          "description": "Map of node/pod affinities for the `chao` container",
           "type": "object"
         },
         "create": {
+          "description": "Enable kubernetes targeting by installing k8s client",
           "type": "boolean"
         },
         "dnsConfig": {
+          "description": "A Kubernetes `PodDNSConfig` for the `chao` deployment's pod spec",
           "type": "object"
         },
         "envFrom": {
+          "description": "Additional `ConfigMap`/`Secret` sources for the `chao` container's environment. Unlike `chao.extraEnv`, does not override chart-managed env vars (Kubernetes gives `env:` precedence over `envFrom:`)",
           "type": "array"
         },
         "excludedNamespaces": {
+          "description": "List of namespaces Gremlin should never report or attack (mutually exclusive with `chao.namespaces`)",
           "type": "array"
         },
         "extraEnv": {
+          "description": "Specify any arbitrary environment variables to pass to the Chao deployment.",
           "type": "array"
         },
         "extraVolumeMounts": {
+          "description": "Additional volume mounts for the `chao` container. A name colliding with one the chart manages fails the install",
           "type": "array"
         },
         "extraVolumes": {
+          "description": "Additional volumes for the `chao` deployment. A name colliding with one the chart manages fails the install NOTE: when gremlin.podSecurity.podSecurityPolicy.create is enabled, the chart's own chao PSP only permits the \"secret\" volume type; any other type is rejected at admission, not by this chart.",
           "type": "array"
         },
         "features": {
@@ -42,6 +51,7 @@
               "type": "object",
               "properties": {
                 "allowlist": {
+                  "description": "RBAC rules describing the resources Chao may query. [See below](#chao-dynamic-queries)",
                   "type": "array",
                   "items": {
                     "type": "object",
@@ -62,6 +72,7 @@
                   }
                 },
                 "denylist": {
+                  "description": "Resources object queries may never read, named as `resource.group` or `*.group`. Passed to Chao as `-deny_resources` and enforced by Chao itself; adds to Chao's built-in denylist, which always applies.",
                   "type": "array"
                 },
                 "enabled": {
@@ -72,39 +83,51 @@
           }
         },
         "hostAliases": {
+          "description": "A list of Kubernetes `HostAlias` entries for the `chao` deployment's pod spec",
           "type": "array"
         },
         "initContainers": {
+          "description": "Additional init containers for the `chao` deployment. A name colliding with one the chart manages fails the install NOTE: when gremlin.podSecurity.podSecurityPolicy.create is enabled, the chart's own chao PSP may reject volumes an init container mounts; see chao.extraVolumes below.",
           "type": "array"
         },
         "lifecycle": {
+          "description": "A Kubernetes `Lifecycle` object (`preStop`/`postStart`) for the `chao` container",
           "type": "object"
         },
         "livenessProbe": {
+          "description": "A Kubernetes `Probe` for the `chao` container",
           "type": "object"
         },
         "namespaces": {
+          "description": "List of namespaces for Gremlin to watch for attacking",
           "type": "array"
         },
         "nodeSelector": {
+          "description": "Map of node labels for pod assignment for the `chao` container",
           "type": "object"
         },
         "podAnnotations": {
+          "description": "Additional annotations applied to Chao pods",
           "type": "object"
         },
         "podLabels": {
+          "description": "Kubernetes labels applied to the chao deployment and it's Pods",
           "type": "object"
         },
         "podSecurityContext": {
+          "description": "A Kubernetes pod-level `SecurityContext` for the `chao` deployment's pod spec",
           "type": "object"
         },
         "priorityClassName": {
+          "description": "The name of the priority class to use for the Chao deployment",
           "type": "string"
         },
         "readinessProbe": {
+          "description": "A Kubernetes `Probe` for the `chao` container",
           "type": "object"
         },
         "resources": {
+          "description": "Set resource requests and limits for the chao deployment NOTE: For backwards compatibility, a top-level `resources` block is still honored when `chao.resources` is unset, but `chao.resources` is preferred and takes precedence.",
           "type": "object"
         },
         "serviceAccount": {
@@ -119,9 +142,11 @@
           }
         },
         "startupProbe": {
+          "description": "A Kubernetes `Probe` for the `chao` container",
           "type": "object"
         },
         "terminationGracePeriodSeconds": {
+          "description": "Termination grace period, in seconds, for the `chao` deployment's pods",
           "type": [
             "integer",
             "string",
@@ -150,6 +175,7 @@
                   }
                 },
                 "enabled": {
+                  "description": "Decides whether the Chao Deployment should be configured for a TLS identity. [See below](#client-mtls-identity)",
                   "type": "boolean"
                 },
                 "existingSecret": {
@@ -182,9 +208,11 @@
           }
         },
         "tolerations": {
+          "description": "List of node taints to tolerate for the `chao` container",
           "type": "array"
         },
         "updateStrategy": {
+          "description": "The rollout strategy Kubernetes will use when updating the Chao deployment",
           "type": "object",
           "properties": {
             "rollingUpdate": {
@@ -215,18 +243,22 @@
       "type": "object",
       "properties": {
         "pullPolicy": {
+          "description": "Container pull policy for the `chao` container",
           "type": "string"
         },
         "pullSecret": {
+          "description": "Pull secret for a private registry for the `chao` container",
           "type": [
             "string",
             "null"
           ]
         },
         "repository": {
+          "description": "Container image to use for the `chao` container",
           "type": "string"
         },
         "tag": {
+          "description": "Container image tag to deploy for the `chao` container. [See below](#pinning-the-agent-version)",
           "type": [
             "string",
             "integer",
@@ -274,24 +306,30 @@
       }
     },
     "dnsConfig": {
+      "description": "A Kubernetes `PodDNSConfig` for the `gremlin` DaemonSet's pod spec",
       "type": "object"
     },
     "envFrom": {
+      "description": "Additional `ConfigMap`/`Secret` sources for the `gremlin` container's environment. Unlike `gremlin.extraEnv`, does not override chart-managed env vars (Kubernetes gives `env:` precedence over `envFrom:`)",
       "type": "array"
     },
     "extraVolumeMounts": {
+      "description": "Additional volume mounts for the `gremlin` container. A name colliding with one the chart manages fails the install",
       "type": "array"
     },
     "extraVolumes": {
+      "description": "Additional volumes for the `gremlin` DaemonSet. A name colliding with one the chart manages fails the install NOTE: when gremlin.podSecurity.podSecurityPolicy.create (or ...securityContextConstraints.create) is enabled, a volume type or hostPath outside what gremlin.podSecurity.volumes / allowedHostPaths permits is rejected at admission, not by this chart.",
       "type": "array"
     },
     "fullnameOverride": {
+      "description": "Overrides the full, generated name of the release's resources.",
       "type": "string"
     },
     "gremlin": {
       "type": "object",
       "properties": {
         "apparmor": {
+          "description": "Apparmor profile to set for the Gremlin Daemon",
           "type": [
             "string",
             "null"
@@ -301,6 +339,7 @@
           "type": "object",
           "properties": {
             "root": {
+              "description": "Specifies the absolute path for the cgroup controller root on target host systems",
               "type": "string"
             }
           }
@@ -309,6 +348,7 @@
           "type": "object",
           "properties": {
             "tags": {
+              "description": "Comma-separated list of `key=value` tag pairs to assign to this client.",
               "type": "string"
             }
           }
@@ -317,6 +357,7 @@
           "type": "object",
           "properties": {
             "dns": {
+              "description": "Specifies whether Gremlin should collect DNS call information",
               "type": "boolean"
             }
           }
@@ -325,14 +366,17 @@
           "type": "object",
           "properties": {
             "driver": {
+              "description": "Specifies which container driver with which to run Gremlin. [See example][driverexample]",
               "type": "string"
             }
           }
         },
         "dnsPolicy": {
+          "description": "The DNS policy to use for the Gremlin DaemonSet",
           "type": "string"
         },
         "extraEnv": {
+          "description": "Specify any arbitrary environment variables to pass to the Gremlin Agent daemonset.",
           "type": "array"
         },
         "features": {
@@ -377,6 +421,7 @@
                   "type": "string"
                 },
                 "volumeMounts": {
+                  "description": "Container volumeMounts added to the Gremlin container for the AMD GPU device nodes and OpenCL ICD registry",
                   "type": "array",
                   "items": {
                     "type": "object",
@@ -394,6 +439,7 @@
                   }
                 },
                 "volumes": {
+                  "description": "Pod volumes added to the Gremlin DaemonSet for the AMD GPU device nodes and OpenCL ICD registry",
                   "type": "array",
                   "items": {
                     "type": "object",
@@ -418,6 +464,7 @@
               }
             },
             "cdiDevice": {
+              "description": "For nodes using the Nvidia Container Device Interface (CDI) rather than the Nvidia container-toolkit runtime hook. When set, the chart adds a `cdi.k8s.io/gremlin-gpu: \u003ccdiDevice\u003e` pod annotation so the CRI injects the named CDI device(s). Use this when NVIDIA_VISIBLE_DEVICES is NOT honored by your runtime (pure Kubernetes-native CDI). A vendor block may override this with its own `cdiDevice`.  Requires containerd \u003e= 1.7 or CRI-O with CDI enabled.",
               "type": "string"
             },
             "custom": {
@@ -438,6 +485,7 @@
               }
             },
             "enabled": {
+              "description": "When true, the chart renders one DaemonSet per `vendors` entry, each carrying that vendor's GPU configuration, plus a `-gpu-none` DaemonSet for the cluster's non-GPU nodes. When false, none of the GPU settings have any effect and a single DaemonSet is rendered.",
               "type": "boolean"
             },
             "nvidia": {
@@ -445,6 +493,7 @@
               "type": "object",
               "properties": {
                 "env": {
+                  "description": "Environment variables added to the Gremlin container for the NVIDIA container toolkit",
                   "type": "array",
                   "items": {
                     "type": "object",
@@ -489,9 +538,11 @@
               }
             },
             "projectOpenclIcd": {
+              "description": "Whether to project a vendor's `openclIcd` file (e.g. /etc/OpenCL/vendors/nvidia.icd) into the container, when that vendor block defines one. Defaults to true, which fixes runtimes that inject the OpenCL driver library but not the ICD file. Set to false when your CDI spec (or another mechanism) already creates the ICD file, to avoid a conflicting mount.",
               "type": "boolean"
             },
             "vendors": {
+              "description": "Vendor blocks to target; one DaemonSet is created per entry",
               "type": "array",
               "items": {
                 "type": "string"
@@ -500,27 +551,34 @@
           }
         },
         "hostNetwork": {
+          "description": "Enable host-level network attacks",
           "type": "boolean"
         },
         "hostPID": {
+          "description": "Enable host-level process killing",
           "type": "boolean"
         },
         "installApparmorProfile": {
+          "description": "Have Gremlin install their own [Apparmor Profile](agent_apparmor.profile) (NOTE: `gremlin.apparmor` overrides this)",
           "type": "boolean"
         },
         "podAnnotations": {
+          "description": "Additional annotations applied to the Gremlin Agent's DaemonSet pods",
           "type": "object"
         },
         "podLabels": {
+          "description": "Kubernetes labels applied to the Gremlin Agent's DaemonSet and it's pods",
           "type": "object"
         },
         "podSecurity": {
           "type": "object",
           "properties": {
             "allowPrivilegeEscalation": {
+              "description": "Allows Gremlin containers privilege escalation powers",
               "type": "boolean"
             },
             "capabilities": {
+              "description": "Specifies which Linux capabilities should be granted to Gremlin",
               "type": "array",
               "items": {
                 "type": "string"
@@ -530,6 +588,7 @@
               "type": "object",
               "properties": {
                 "rule": {
+                  "description": "Specifies the Linux groups applied to mounted volumes",
                   "type": "string"
                 }
               }
@@ -538,17 +597,20 @@
               "type": "object",
               "properties": {
                 "create": {
+                  "description": "When true, Gremlin creates and uses a custom PodSecurityPolicy, granting all behaviors Gremlin needs",
                   "type": "boolean"
                 },
                 "runAsUser": {
                   "type": "object",
                   "properties": {
                     "rule": {
+                      "description": "Specifies the Linux user the Gremlin Daemonset containers should run as",
                       "type": "string"
                     }
                   }
                 },
                 "seLinux": {
+                  "description": "Sets the SecurityContext for the PSP used by the Gremlin Daemonset",
                   "type": "object",
                   "properties": {
                     "rule": {
@@ -570,12 +632,15 @@
               }
             },
             "privileged": {
+              "description": "Determines whether the Gremlin Daemonset should run privileged containers",
               "type": "boolean"
             },
             "readOnlyRootFilesystem": {
+              "description": "Forces the Gremlin Daemonset containers to run with a read-only root filesystem NOTE: When true, Disk and IO experiments against the host will fail unless they target an external volume",
               "type": "boolean"
             },
             "seLinuxOptions": {
+              "description": "Specifies SELinux options to apply to the Gremlin Daemonset container securityContext. WARNING: This option should be enabled with caution as it is likely to break the GremlinAgent or your Kubernetes installation. Gremlin recommends users instead install a custom SELinux policy that provides integration with the labels already defined on the target system so that paths do not need to be relabeled. See https://github.com/gremlin/selinux-policies The fragment and the sibling type: below must each independently read as \"object or null\" - Helm 3's validator ignores a $ref's sibling keywords and Helm 4's applies them as an AND, so both halves are load-bearing, each for a different Helm major.",
               "$ref": "schemas/selinuxoptions.json",
               "type": [
                 "object",
@@ -586,9 +651,11 @@
               "type": "object",
               "properties": {
                 "enabled": {
+                  "description": "Determines whether the Gremlin Daemonset should be annotated with the seccomp profile specified by gremlin.podSecurity.seccomp.profile",
                   "type": "boolean"
                 },
                 "profile": {
+                  "description": "Describes the name of the seccomp profile to use  NOTE: When this value is `localhost/gremlin`, Gremlin will create its own custom seccomp profile",
                   "type": "string"
                 },
                 "root": {
@@ -600,20 +667,24 @@
               "type": "object",
               "properties": {
                 "allowHostDirVolumePlugin": {
+                  "description": "Specifies whether the Gremlin Daemonset has access to host path directories as mounted volumes",
                   "type": "boolean"
                 },
                 "create": {
+                  "description": "When true, Gremlin creates and uses a custom SecurityContextConstraints, granting all behaviors Gremlin needs",
                   "type": "boolean"
                 },
                 "runAsUser": {
                   "type": "object",
                   "properties": {
                     "type": {
+                      "description": "Specifies the Linux user the Gremlin Daemonset containers should run as",
                       "type": "string"
                     }
                   }
                 },
                 "seLinuxContext": {
+                  "description": "Sets the SecurityContext for the SCC used by the Gremlin Daemonset",
                   "type": "object",
                   "properties": {
                     "seLinuxOptions": {
@@ -638,11 +709,13 @@
               "type": "object",
               "properties": {
                 "rule": {
+                  "description": "Specifies the Linux groups the Gremlin Daemonset containers should run as",
                   "type": "string"
                 }
               }
             },
             "volumes": {
+              "description": "Specifies the volume types the Gremlin Daemonset is allowed to use",
               "type": "array",
               "items": {
                 "type": "string"
@@ -651,41 +724,55 @@
           }
         },
         "priorityClassName": {
+          "description": "The priority class to use for the agent DaemonSet",
           "type": "string"
         },
         "proxy": {
           "type": "object",
           "properties": {
             "url": {
+              "description": "Specifies the http proxy the agent should use to communicate with api.gremlin.com.",
               "type": "string"
             }
           }
         },
         "resources": {
+          "description": "Set resource requests and limits See: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers",
           "type": "object"
         },
         "secret": {
           "type": "object",
           "properties": {
             "certificate": {
+              "description": "Contents of the certificate. Required if using managed secrets of `type=certificate`",
               "type": "string"
             },
             "clusterID": {
+              "description": "Arbitrary string that uniquely identifies your cluster (e.g. `my-production-cluster`)",
               "type": "string"
             },
             "key": {
+              "description": "Contents of the private key. Required if using managed secrets of `type=certificate`",
               "type": "string"
             },
             "managed": {
+              "description": "Specifies whether Gremlin should manage its secrets with Helm",
               "type": "boolean"
             },
+            "name": {
+              "description": "Name of the Secret holding the credentials, for example when pointing at an externally managed secret",
+              "type": "string"
+            },
             "teamID": {
+              "description": "Gremlin Team ID to authenticate with",
               "type": "string"
             },
             "teamSecret": {
+              "description": "Gremlin's team secret. Required if using managed secrets of `type=secret`",
               "type": "string"
             },
             "type": {
+              "description": "The type of certificate to use, can be either `certificate` or `secret` To manage secrets with helm, set `managed=true` and fill in either the certificate auth or secret auth sections",
               "type": "string"
             }
           }
@@ -697,11 +784,13 @@
               "type": "object"
             },
             "create": {
+              "description": "Specifies whether Gremlin's kubernetes service account should be created by this helm chart",
               "type": "boolean"
             }
           }
         },
         "serviceUrl": {
+          "description": "Base URL of the Gremlin API the agent and Chao report to. The values file generated at https://app.gremlin.com/getting-started always sets this explicitly, so you rarely need to change it; override it for Gremlin Private Edition",
           "type": "string"
         },
         "tls": {
@@ -725,6 +814,7 @@
                   }
                 },
                 "enabled": {
+                  "description": "Decides whether the Gremlin Daemonset should be configured for a TLS identity. [See below](#client-mtls-identity)",
                   "type": "boolean"
                 },
                 "existingSecret": {
@@ -757,6 +847,7 @@
           }
         },
         "updateStrategy": {
+          "description": "The rollout strategy Kubernetes will use when updating the Gremlin daemonset",
           "type": "object",
           "properties": {
             "rollingUpdate": {
@@ -778,24 +869,29 @@
       }
     },
     "hostAliases": {
+      "description": "A list of Kubernetes `HostAlias` entries for the `gremlin` DaemonSet's pod spec. No effect while `gremlin.hostNetwork` is `true` (the default)",
       "type": "array"
     },
     "image": {
       "type": "object",
       "properties": {
         "pullPolicy": {
+          "description": "Container pull policy",
           "type": "string"
         },
         "pullSecret": {
+          "description": "Pull secret for a private registry",
           "type": [
             "string",
             "null"
           ]
         },
         "repository": {
+          "description": "Container image to use",
           "type": "string"
         },
         "tag": {
+          "description": "Container image tag to deploy. [See below](#pinning-the-agent-version)",
           "type": [
             "string",
             "integer",
@@ -805,36 +901,45 @@
       }
     },
     "initContainers": {
+      "description": "Additional init containers for the `gremlin` DaemonSet, appended after `seccomp-init` when enabled. A name colliding with one the chart manages fails the install NOTE: when gremlin.podSecurity.podSecurityPolicy.create (or ...securityContextConstraints.create) is enabled, the chart's own PSP/SCC may reject volumes an init container mounts; see extraVolumes below.",
       "type": "array"
     },
     "lifecycle": {
+      "description": "A Kubernetes `Lifecycle` object (`preStop`/`postStart`) for the `gremlin` container",
       "type": "object"
     },
     "livenessProbe": {
+      "description": "A Kubernetes `Probe` for the `gremlin` container",
       "type": "object"
     },
     "nameOverride": {
+      "description": "Overrides the chart name used when computing the release's derived resource names.",
       "type": "string"
     },
     "nodeSelector": {
+      "description": "Map of node labels for pod assignment for the `gremlin` container",
       "type": "object"
     },
     "podSecurityContext": {
+      "description": "A Kubernetes pod-level `SecurityContext` for the `gremlin` DaemonSet, alongside the existing container-level `gremlin.podSecurity.*` settings",
       "type": "object"
     },
     "readinessProbe": {
+      "description": "A Kubernetes `Probe` for the `gremlin` container",
       "type": "object"
     },
     "ssl": {
       "type": "object",
       "properties": {
         "certDir": {
+          "description": "sets the SSL_CERT_DIR environment variable on the both agents. Unlike ssl.certFile, this value accepts only a path to an existing directory on the Kubernetes nodes. This value is ignored when blank or absent.",
           "type": [
             "string",
             "null"
           ]
         },
         "certFile": {
+          "description": "Add a certificate file to Gremlin's set of certificate authorities. This argument expects a file containing the certificate(s) you wish to add. When set, this chart creates secret (`ssl-cert-file`) with the contents and passes it to both agents. This value is ignored when blank or absent.",
           "type": [
             "string",
             "null"
@@ -843,9 +948,11 @@
       }
     },
     "startupProbe": {
+      "description": "A Kubernetes `Probe` for the `gremlin` container",
       "type": "object"
     },
     "terminationGracePeriodSeconds": {
+      "description": "Termination grace period, in seconds, for the `gremlin` DaemonSet's pods",
       "type": [
         "integer",
         "string",
@@ -854,6 +961,7 @@
       "pattern": "^[0-9]+$"
     },
     "tolerations": {
+      "description": "List of node taints to tolerate for the `gremlin` container",
       "type": "array"
     }
   },
