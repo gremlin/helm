@@ -11,6 +11,7 @@
 # The drift check (hooks/check-drift.sh) is what actually catches a
 # consequential divergence.
 set -euo pipefail
+shopt -s nullglob
 cd "$(dirname "$0")/.."          # always operate from the repo root
 
 SCHEMA_PLUGIN_VERSION="${SCHEMA_PLUGIN_VERSION:-v2.2.0}"

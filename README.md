@@ -76,9 +76,11 @@ Before committing, or at any time:
 make check
 ```
 
-runs everything a PR is checked for, in the order CI runs it: regenerating each chart's
-`values.schema.json` and `README.md`, then linting. The pre-commit hooks run the same steps
-automatically on `git commit`.
+runs the same schema, docs and lint checks the `chart-tooling` workflow runs, in that order:
+regenerating each chart's `values.schema.json` and `README.md`, then linting. It does not run the
+unit test suites - CI checks those separately (`.github/workflows/unittest.yml`), so run
+`make test` too before pushing. The pre-commit hooks run `check`'s steps automatically on
+`git commit`.
 
 Individual targets:
 

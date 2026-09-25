@@ -13,6 +13,7 @@
 # Deliberately no --quiet: it would suppress the output a contributor needs
 # to diagnose a failure.
 set -euo pipefail
+shopt -s nullglob
 cd "$(dirname "$0")/.."          # always operate from the repo root
 
 if ! command -v helm >/dev/null 2>&1; then

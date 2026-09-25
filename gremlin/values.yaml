@@ -4,13 +4,13 @@
 
 image:
   repository: gremlin/gremlin
-  tag: latest
+  tag: latest # @schema type:[string, integer, number]
   pullPolicy: Always
   pullSecret: # @schema type:[string, null]
 
 chaoimage:
   repository: gremlin/chao
-  tag: latest
+  tag: latest # @schema type:[string, integer, number]
   pullPolicy: Always
   pullSecret: # @schema type:[string, null]
 
@@ -91,7 +91,7 @@ envFrom: []
 # Gremlin DaemonSet only; the Chao deployment has its own chao.terminationGracePeriodSeconds.
 # Passed through to the rendered manifest as-is. Unset by default, which leaves Kubernetes'
 # default (30 seconds) in effect.
-terminationGracePeriodSeconds: # @schema type:[integer, null]
+terminationGracePeriodSeconds: # @schema type:[integer, string, null];pattern:^[0-9]+$
 
 # dnsConfig -
 # A Kubernetes PodDNSConfig object for the Gremlin DaemonSet's pod spec. Applies to the Gremlin
@@ -598,7 +598,7 @@ chao:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 25% # @schema type:[integer, string]
-      maxSurge: 25%
+      maxSurge: 25% # @schema type:[integer, string]
 
   # chao.priorityClassName -
   # The name of the priority class to use for the Chao deployment
@@ -696,7 +696,7 @@ chao:
   # Chao deployment only; the Gremlin DaemonSet has its own terminationGracePeriodSeconds.
   # Passed through to the rendered manifest as-is. Unset by default, which leaves Kubernetes'
   # default (30 seconds) in effect.
-  terminationGracePeriodSeconds: # @schema type:[integer, null]
+  terminationGracePeriodSeconds: # @schema type:[integer, string, null];pattern:^[0-9]+$
 
   # chao.dnsConfig -
   # A Kubernetes PodDNSConfig object for the Chao deployment's pod spec. Applies to the Chao

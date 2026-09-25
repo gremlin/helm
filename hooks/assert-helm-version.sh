@@ -26,13 +26,21 @@ _major() {
     "$1" version --short 2>/dev/null | sed -E 's/^v([0-9]+).*/\1/'
 }
 
+# Wraps a command substitution so a failing $1 (an executable that isn't
+# helm, a stub, a wrapper that exits non-zero) can't take the whole script
+# down via set -e before its own diagnostic line prints - see the empty-output
+# failure this guards against below.
+_or_empty() {
+    "$@" || true
+}
+
 if [ "$#" -ge 1 ]; then
     expected="$1"
     if ! command -v helm >/dev/null 2>&1; then
         echo "assert-helm-version: no 'helm' found on PATH (expected $expected)" >&2
         exit 1
     fi
-    got="$(helm version --short 2>/dev/null)"
+    got="$(_or_empty helm version --short 2>/dev/null)"
     case "$got" in
         "$expected"*)
             exit 0
@@ -63,7 +71,7 @@ for slot in HELM3_BIN:3 HELM4_BIN:4; do
         continue
     fi
 
-    major="$(_major "$val")"
+    major="$(_or_empty _major "$val")"
     if [ "$major" != "$want" ]; then
         echo "assert-helm-version: $var ($val) reports major version ${major:-unknown}, expected $want" >&2
         fail=1

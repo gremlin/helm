@@ -18,6 +18,7 @@
 # hard-failing hook here would block `git commit` for exactly the contributor
 # B5 exists to accommodate.
 set -euo pipefail
+shopt -s nullglob
 cd "$(dirname "$0")/.."          # always operate from the repo root
 
 HELM_DOCS_VERSION="${HELM_DOCS_VERSION:-1.14.2}"

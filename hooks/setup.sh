@@ -15,6 +15,7 @@ cd "$(dirname "$0")/.."          # always operate from the repo root
 
 SCHEMA_PLUGIN_VERSION="${SCHEMA_PLUGIN_VERSION:-v2.2.0}"
 HELM_DOCS_VERSION="${HELM_DOCS_VERSION:-1.14.2}"
+PRE_COMMIT_VERSION="${PRE_COMMIT_VERSION:-4.6.2}"
 schema_pin="${SCHEMA_PLUGIN_VERSION#v}"
 
 warn() {
@@ -23,6 +24,15 @@ warn() {
     for line in "$@"; do
         echo "         $line" >&2
     done
+}
+
+# Portable sha256: Linux ships sha256sum, macOS ships shasum -a 256.
+sha256() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    else
+        shasum -a 256 "$1" | awk '{print $1}'
+    fi
 }
 
 # --- 1. Helm itself: required, never installed by this script -----------
@@ -53,13 +63,44 @@ fi
 # --- 3. helm-docs ----------------------------------------------------------
 if ! command -v helm-docs >/dev/null 2>&1; then
     echo "Installing helm-docs ${HELM_DOCS_VERSION}..."
+
     install_dir="${HELM_DOCS_INSTALL_DIR:-/usr/local/bin}"
-    mkdir -p "$install_dir"
+    if ! mkdir -p "$install_dir" 2>/dev/null || [ ! -w "$install_dir" ]; then
+        echo "error: cannot write to $install_dir." >&2
+        echo "       Set HELM_DOCS_INSTALL_DIR to a directory you can write (e.g. a" >&2
+        echo "       directory already on your PATH under \$HOME), or re-run 'make setup'" >&2
+        echo "       with sudo." >&2
+        exit 1
+    fi
+
+    arch="$(uname -m)"
+    case "$arch" in
+        # helm-docs publishes Linux/Darwin_arm64; Linux's uname -m says aarch64.
+        aarch64) arch="arm64" ;;
+    esac
+    asset="helm-docs_${HELM_DOCS_VERSION}_$(uname -s)_${arch}.tar.gz"
+
+    checksums="hooks/helm-docs-checksums.txt"
+    expected="$(awk -v f="$asset" '$2==f{print $1}' "$checksums")"
+    if [ -z "$expected" ]; then
+        echo "error: no pinned checksum for $asset in $checksums." >&2
+        echo "       Add one from https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/checksums.txt" >&2
+        exit 1
+    fi
+
     tmp="$(mktemp -d)"
-    curl -fsSL "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/helm-docs_${HELM_DOCS_VERSION}_$(uname -s)_$(uname -m).tar.gz" \
-        | tar -xz -C "$tmp" helm-docs
+    trap 'rm -rf "$tmp"' EXIT
+
+    curl -fsSL "https://github.com/norwoodj/helm-docs/releases/download/v${HELM_DOCS_VERSION}/${asset}" -o "$tmp/$asset"
+    actual="$(sha256 "$tmp/$asset")"
+    if [ "$actual" != "$expected" ]; then
+        echo "error: helm-docs download checksum mismatch for $asset." >&2
+        echo "       expected $expected, got $actual. Refusing to install." >&2
+        exit 1
+    fi
+
+    tar -xz -C "$tmp" -f "$tmp/$asset" helm-docs
     install -m 0755 "$tmp/helm-docs" "$install_dir/helm-docs"
-    rm -rf "$tmp"
     docs_installed="$HELM_DOCS_VERSION"
     docs_status="pinned"
 else
@@ -77,16 +118,24 @@ else
 fi
 
 # --- 4. pre-commit (the binary) --------------------------------------------
+# pipx first, and --user on a bare pip/pip3: a PEP 668 "externally-managed-
+# environment" system Python (stock on current Fedora, Debian, Homebrew)
+# refuses an unqualified `pip install`. Each candidate is tried inside the
+# `if`'s own condition, not as a standalone command, so a failing pip/pip3
+# falls through to the next candidate instead of aborting the script under
+# set -e before brew ever gets a chance.
 if ! command -v pre-commit >/dev/null 2>&1; then
     echo "Installing pre-commit..."
-    if command -v pip >/dev/null 2>&1; then
-        pip install pre-commit
-    elif command -v pip3 >/dev/null 2>&1; then
-        pip3 install pre-commit
-    elif command -v brew >/dev/null 2>&1; then
-        brew install pre-commit
+    if command -v pipx >/dev/null 2>&1 && pipx install pre-commit; then
+        :
+    elif command -v pip >/dev/null 2>&1 && pip install --user pre-commit; then
+        :
+    elif command -v pip3 >/dev/null 2>&1 && pip3 install --user pre-commit; then
+        :
+    elif command -v brew >/dev/null 2>&1 && brew install pre-commit; then
+        :
     else
-        echo "error: could not install pre-commit automatically (no pip/pip3/brew on PATH)." >&2
+        echo "error: could not install pre-commit automatically (tried pipx, pip --user, pip3 --user, brew)." >&2
         echo "       Install it yourself: https://pre-commit.com/#install" >&2
         exit 1
     fi
