@@ -106,6 +106,11 @@ tests in `tests/`, which stand on their own.
 **How to apply:** let the contract live at `.claude/contracts/<slug>/` on disk so the tooling
 keeps working unchanged, and carry any reasoning a future reader needs into the commit message,
 the pull request description, or this file — restated in prose, never as a pointer to a path
-that does not exist in the repository. Executable probes under `tests/` are a different matter
-and belong in the repository, but they must not cite contract or design-document paths either,
-for the same reason.
+that does not exist in the repository.
+
+The same applies to the executable probes those workflows generate, which live under
+`tests/contract/` and are gitignored alongside the contract. They are machinery for grading one
+piece of work against one agreement, not a suite this repository runs: nothing invokes them, they
+need two Helm majors on `PATH` to run at all, and their headers are written in the contract's own
+vocabulary. `tests/` otherwise remains the right place for tests this repository does run —
+`helm unittest` suites under `<chart>/tests/` are committed and are what CI executes.
