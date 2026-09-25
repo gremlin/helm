@@ -32,7 +32,17 @@ fi
 help_out="$(helm plugin install --help 2>&1 || true)"
 verify_flag=()
 case "$help_out" in
-    *--verify*) verify_flag=(--verify=false) ;;
+    *--verify*)
+        verify_flag=(--verify=false)
+        # Visible at the point of the decision, not just in this comment:
+        # upstream publishes no signed release for Helm to check --verify
+        # against, so this is the only way to install the plugin at all, not
+        # a shortcut taken instead of a safer option. Whoever runs `make
+        # setup` should see this, not just whoever reads this file's source.
+        echo "Installing helm-values-schema-json from $PLUGIN_URL with plugin"
+        echo "signature verification disabled (--verify=false): upstream publishes no"
+        echo "signed release for Helm to verify against."
+        ;;
 esac
 
 helm plugin install "$PLUGIN_URL" \

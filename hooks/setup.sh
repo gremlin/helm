@@ -118,6 +118,11 @@ else
 fi
 
 # --- 4. pre-commit (the binary) --------------------------------------------
+# pipx/pip/pip3 install the exact pin; brew does not take a version pin any
+# more easily than helm-docs' brew path does above, so it installs whatever
+# is current and is reconciled the same way: a mismatch warning below, never
+# a failure.
+#
 # pipx first, and --user on a bare pip/pip3: a PEP 668 "externally-managed-
 # environment" system Python (stock on current Fedora, Debian, Homebrew)
 # refuses an unqualified `pip install`. Each candidate is tried inside the
@@ -125,12 +130,12 @@ fi
 # falls through to the next candidate instead of aborting the script under
 # set -e before brew ever gets a chance.
 if ! command -v pre-commit >/dev/null 2>&1; then
-    echo "Installing pre-commit..."
-    if command -v pipx >/dev/null 2>&1 && pipx install pre-commit; then
+    echo "Installing pre-commit ${PRE_COMMIT_VERSION}..."
+    if command -v pipx >/dev/null 2>&1 && pipx install "pre-commit==${PRE_COMMIT_VERSION}"; then
         :
-    elif command -v pip >/dev/null 2>&1 && pip install --user pre-commit; then
+    elif command -v pip >/dev/null 2>&1 && pip install --user "pre-commit==${PRE_COMMIT_VERSION}"; then
         :
-    elif command -v pip3 >/dev/null 2>&1 && pip3 install --user pre-commit; then
+    elif command -v pip3 >/dev/null 2>&1 && pip3 install --user "pre-commit==${PRE_COMMIT_VERSION}"; then
         :
     elif command -v brew >/dev/null 2>&1 && brew install pre-commit; then
         :
@@ -141,6 +146,13 @@ if ! command -v pre-commit >/dev/null 2>&1; then
     fi
 fi
 precommit_installed="$(pre-commit --version 2>&1 | awk '{print $NF}')"
+if [ "$precommit_installed" = "$PRE_COMMIT_VERSION" ]; then
+    precommit_status="pinned"
+else
+    precommit_status="MISMATCH"
+    warn "pre-commit $precommit_installed found, but this repo pins $PRE_COMMIT_VERSION." \
+        "Leaving it as-is (make setup never replaces an existing install)."
+fi
 
 # --- 5. Register the hooks --------------------------------------------------
 pre-commit install
@@ -151,4 +163,4 @@ echo "Toolchain summary:"
 echo "  helm                        $helm_version"
 echo "  helm-values-schema-json     ${schema_installed:-none} ($schema_status)"
 echo "  helm-docs                   ${docs_installed:-none} ($docs_status)"
-echo "  pre-commit                  $precommit_installed (hooks registered)"
+echo "  pre-commit                  $precommit_installed ($precommit_status, hooks registered)"

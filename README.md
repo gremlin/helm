@@ -70,6 +70,13 @@ registers the pre-commit hooks - each idempotently, and it never replaces or upg
 you've already installed at a different version (you'll get a warning instead, naming the
 version found and the version this repo pins).
 
+The `helm schema` plugin install disables Helm 4's plugin signature verification
+(`--verify=false`): its upstream, [losisin/helm-values-schema-json](https://github.com/losisin/helm-values-schema-json),
+publishes no signed release for Helm to verify against, so this is the only way to install it at
+all, not a shortcut taken instead of a safer option. `make setup` prints this at install time too.
+The `helm-docs` download is checksummed against a pinned SHA-256 before it's extracted, so that
+one isn't in the same position.
+
 Before committing, or at any time:
 
 ```shell

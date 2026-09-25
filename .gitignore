@@ -8,3 +8,5 @@ reviews/
 
 # Contract working files are local-only in this repository — see CLAUDE.md.
 .claude/contracts/
+
+__pycache__/
