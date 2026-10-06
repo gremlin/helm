@@ -39,7 +39,7 @@ tests:
     asserts:
       - lengthEqual:
           path: rules
-          count: 18
+          count: 19
       - equal:
           path: rules[7]
           value:
@@ -63,7 +63,7 @@ tests:
       chao.features.dynamicQuery.enabled: true
     asserts:
       - notMatchRegexRaw:
-          pattern: "secrets|configmaps|pods/log|nodes/proxy|services/proxy|clusterroles"
+          pattern: "secrets|configmaps|nodes/proxy|services/proxy|clusterroles"
       - notContains:
           path: rules
           content:
@@ -177,3 +177,19 @@ tests:
           path: rules[7].resources
           value:
             - "*"
+
+  - it: should grant only get on pods/log by default
+    template: chao-service-account.yaml
+    documentIndex: 1
+    set:
+      chao.features.dynamicQuery.enabled: true
+    asserts:
+      - contains:
+          path: rules
+          content:
+            apiGroups:
+              - ""
+            resources:
+              - pods/log
+            verbs:
+              - get

@@ -778,6 +778,11 @@ chao:
           resources: ["pods", "nodes"]
         - apiGroups: ["apiextensions.k8s.io"]
           resources: ["customresourcedefinitions"]
+        # Pod logs. RBAC grants these cluster-wide, but Chao refuses to read logs from any namespace other than its
+        #   own.
+        - apiGroups: [""]
+          resources: ["pods/log"]
+          verbs: ["get"]
 
       # chao.features.dynamicQuery.denylist
       # Resources object queries may never read, named as `resource.group` or `*.group` — for example

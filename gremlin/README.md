@@ -172,14 +172,14 @@ Dynamic queries are **read-only**. `verbs` defaults to `get` and `list` and may 
 
 ### What the default grants
 
-The default covers the resources that describe a cluster's shape, scheduling, and health — `endpoints`, `events`, `persistentvolumeclaims`, `jobs`, `networkpolicies`, `storageclasses`, `customresourcedefinitions`, and the like — on top of the workloads the base `gremlin-watcher` rules already watch. See [values.yaml](values.yaml) for the full list.
+The default covers the resources that describe a cluster's shape, scheduling, and health — `endpoints`, `events`, `persistentvolumeclaims`, `jobs`, `networkpolicies`, `storageclasses`, `customresourcedefinitions`, and the like — on top of the workloads the base `gremlin-watcher` rules already watch. It also grants `get` on `pods/log`, which Chao itself confines to the namespace it is installed in: RBAC cannot scope a ClusterRole rule to one namespace, so Chao refuses to read logs from anywhere else. See [values.yaml](values.yaml) for the full list.
 
 Some things are deliberately left out of it:
 
 | Left out of the default | Why |
 | --- | --- |
 | `secrets`, `configmaps` | Both commonly hold connection strings, tokens, and API keys |
-| `pods/log` | Application logs commonly contain tokens and personal data |
+| `pods/log` outside Chao's own namespace | Application logs commonly contain tokens and personal data. Enforced by Chao, not RBAC |
 | `nodes/proxy` | Reaches the kubelet API, exposing every pod spec — and its environment — on a node |
 | `services/proxy` | An HTTP tunnel into any in-cluster service, bypassing NetworkPolicy |
 | RBAC roles and bindings | A map of which identity is allowed to do what, which is reconnaissance for privilege escalation |
