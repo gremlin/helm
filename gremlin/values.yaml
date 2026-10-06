@@ -737,10 +737,14 @@ chao:
 
       # chao.features.dynamicQuery.allowlist
       # The Kubernetes resources Chao is allowed to query. Each entry maps directly onto an RBAC rule and accepts
-      #   `apiGroups`, `resources`, and an optional `verbs`. Both `apiGroups` and `resources` must be named — there
-      #   is no wildcard default. An entry that omits its `apiGroups` fails the install rather than being granted
-      #   across every group, and an entry that omits its `resources` fails rather than rendering a rule that grants
-      #   nothing. The core API group is the empty string (`""`).
+      #   `apiGroups`, `resources`, and optional `verbs` and `scope`. Both `apiGroups` and `resources` must be named —
+      #   there is no wildcard default. An entry that omits its `apiGroups` fails the install rather than being
+      #   granted across every group, and an entry that omits its `resources` fails rather than rendering a rule that
+      #   grants nothing. The core API group is the empty string (`""`).
+      #
+      # `scope` decides where an entry is granted: `cluster` (the default) adds it to the `gremlin-watcher`
+      #   ClusterRole, reaching every namespace; `namespace` adds it to a `chao-dynamic-query` Role in the namespace
+      #   Chao is installed in, and nowhere else. Any other value fails the install.
       #
       # This list is the outer bound of what Gremlin can read: anything absent from it is refused by the API server,
       #   not by Chao. `denylist` below narrows it further from inside Chao.
@@ -778,11 +782,12 @@ chao:
           resources: ["pods", "nodes"]
         - apiGroups: ["apiextensions.k8s.io"]
           resources: ["customresourcedefinitions"]
-        # Pod logs. RBAC grants these cluster-wide, but Chao refuses to read logs from any namespace other than its
-        #   own.
+        # Logs, but only for the pods in Chao's own namespace — application logs elsewhere in the cluster commonly
+        #   carry tokens and personal data.
         - apiGroups: [""]
           resources: ["pods/log"]
           verbs: ["get"]
+          scope: namespace
 
       # chao.features.dynamicQuery.denylist
       # Resources object queries may never read, named as `resource.group` or `*.group` — for example

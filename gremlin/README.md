@@ -164,7 +164,7 @@ The chart records `annotations.minimumAppVersion`: the oldest agent version thes
 
 ## Chao dynamic queries
 
-By default, Chao reads a fixed set of Kubernetes resources — the ones named in the `gremlin-watcher` ClusterRole. Enabling `chao.features.dynamicQuery` lets Gremlin query resources beyond that set. `allowlist` says which ones: each entry maps directly onto an RBAC rule and accepts `apiGroups`, `resources`, and an optional `verbs`, and is added to the `gremlin-watcher` ClusterRole. Every entry has to name its `apiGroups` and `resources` — nothing is wildcarded on your behalf, and an entry that leaves `apiGroups` out fails the install rather than being granted across every API group.
+By default, Chao reads a fixed set of Kubernetes resources — the ones named in the `gremlin-watcher` ClusterRole. Enabling `chao.features.dynamicQuery` lets Gremlin query resources beyond that set. `allowlist` says which ones: each entry maps directly onto an RBAC rule and accepts `apiGroups`, `resources`, and optional `verbs` and `scope`. By default an entry is added to the `gremlin-watcher` ClusterRole; with `scope: namespace` it is added to a `chao-dynamic-query` Role in the namespace Chao is installed in instead, and reaches nothing outside it. Every entry has to name its `apiGroups` and `resources` — nothing is wildcarded on your behalf, and an entry that leaves `apiGroups` out fails the install rather than being granted across every API group.
 
 **RBAC is the boundary, and Chao holds a denylist inside it.** Chao is told the feature is on (the `-dynamic_query` flag) but is never handed the allowlist — it discovers what it may read by being refused, and handles the `403` itself. Anything absent from the allowlist is refused by the API server, so the outer limit is not something Chao has to be trusted to honor. Kubernetes RBAC has no deny rule, so a grant is the only place that outer limit can be expressed; `denylist` is the inner one, enforced by Chao, for carving resources back out of a grant that is broader than you want. It is passed as `-deny_resources` and adds to a built-in denylist that always applies and cannot be turned off.
 
@@ -172,14 +172,14 @@ Dynamic queries are **read-only**. `verbs` defaults to `get` and `list` and may 
 
 ### What the default grants
 
-The default covers the resources that describe a cluster's shape, scheduling, and health — `endpoints`, `events`, `persistentvolumeclaims`, `jobs`, `networkpolicies`, `storageclasses`, `customresourcedefinitions`, and the like — on top of the workloads the base `gremlin-watcher` rules already watch. It also grants `get` on `pods/log`, which Chao itself confines to the namespace it is installed in: RBAC cannot scope a ClusterRole rule to one namespace, so Chao refuses to read logs from anywhere else. See [values.yaml](values.yaml) for the full list.
+The default covers the resources that describe a cluster's shape, scheduling, and health — `endpoints`, `events`, `persistentvolumeclaims`, `jobs`, `networkpolicies`, `storageclasses`, `customresourcedefinitions`, and the like — on top of the workloads the base `gremlin-watcher` rules already watch. It also grants `get` on `pods/log`, but only in the namespace Chao is installed in. See [values.yaml](values.yaml) for the full list.
 
 Some things are deliberately left out of it:
 
 | Left out of the default | Why |
 | --- | --- |
 | `secrets`, `configmaps` | Both commonly hold connection strings, tokens, and API keys |
-| `pods/log` outside Chao's own namespace | Application logs commonly contain tokens and personal data. Enforced by Chao, not RBAC |
+| `pods/log` outside Chao's own namespace | Application logs commonly contain tokens and personal data |
 | `nodes/proxy` | Reaches the kubelet API, exposing every pod spec — and its environment — on a node |
 | `services/proxy` | An HTTP tunnel into any in-cluster service, bypassing NetworkPolicy |
 | RBAC roles and bindings | A map of which identity is allowed to do what, which is reconnaissance for privilege escalation |
@@ -203,9 +203,13 @@ chao:
           verbs: ["get"]
         - apiGroups: ["argoproj.io"]
           resources: ["applications"]
+        - apiGroups: [""]
+          resources: ["pods/log"]
+          verbs: ["get"]
+          scope: namespace
 ```
 
-which grants Chao read access to `pods`, `services`, and Argo CD `applications`, plus `get` on `deployments`. Enabling the feature with an allowlist that names no resources fails the install rather than silently deploying a Chao that cannot query anything.
+which grants Chao read access to `pods`, `services`, and Argo CD `applications`, plus `get` on `deployments`, across the cluster — and `get` on `pods/log` only in its own namespace. `scope` takes `cluster` (the default) or `namespace`; anything else fails the install. Enabling the feature with an allowlist that names no resources fails the install rather than silently deploying a Chao that cannot query anything.
 
 ### Denying resources inside the allowlist
 

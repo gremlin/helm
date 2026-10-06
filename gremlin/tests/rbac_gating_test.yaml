@@ -58,9 +58,18 @@ tests:
           path: roleRef.name
           value: scc:gremlin
 
-  - it: should render chao's service account and cluster-scoped RBAC by default
+  - it: should render chao's service account, cluster-scoped RBAC, and namespaced dynamic query RBAC by default
     templates:
       - chao-service-account.yaml
+    asserts:
+      - hasDocuments:
+          count: 5
+
+  - it: should render only chao's service account and cluster-scoped RBAC when dynamic query is disabled
+    templates:
+      - chao-service-account.yaml
+    set:
+      chao.features.dynamicQuery.enabled: false
     asserts:
       - hasDocuments:
           count: 3

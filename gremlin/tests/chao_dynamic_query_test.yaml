@@ -39,7 +39,7 @@ tests:
     asserts:
       - lengthEqual:
           path: rules
-          count: 19
+          count: 18
       - equal:
           path: rules[7]
           value:
@@ -56,14 +56,14 @@ tests:
               - get
               - list
 
-  - it: should not grant the resources deliberately left out of the default allowlist
+  - it: should not grant the resources deliberately left out of the default allowlist cluster-wide
     template: chao-service-account.yaml
     documentIndex: 1
     set:
       chao.features.dynamicQuery.enabled: true
     asserts:
       - notMatchRegexRaw:
-          pattern: "secrets|configmaps|nodes/proxy|services/proxy|clusterroles"
+          pattern: "secrets|configmaps|pods/log|nodes/proxy|services/proxy|clusterroles"
       - notContains:
           path: rules
           content:
@@ -178,18 +178,92 @@ tests:
           value:
             - "*"
 
-  - it: should grant only get on pods/log by default
+  - it: should grant only get on pods/log, and only in the release namespace, by default
     template: chao-service-account.yaml
-    documentIndex: 1
+    documentIndex: 3
     set:
       chao.features.dynamicQuery.enabled: true
     asserts:
-      - contains:
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.name
+          value: chao-dynamic-query
+      - equal:
+          path: metadata.namespace
+          value: my-namespace
+      - equal:
           path: rules
-          content:
-            apiGroups:
-              - ""
-            resources:
-              - pods/log
-            verbs:
-              - get
+          value:
+            - apiGroups:
+                - ""
+              resources:
+                - pods/log
+              verbs:
+                - get
+
+  - it: should bind the namespaced dynamic query Role to chao's service account
+    template: chao-service-account.yaml
+    documentIndex: 4
+    set:
+      chao.features.dynamicQuery.enabled: true
+    asserts:
+      - isKind:
+          of: RoleBinding
+      - equal:
+          path: metadata.namespace
+          value: my-namespace
+      - equal:
+          path: roleRef
+          value:
+            apiGroup: rbac.authorization.k8s.io
+            kind: Role
+            name: chao-dynamic-query
+      - equal:
+          path: subjects
+          value:
+            - kind: ServiceAccount
+              name: chao
+              namespace: my-namespace
+
+  - it: should keep namespace-scoped entries out of the ClusterRole
+    template: chao-service-account.yaml
+    documentIndex: 1
+    set:
+      chao.features.dynamicQuery:
+        enabled: true
+        allowlist:
+          - apiGroups: [""]
+            resources: ["events"]
+            scope: cluster
+          - apiGroups: [""]
+            resources: ["pods/log"]
+            scope: namespace
+    asserts:
+      - lengthEqual:
+          path: rules
+          count: 8
+      - equal:
+          path: rules[7].resources
+          value:
+            - events
+
+  - it: should render no namespaced Role when no allowlist entry is namespace-scoped
+    template: chao-service-account.yaml
+    set:
+      chao.features.dynamicQuery:
+        enabled: true
+        allowlist:
+          - apiGroups: [""]
+            resources: ["events"]
+    asserts:
+      - hasDocuments:
+          count: 3
+
+  - it: should render no namespaced Role when the feature is disabled
+    template: chao-service-account.yaml
+    set:
+      chao.features.dynamicQuery.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 3
