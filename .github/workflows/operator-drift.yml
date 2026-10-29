@@ -1,0 +1,26 @@
+name: Operator chart drift
+
+on: pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.17.0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install pyyaml==6.0.3
+
+      - run: python3 ci/gremlin-operator/drift.py check
+
+      - run: python3 -m unittest discover -s ci/gremlin-operator -p 'test_*.py'
