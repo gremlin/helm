@@ -66,11 +66,13 @@ RESTRICTED_PATCHES = """patches:
       value: --credential-namespaces=gremlin,gremlin-system,team-b
 """
 
-# resources: operator directories to build; readonly_namespaces: namespaces that get config/credential-namespace-readonly
+# resources and components: operator directories to build; readonly_namespaces: namespaces that get config/credential-namespace-readonly
 SCENARIOS = {
     "default": {"resources": ["config/deploy"]},
     "restricted": {"resources": ["config/deploy"], "readonly_namespaces": RESTRICTED_NAMESPACES,
                    "patches": RESTRICTED_PATCHES},
+    "node-read-off": {"resources": ["config/deploy"], "components": ["config/agent-node-read-off"]},
+    "openshift": {"resources": ["config/deploy", "config/openshift"]},
 }
 
 
@@ -344,6 +346,8 @@ def kustomize_build(operator, spec):
                 f"namespace: {namespace}\nresources:\n- ../op/config/credential-namespace-readonly\n",
                 encoding="utf-8")
             lines.append(f"- ../ns-{namespace}")
+        if spec.get("components"):
+            lines += ["components:"] + [f"- ../op/{c}" for c in spec["components"]]
         (tmp / "overlay" / "kustomization.yaml").write_text(
             "\n".join(lines) + "\n" + spec.get("patches", ""), encoding="utf-8")
         return run([str(operator / "bin" / "kustomize"), "build", str(tmp / "overlay")])

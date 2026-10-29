@@ -140,6 +140,26 @@ class SyncHelpersTest(unittest.TestCase):
             self.assertFalse(drift.CRD_NAME.match(bad), bad)
 
 
+class OverlayTest(unittest.TestCase):
+    def overlay(self, scenario):
+        seen = []
+        with tempfile.TemporaryDirectory() as operator:
+            def capture(cmd):
+                seen.append((Path(cmd[-1]) / "kustomization.yaml").read_text())
+                return ""
+            with mock.patch.object(drift, "run", side_effect=capture):
+                drift.kustomize_build(Path(operator), drift.SCENARIOS[scenario])
+        return seen[0]
+
+    def test_node_read_off_lists_the_directory_as_a_component(self):
+        text = self.overlay("node-read-off")
+        self.assertIn("resources:\n- ../op/config/deploy\n", text)
+        self.assertIn("components:\n- ../op/config/agent-node-read-off\n", text)
+
+    def test_openshift_adds_the_resource_set(self):
+        self.assertIn("- ../op/config/openshift\n", self.overlay("openshift"))
+
+
 class SnapshotRefTest(unittest.TestCase):
     def check(self, header):
         with tempfile.TemporaryDirectory() as tmp:
