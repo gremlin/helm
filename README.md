@@ -56,6 +56,16 @@ helm install gremlin-integrations gremlin/gremlin-integrations \
 For more detailed instructions, see the chart's
 documentation [here](https://github.com/gremlin/helm/blob/master/gremlin-integrations/README.md).
 
+### Gremlin Operator
+
+```shell
+helm install gremlin-operator gremlin/gremlin-operator \
+    --namespace gremlin-operator-system --create-namespace
+```
+
+For more detailed instructions, see the chart's
+documentation [here](https://github.com/gremlin/helm/blob/master/gremlin-operator/README.md).
+
 ## Reporting Issues
 
 Please report all issues [here](https://support-site.gremlin.com/).
