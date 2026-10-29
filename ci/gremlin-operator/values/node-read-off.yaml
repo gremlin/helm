@@ -1,4 +1,0 @@
-# Agent node read switched off, as the operator's node-read-off component does.
-agent:
-  nodeRead:
-    enabled: false

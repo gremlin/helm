@@ -1,3 +1,0 @@
-# OpenShift support on, as the operator's openshift manifest set does.
-openshift:
-  enabled: true

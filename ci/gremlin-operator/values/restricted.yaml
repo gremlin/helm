@@ -1,2 +1,0 @@
-# Credential manager limited to a list of namespaces, as in the operator's restricted install.
-credentialNamespaces: [gremlin, gremlin-system, team-b]
