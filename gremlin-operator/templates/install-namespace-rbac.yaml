@@ -1,0 +1,412 @@
+{{- $prefix := include "gremlin-operator.prefix" . }}
+{{- $namespace := .Values.installNamespace.name }}
+{{- $reconciler := include "gremlin-operator.reconcilerName" . }}
+{{- $credentialManager := include "gremlin-operator.credentialManagerName" . }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gremlin-agent
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gremlin-chao
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $prefix }}-agent-daemonsets
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+    verbs:
+      - create
+      - delete
+      - list
+      - patch
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $prefix }}-agent-daemonsets
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $prefix }}-agent-daemonsets
+subjects:
+  - kind: ServiceAccount
+    name: {{ $reconciler }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $prefix }}-chao-deployments
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+    verbs:
+      - create
+      - list
+      - watch
+  - apiGroups:
+      - apps
+    resourceNames:
+      - chao
+    resources:
+      - deployments
+    verbs:
+      - delete
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $prefix }}-chao-deployments
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $prefix }}-chao-deployments
+subjects:
+  - kind: ServiceAccount
+    name: {{ $reconciler }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $prefix }}-chao-lease
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+  - apiGroups:
+      - coordination.k8s.io
+    resourceNames:
+      - chao
+    resources:
+      - leases
+    verbs:
+      - get
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $prefix }}-chao-lease
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $prefix }}-chao-lease
+subjects:
+  - kind: ServiceAccount
+    name: gremlin-chao
+    namespace: {{ $namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $prefix }}-credential-manager-trust-bundles
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $prefix }}-credential-manager-trust-bundles
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $prefix }}-credential-manager-trust-bundles
+subjects:
+  - kind: ServiceAccount
+    name: {{ $credentialManager }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $prefix }}-credential-copy-writer
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - secrets
+    verbs:
+      - create
+      - delete
+      - get
+      - patch
+      - update
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $prefix }}-credential-copy-writer
+  namespace: {{ $namespace }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $prefix }}-credential-copy-writer
+subjects:
+  - kind: ServiceAccount
+    name: {{ $credentialManager }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $prefix }}-chao-reader
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - daemonsets
+      - deployments
+      - replicasets
+      - statefulsets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - nodes
+      - pods
+      - replicationcontrollers
+      - services
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - apps.openshift.io
+    resources:
+      - deploymentconfigs
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - argoproj.io
+    resources:
+      - rollouts
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - autoscaling
+    resources:
+      - horizontalpodautoscalers
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - policy
+    resources:
+      - poddisruptionbudgets
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+      - events
+      - limitranges
+      - persistentvolumeclaims
+      - persistentvolumes
+      - resourcequotas
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - apps
+    resources:
+      - controllerrevisions
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - batch
+    resources:
+      - cronjobs
+      - jobs
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - discovery.k8s.io
+    resources:
+      - endpointslices
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingressclasses
+      - networkpolicies
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - storage.k8s.io
+    resources:
+      - csidrivers
+      - csinodes
+      - storageclasses
+      - volumeattachments
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - scheduling.k8s.io
+    resources:
+      - priorityclasses
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - node.k8s.io
+    resources:
+      - runtimeclasses
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - metrics.k8s.io
+    resources:
+      - nodes
+      - pods
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - apiextensions.k8s.io
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $prefix }}-chao-reader
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $prefix }}-chao-reader
+subjects:
+  - kind: ServiceAccount
+    name: gremlin-chao
+    namespace: {{ $namespace }}
+{{- if .Values.agent.nodeRead.enabled }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $prefix }}-agent-node-reader
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $prefix }}-agent-node-reader
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $prefix }}-agent-node-reader
+subjects:
+  - kind: ServiceAccount
+    name: gremlin-agent
+    namespace: {{ $namespace }}
+{{- end }}

@@ -1,0 +1,81 @@
+{{- if .Values.openshift.enabled }}
+{{- $prefix := include "gremlin-operator.prefix" . }}
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: gremlin
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+  annotations:
+    kubernetes.io/description: gremlin lets the Gremlin agent run on the host's network and PID namespaces with the
+      capabilities it needs and the SELinux type spc_t, and no privileged container.
+allowHostDirVolumePlugin: true
+allowHostIPC: false
+allowHostNetwork: true
+allowHostPID: true
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities:
+  - KILL
+  - NET_ADMIN
+  - SYS_BOOT
+  - SYS_TIME
+  - DAC_READ_SEARCH
+  - SYS_RESOURCE
+  - SYS_ADMIN
+  - SYS_PTRACE
+  - NET_RAW
+defaultAddCapabilities: null
+groups: []
+priority: null
+readOnlyRootFilesystem: false
+requiredDropCapabilities: []
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+  seLinuxOptions:
+    type: spc_t
+    level: s0-s0:c0.c1023
+seccompProfiles:
+  - runtime/default
+volumes:
+  - configMap
+  - secret
+  - hostPath
+  - emptyDir
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $prefix }}-agent-scc
+  namespace: {{ .Values.installNamespace.name }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - security.openshift.io
+    resourceNames:
+      - gremlin
+    resources:
+      - securitycontextconstraints
+    verbs:
+      - use
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $prefix }}-agent-scc
+  namespace: {{ .Values.installNamespace.name }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $prefix }}-agent-scc
+subjects:
+  - kind: ServiceAccount
+    name: gremlin-agent
+    namespace: {{ .Values.installNamespace.name }}
+{{- end }}
