@@ -116,7 +116,7 @@ tests:
           path: metadata.name
           value: team-a
 
-  - it: renders none of the OpenShift objects and no label when OpenShift is off
+  - it: renders none of the OpenShift objects when OpenShift is off
     asserts:
       - notExists:
           path: kind
@@ -142,12 +142,21 @@ tests:
           matchMany: true
           skipEmptyTemplates: true
         template: templates/openshift.yaml
+
+  - it: labels the install namespace privileged when OpenShift is off and the chart creates it
+    template: templates/namespaces.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["pod-security.kubernetes.io/enforce"]
+          value: privileged
+        documentSelector:
+          path: metadata.name
+          value: gremlin
       - notExists:
           path: metadata.labels["pod-security.kubernetes.io/enforce"]
         documentSelector:
           path: metadata.name
-          value: gremlin
-        template: templates/namespaces.yaml
+          value: gremlin-system
 
   - it: still renders the OpenShift objects but no namespace label when the chart does not create the install namespace
     set:
