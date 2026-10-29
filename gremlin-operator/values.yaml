@@ -38,8 +38,10 @@ installNamespace:
   # on upgrade deletes the ServiceAccounts and grants in the old namespace; delete your Agents first.
   name: gremlin
   # installNamespace.create -
-  # Creates the namespace and keeps it when the release is uninstalled. Set to false when it already exists and holds
-  # nothing else. The chart then adopts the namespace, and its existing admins and ServiceAccount tokens keep working.
+  # Creates the namespace, labels it `pod-security.kubernetes.io/enforce: privileged` so Pod Security admits the agent
+  # pods, and keeps it when the release is uninstalled. Set to false when it already exists and holds nothing else. The
+  # chart then adopts the namespace, and its existing admins and ServiceAccount tokens keep working, but it does not
+  # label it: on any cluster whose Pod Security default blocks privileged pods, label it yourself.
   create: true
 
 gremlinSystemNamespace:
@@ -192,9 +194,8 @@ agent:
 
 openshift:
   # openshift.enabled -
-  # Renders the SecurityContextConstraints `gremlin`, the Role and RoleBinding that let the agent ServiceAccount use
-  # it, and the `pod-security.kubernetes.io/enforce: privileged` label on the install namespace when the chart
-  # creates it. It needs an operator release that has the OpenShift support.
+  # Renders the SecurityContextConstraints `gremlin` and the Role and RoleBinding that let the agent ServiceAccount use
+  # it. It needs an operator release that has the OpenShift support.
   enabled: false
 
 # webhooks:

@@ -5,9 +5,7 @@ metadata:
   name: {{ .Values.installNamespace.name }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
-    {{- if .Values.openshift.enabled }}
     pod-security.kubernetes.io/enforce: privileged
-    {{- end }}
   annotations:
     helm.sh/resource-policy: keep
 {{- end }}

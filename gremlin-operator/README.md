@@ -44,7 +44,7 @@ Deployment only. A setting you want on both is written in both blocks.
 | `nameOverride`                                     | Replaces the chart name in the `app.kubernetes.io/name` label and the object name prefix     | `""`                                                     |
 | `fullnameOverride`                                 | Replaces the object name prefix. A DNS-1123 label of at most 28 characters                   | `""` (`gremlin-operator`)                                |
 | `installNamespace.name`                            | Namespace the operator deploys agents into. A new namespace, not a system namespace. [See below](#namespaces-and-uninstall) | `gremlin`                                                |
-| `installNamespace.create`                          | Create the install namespace and keep it on uninstall. [See below](#namespaces-and-uninstall) | `true`                                                  |
+| `installNamespace.create`                          | Create the install namespace, labelled privileged for Pod Security, and keep it on uninstall. [See below](#namespaces-and-uninstall) | `true`                                                  |
 | `gremlinSystemNamespace.create`                    | Create `gremlin-system` and keep it on uninstall. [See below](#namespaces-and-uninstall)     | `true`                                                   |
 | `credentialNamespaces`                             | Namespaces the credential manager may read. [See below](#credential-namespaces)             | `[]` (every namespace)                                   |
 | `reconciler.replicas`                              | Reconciler replicas                                                                          | `1`                                                      |
@@ -116,6 +116,15 @@ To reinstall under another release name, Helm refuses the kept namespaces becaus
 `installNamespace.create` and `gremlinSystemNamespace.create` to `false` for the reinstall instead of deleting anything.
 Setting one to `false` on a later upgrade leaves the existing namespace in place.
 
+The chart always labels an install namespace it creates `pod-security.kubernetes.io/enforce: privileged`, on every
+cluster, because the agent pods run on the host's network and PID namespaces and Pod Security would refuse them
+otherwise. It does not label `gremlin-system`.
+
+When `installNamespace.create` is `false`, the chart does not create or label the install namespace. On any cluster whose
+Pod Security default blocks privileged pods, not only OpenShift, add the label to the existing namespace yourself, with
+`kubectl label namespace <name> pod-security.kubernetes.io/enforce=privileged`, or Pod Security refuses the agent pods. The
+reconciler reports refused pods as `PodsRejected` on the Agent.
+
 Choose a new install namespace with `installNamespace.name`. Do not point it at a namespace that already exists for
 another purpose, such as the `gremlin` namespace of the `gremlin` chart: the credential manager gets write access to
 Secrets in the install namespace and the reconciler can create workloads there. If you already run the `gremlin` chart in
@@ -134,19 +143,14 @@ With `agent.nodeRead.enabled` set to `false`, the node-reader ClusterRole and it
 reconciler is passed `--agent-node-read=false`, so agents run with `GREMLIN_PUSH_POD_CIDR_TAGS` and
 `GREMLIN_PUSH_ZONE_CIDR_TAGS` set to `false`. The value must be a boolean: the string `"false"` is rejected.
 
-The flag exists only in newer operator releases. An operator that does not know `--agent-node-read` exits at start, so
-the reconciler crash-loops. At the time of writing the operator version this chart was built against does not accept it,
-so leave the value at `true` until the operator release you deploy supports it.
+The flag exists only in operator releases that include the node-read switch. An older operator that does not know
+`--agent-node-read` exits at start, so the reconciler crash-loops. Check that the release you deploy has it before you
+turn the node read off.
 
 ## OpenShift
 
-With `openshift.enabled` set to `true` the chart renders the SecurityContextConstraints (SCC) `gremlin`, a Role and
-RoleBinding named `<prefix>-agent-scc` that let the `gremlin-agent` ServiceAccount use it, and the
-`pod-security.kubernetes.io/enforce: privileged` label on the install namespace.
-
-The chart sets the label only on a namespace it creates. When `installNamespace.create` is `false`, add the label to the
-existing install namespace yourself, with `kubectl label namespace <name> pod-security.kubernetes.io/enforce=privileged`,
-or Pod Security refuses the agent pods. The reconciler reports refused pods as `PodsRejected` on the Agent.
+With `openshift.enabled` set to `true` the chart renders the SecurityContextConstraints (SCC) `gremlin`, and a Role and
+RoleBinding named `<prefix>-agent-scc` that let the `gremlin-agent` ServiceAccount use it.
 
 The operator's SCC is named `gremlin`, the same name as the SCC the `gremlin` chart creates when
 `gremlin.podSecurity.securityContextConstraints.create` is `true`. The two charts clash: with those settings on in both,

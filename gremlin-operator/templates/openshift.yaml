@@ -8,7 +8,9 @@ metadata:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
   annotations:
     kubernetes.io/description: gremlin lets the Gremlin agent run on the host's network and PID namespaces with the
-      capabilities it needs and the SELinux type spc_t, and no privileged container.
+      capabilities it needs and the SELinux type spc_t, and no privileged container. It also allows host file system
+      access as root, host PID and host network, and SYS_ADMIN, so grant use of it only to the agent's ServiceAccount,
+      and restrict who can create pods in the namespace where it is bound.
 allowHostDirVolumePlugin: true
 allowHostIPC: false
 allowHostNetwork: true
