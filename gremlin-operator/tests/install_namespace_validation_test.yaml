@@ -1,0 +1,74 @@
+suite: install namespace validation
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - NOTES.txt
+  - templates/reconciler-deployment.yaml
+tests:
+  - it: refuses an install namespace equal to the credential namespace
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: gremlin-system
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name'
+
+  - it: refuses an install namespace equal to the operator's own namespace
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: gremlin-operator-system
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name'
+
+  - it: refuses an install namespace equal to a custom operator namespace
+    template: NOTES.txt
+    release:
+      name: gremlin-operator
+      namespace: ops
+    set:
+      installNamespace:
+        name: ops
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name'
+
+  - it: refuses an install namespace that is not a DNS-1123 label
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: Not_A_Label
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name'
+
+  - it: refuses an empty install namespace
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: ""
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name'
+
+  - it: refuses to install into the credential namespace as the operator namespace
+    template: NOTES.txt
+    release:
+      name: gremlin-operator
+      namespace: gremlin-system
+    asserts:
+      - failedTemplate:
+          errorPattern: 'gremlin-system'
+
+  - it: accepts a custom install namespace that differs from both reserved namespaces
+    template: templates/reconciler-deployment.yaml
+    set:
+      installNamespace:
+        name: team-a
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --install-namespace=team-a

@@ -1,0 +1,123 @@
+suite: operator Deployments
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - templates/reconciler-deployment.yaml
+  - templates/credential-manager-deployment.yaml
+tests:
+  - it: runs the reconciler Deployment with its own command, ServiceAccount and the base arguments
+    template: templates/reconciler-deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: gremlin-operator-controller-manager
+      - equal:
+          path: metadata.namespace
+          value: gremlin-operator-system
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: gremlin-operator-controller-manager
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: manager
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - /reconciler
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 4
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --leader-elect
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --health-probe-bind-address=:8081
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --metrics-bind-address=:8443
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --install-namespace=gremlin
+
+  - it: runs the credential manager Deployment with its own command, ServiceAccount and the base arguments
+    template: templates/credential-manager-deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: gremlin-operator-credential-manager
+      - equal:
+          path: metadata.namespace
+          value: gremlin-operator-system
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: gremlin-operator-credential-manager
+      - equal:
+          path: spec.template.spec.containers[0].name
+          value: manager
+      - equal:
+          path: spec.template.spec.containers[0].command
+          value:
+            - /credential-manager
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 5
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --leader-elect
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --health-probe-bind-address=:8082
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --metrics-bind-address=:8444
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --zap-devel=false
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --install-namespace=gremlin
+
+  - it: gives both processes the one install namespace value
+    set:
+      installNamespace:
+        name: team-a
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --install-namespace=team-a
+        template: templates/reconciler-deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --install-namespace=gremlin
+        template: templates/reconciler-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --install-namespace=team-a
+        template: templates/credential-manager-deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --install-namespace=gremlin
+        template: templates/credential-manager-deployment.yaml
+
+  - it: keeps the install namespace the same in both processes when a credential namespace list is set
+    set:
+      installNamespace:
+        name: team-a
+      credentialNamespaces:
+        - team-a
+        - team-b
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --install-namespace=team-a
+        template: templates/reconciler-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --install-namespace=team-a
+        template: templates/credential-manager-deployment.yaml

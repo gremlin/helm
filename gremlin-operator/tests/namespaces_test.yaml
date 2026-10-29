@@ -1,0 +1,121 @@
+suite: namespaces
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - templates/namespaces.yaml
+tests:
+  - it: creates the install and credential namespaces and keeps both when the release is removed
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: Namespace
+        documentSelector:
+          path: metadata.name
+          value: gremlin
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+        documentSelector:
+          path: metadata.name
+          value: gremlin
+      - isKind:
+          of: Namespace
+        documentSelector:
+          path: metadata.name
+          value: gremlin-system
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+        documentSelector:
+          path: metadata.name
+          value: gremlin-system
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin-operator-system")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+
+  - it: keeps a custom install namespace when the release is removed
+    set:
+      installNamespace:
+        name: team-a
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+        documentSelector:
+          path: metadata.name
+          value: team-a
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+
+  - it: does not create the install namespace when told not to
+    set:
+      installNamespace:
+        create: false
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+      - isKind:
+          of: Namespace
+        documentSelector:
+          path: metadata.name
+          value: gremlin-system
+
+  - it: does not create gremlin-system when told not to
+    set:
+      gremlinSystemNamespace:
+        create: false
+    asserts:
+      - hasDocuments:
+          count: 1
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin-system")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+      - isKind:
+          of: Namespace
+        documentSelector:
+          path: metadata.name
+          value: gremlin
+
+  - it: creates no namespace at all when both are told not to
+    set:
+      installNamespace:
+        create: false
+      gremlinSystemNamespace:
+        create: false
+    asserts:
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin-system")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
