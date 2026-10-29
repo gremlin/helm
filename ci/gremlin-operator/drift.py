@@ -10,15 +10,19 @@
       offers no value that defines a volume, volume mount, init container or sidecar. Exit 1 on any difference.
 
 The comparison keys objects by (kind, namespace, name) and compares whole objects, except:
-  - metadata labels and annotations, container image and imagePullPolicy are ignored;
-  - the pod template's labels and annotations must carry every key the operator sets, with the same value; keys only
-    the chart sets are ignored;
+  - container image and imagePullPolicy are ignored;
+  - object metadata and pod template labels and annotations must carry every key the operator sets, with the same
+    value; keys only the chart sets are ignored, except aggregate-to-* labels and a resource-policy annotation outside
+    a Namespace, which are reported; the keys Helm sets itself (managed-by, version, instance, chart) are ignored both ways;
   - empty lists and maps are dropped, and container args are compared as sorted lists;
-  - the operator's own Namespace is ignored, because the chart installs into the Helm release namespace.
+  - the operator's own Namespace is ignored, because the chart installs into the Helm release namespace;
+  - an object rendered twice on either side is reported.
+A snapshot whose recorded operator commit is not the one in operator-ref is reported too.
 Each Service selector and NetworkPolicy podSelector must also match the pod template of a Deployment in its namespace.
 """
 import argparse
 import copy
+import os
 import re
 import subprocess
 import sys
@@ -34,6 +38,12 @@ DEFAULT_CHART = REPO / "gremlin-operator"
 OPERATOR_NAMESPACE = "gremlin-operator-system"
 RELEASE_NAME = "gremlin-operator"
 VALUES_CASE = "values-offer-no-named-fragments"
+HELM_SET_KEYS = frozenset({"app.kubernetes.io/managed-by", "app.kubernetes.io/version", "app.kubernetes.io/instance",
+                           "helm.sh/chart"})
+AGGREGATE_LABEL_PREFIX = "rbac.authorization.k8s.io/aggregate-to-"
+RESOURCE_POLICY = "helm.sh/resource-policy"
+CRD_NAME = re.compile(r"^[a-z0-9.-]+$")
+REF_LINE = re.compile(r"(?m)^# operator-ref: (\S+)$")
 FRAGMENT_KEY = re.compile(r"(?i)(volume|initcontainer|sidecar|extracontainer)")
 TRUNCATE = 300
 
@@ -143,12 +153,46 @@ def diff(chart_value, operator_value, path=""):
         yield path, chart_value, operator_value
 
 
+def index_objects(docs, ignored, phrase, scenario):
+    """Map each object's key to the object; report keys that occur more than once."""
+    objects, counts = {}, {}
+    for doc in docs:
+        key = object_key(doc)
+        if key != ignored:
+            objects[key] = doc
+            counts[key] = counts.get(key, 0) + 1
+    lines = [f"{scenario} {kind} {namespace}/{name}: {phrase} {n} times"
+             for (kind, namespace, name), n in sorted(counts.items()) if n > 1]
+    return objects, lines
+
+
+def key_differences(where, prefix, chart_map, operator_map, ignore=(), kind=None):
+    """Every key the operator sets must be in the chart's map with the same value. Chart-only keys are ignored,
+    except the ones that change who holds a grant or what Helm keeps on uninstall."""
+    lines = []
+    for k, v in sorted(operator_map.items()):
+        if k not in ignore and chart_map.get(k) != v:
+            lines.append(f"{where} {prefix}.{k}: chart={chart_map.get(k)} operator={v}")
+    for k, v in sorted(chart_map.items()):
+        if k in operator_map:
+            continue
+        if (prefix.endswith("labels") and k.startswith(AGGREGATE_LABEL_PREFIX)) or (
+                kind not in (None, "Namespace") and prefix.endswith("annotations") and k == RESOURCE_POLICY):
+            lines.append(f"{where} {prefix}.{k}: chart={v} operator=None")
+    return lines
+
+
+def metadata_maps(doc):
+    meta = doc.get("metadata") or {}
+    return {"labels": meta.get("labels") or {}, "annotations": meta.get("annotations") or {}}
+
+
 def compare(scenario, chart_docs, operator_docs):
     """Report lines for every difference between the chart's objects and the operator's."""
     ignored = ("Namespace", "", OPERATOR_NAMESPACE)
-    chart = {object_key(d): d for d in chart_docs if object_key(d) != ignored}
-    operator = {object_key(d): d for d in operator_docs if object_key(d) != ignored}
-    lines = []
+    chart, lines = index_objects(chart_docs, ignored, "the chart renders it", scenario)
+    operator, operator_duplicates = index_objects(operator_docs, ignored, "the operator's output has it", scenario)
+    lines += operator_duplicates
     for key in sorted(set(chart) | set(operator)):
         kind, namespace, name = key
         where = f"{scenario} {kind} {namespace}/{name}"
@@ -158,13 +202,11 @@ def compare(scenario, chart_docs, operator_docs):
         if key not in chart:
             lines.append(f"{where}: only in the operator's output")
             continue
-        if kind == "Deployment":
-            mine, wanted = pod_template_maps(chart[key]), pod_template_maps(operator[key])
-            for field in ("labels", "annotations"):
-                for k, v in sorted(wanted[field].items()):
-                    if mine[field].get(k) != v:
-                        lines.append(f"{where} spec.template.metadata.{field}.{k}: "
-                                     f"chart={mine[field].get(k)} operator={v}")
+        for field in ("labels", "annotations"):
+            lines += key_differences(where, f"metadata.{field}", metadata_maps(chart[key])[field],
+                                     metadata_maps(operator[key])[field], ignore=HELM_SET_KEYS, kind=kind)
+            lines += key_differences(where, f"spec.template.metadata.{field}", pod_template_maps(chart[key])[field],
+                                     pod_template_maps(operator[key])[field])
         for path, a, b in diff(normalize(chart[key]), normalize(operator[key])):
             lines.append(f"{where} {path}: chart={show(a)} operator={show(b)}")
     return lines
@@ -239,7 +281,13 @@ def check_scenario(name, chart):
         chart_docs = helm_render(chart, values_file)
     except DriftError as err:
         return [f"{name}: {err}"]
-    operator_docs = load_docs(expected_file.read_text(encoding="utf-8"))
+    expected_text = expected_file.read_text(encoding="utf-8")
+    recorded = REF_LINE.search(expected_text[:500])
+    if not recorded or recorded.group(1) != pinned_head():
+        return [f"{name}: {expected_file.relative_to(REPO)} was built at operator commit "
+                f"{recorded.group(1) if recorded else '(none recorded)'} but operator-ref is {pinned_head()}; "
+                "run drift.py sync against a checkout at operator-ref and commit the result"]
+    operator_docs = load_docs(expected_text)
     return compare(name, chart_docs, operator_docs) + selector_guard(name, chart_docs)
 
 
@@ -279,7 +327,7 @@ def require_pinned_checkout(operator):
     head = run(["git", "-C", str(operator), "rev-parse", "HEAD"]).strip()
     if head != pin:
         raise DriftError(f"the operator checkout is at {head} but operator-ref pins {pin}")
-    if run(["git", "-C", str(operator), "status", "--porcelain", "--untracked-files=no", "--", "config"]).strip():
+    if run(["git", "--no-optional-locks", "-C", str(operator), "status", "--porcelain", "--untracked-files=no", "--", "config"]).strip():
         raise DriftError("the operator checkout has uncommitted changes under config/")
 
 
@@ -307,23 +355,27 @@ def split_documents(text):
 
 def cmd_sync(args):
     operator = Path(args.operator).resolve()
-    if not (operator / "bin" / "kustomize").is_file():
+    if not os.access(operator / "bin" / "kustomize", os.X_OK):
         raise DriftError(f"no bin/kustomize in the operator checkout {operator}")
     require_pinned_checkout(operator)
     builds = {name: kustomize_build(operator, spec) for name, spec in SCENARIOS.items()}
 
     expected_dir, crd_dir = HERE / "expected", DEFAULT_CHART / "crds"
-    expected_dir.mkdir(exist_ok=True)
-    crd_dir.mkdir(parents=True, exist_ok=True)
-    for name, text in builds.items():
-        header = f"# Operator output for the {name} scenario, written by drift.py sync. Do not edit by hand.\n"
-        (expected_dir / f"{name}.yaml").write_text(header + text, encoding="utf-8")
-
     crds = {}
     for part in split_documents(builds["default"]):
         doc = yaml.safe_load(part)
         if doc and doc["kind"] == "CustomResourceDefinition":
-            crds[doc["metadata"]["name"]] = part
+            name = doc["metadata"]["name"]
+            if not CRD_NAME.match(name) or (crd_dir / f"{name}.yaml").resolve().parent != crd_dir.resolve():
+                raise DriftError(f"refusing to write a CRD named {name!r} into {crd_dir}")
+            crds[name] = part
+
+    expected_dir.mkdir(exist_ok=True)
+    crd_dir.mkdir(parents=True, exist_ok=True)
+    for name, text in builds.items():
+        header = (f"# Operator output for the {name} scenario, written by drift.py sync. Do not edit by hand.\n"
+                  f"# operator-ref: {pinned_head()}\n")
+        (expected_dir / f"{name}.yaml").write_text(header + text, encoding="utf-8")
     for stale in crd_dir.glob("*.yaml"):
         if stale.stem not in crds:
             stale.unlink()

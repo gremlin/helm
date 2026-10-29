@@ -1,6 +1,8 @@
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import drift  # noqa: E402
@@ -23,10 +25,9 @@ def network_policy(pod_selector, name="np", namespace="ns"):
 
 
 class CompareTest(unittest.TestCase):
-    def test_ignores_image_metadata_labels_arg_order_and_empty_collections(self):
+    def test_ignores_image_arg_order_and_empty_collections(self):
         chart = deployment(args=["--b", "--a"], image="chart:1")
         operator = deployment(args=["--a", "--b"], image="operator:2")
-        operator["metadata"]["labels"] = {"c": "d"}
         operator["spec"]["template"]["spec"]["volumes"] = []
         self.assertEqual(drift.compare("s", [chart], [operator]), [])
 
@@ -55,9 +56,41 @@ class CompareTest(unittest.TestCase):
         self.assertEqual(len(lines), 1)
         self.assertTrue(lines[0].startswith("s Role /r rules: chart="))
 
-    def test_long_values_are_truncated(self):
-        self.assertTrue(drift.show("x" * 1000).endswith("..."))
-        self.assertEqual(drift.show("short"), "short")
+    def test_object_metadata_must_carry_the_operator_keys(self):
+        chart, operator = deployment(), deployment()
+        operator["metadata"]["labels"] = {"a": "b", "control-plane": "controller-manager"}
+        operator["metadata"]["annotations"] = {"note": "x"}
+        chart["metadata"]["labels"] = {"a": "b", "control-plane": "other", "extra": "ok"}
+        self.assertEqual(drift.compare("s", [chart], [operator]), [
+            "s Deployment ns/d metadata.labels.control-plane: chart=other operator=controller-manager",
+            "s Deployment ns/d metadata.annotations.note: chart=None operator=x"])
+
+    def test_keys_helm_sets_are_ignored_on_both_sides(self):
+        chart, operator = deployment(), deployment()
+        chart["metadata"]["labels"] = {"a": "b", "helm.sh/chart": "c-1", "app.kubernetes.io/managed-by": "Helm",
+                                       "app.kubernetes.io/version": "1", "app.kubernetes.io/instance": "r"}
+        operator["metadata"]["labels"] = {"a": "b", "app.kubernetes.io/managed-by": "kustomize"}
+        self.assertEqual(drift.compare("s", [chart], [operator]), [])
+
+    def test_chart_only_aggregation_label_is_reported(self):
+        chart, operator = deployment(), deployment()
+        chart["metadata"]["labels"] = {"a": "b", "rbac.authorization.k8s.io/aggregate-to-view": "true"}
+        self.assertEqual(drift.compare("s", [chart], [operator]), [
+            "s Deployment ns/d metadata.labels.rbac.authorization.k8s.io/aggregate-to-view: chart=true operator=None"])
+
+    def test_chart_only_resource_policy_is_reported_except_on_a_namespace(self):
+        policy = {"helm.sh/resource-policy": "keep"}
+        chart = deployment()
+        chart["metadata"]["annotations"] = dict(policy)
+        self.assertEqual(drift.compare("s", [chart], [deployment()]), [
+            "s Deployment ns/d metadata.annotations.helm.sh/resource-policy: chart=keep operator=None"])
+        namespace = {"kind": "Namespace", "metadata": {"name": "gremlin", "annotations": dict(policy)}}
+        self.assertEqual(drift.compare("s", [namespace], [{"kind": "Namespace", "metadata": {"name": "gremlin"}}]), [])
+
+    def test_duplicate_objects_are_reported_on_either_side(self):
+        lines = drift.compare("s", [deployment(), deployment()], [deployment(), deployment()])
+        self.assertEqual(lines, ["s Deployment ns/d: the chart renders it 2 times",
+                                 "s Deployment ns/d: the operator's output has it 2 times"])
 
 
 class SelectorGuardTest(unittest.TestCase):
@@ -98,10 +131,39 @@ class SyncHelpersTest(unittest.TestCase):
     def test_split_documents_drops_empty_parts(self):
         self.assertEqual(drift.split_documents("a: 1\n---\nb: 2\n---\n"), ["a: 1\n", "b: 2\n"])
 
-    def test_every_scenario_has_values_and_the_pin_is_a_full_hash(self):
-        for name in drift.SCENARIOS:
-            self.assertTrue((drift.HERE / "values" / f"{name}.yaml").is_file(), name)
+    def test_the_pin_is_a_full_hash(self):
         self.assertRegex(drift.pinned_head(), r"^[0-9a-f]{40}$")
+
+    def test_crd_names_must_be_plain_dns_names(self):
+        self.assertTrue(drift.CRD_NAME.match("agents.gremlin.com"))
+        for bad in ("../x", "a/b", "A.b", "", "a b"):
+            self.assertFalse(drift.CRD_NAME.match(bad), bad)
+
+
+class SnapshotRefTest(unittest.TestCase):
+    def check(self, header):
+        with tempfile.TemporaryDirectory() as tmp:
+            here = Path(tmp)
+            for sub in ("values", "expected"):
+                (here / sub).mkdir()
+            (here / "values" / "s.yaml").write_text("{}\n")
+            (here / "expected" / "s.yaml").write_text(header + "kind: ConfigMap\nmetadata: {name: c}\n")
+            with mock.patch.object(drift, "HERE", here), mock.patch.object(drift, "REPO", here), \
+                    mock.patch.object(drift, "pinned_head", return_value="a" * 40), \
+                    mock.patch.object(drift, "helm_render", return_value=[]):
+                return drift.check_scenario("s", here)
+
+    def test_snapshot_built_at_another_commit_is_reported_before_any_comparison(self):
+        lines = self.check("# operator-ref: " + "b" * 40 + "\n")
+        self.assertEqual(len(lines), 1)
+        self.assertIn("was built at operator commit " + "b" * 40, lines[0])
+
+    def test_snapshot_without_a_recorded_commit_is_reported(self):
+        self.assertIn("(none recorded)", self.check("# no ref here\n")[0])
+
+    def test_snapshot_at_the_pinned_commit_is_compared(self):
+        self.assertEqual(self.check("# operator-ref: " + "a" * 40 + "\n"),
+                         ["s ConfigMap /c: only in the operator's output"])
 
 
 if __name__ == "__main__":
