@@ -6,7 +6,7 @@
 #   ci/gremlin-operator/kind-test.sh [--scenario install|uninstall|all] [--junit FILE]
 #
 # Environment:
-#   OPERATOR_CHECKOUT  operator repository to build the image from (default $HOME/workspace/github.com/gremlin/gremlin-operator)
+#   OPERATOR_CHECKOUT  operator repository to build the image from, at the commit in ci/gremlin-operator/operator-ref (default $HOME/workspace/github.com/gremlin/gremlin-operator)
 #   CHART_DIR          chart to install (default: gremlin-operator at the repository root)
 #   KUBE_CONTEXT       reuse an existing kind context (must start with kind-) instead of creating a cluster
 #   IMAGE              reuse an image already loaded in that cluster (repository:tag) instead of building one
@@ -110,11 +110,16 @@ fi
 echo "--- helm lint --strict"
 helm lint --strict "$CHART_DIR" || die "helm lint failed for $CHART_DIR"
 
-# 3. Image and cluster.
+# 3. Image and cluster. An image built here comes from the operator commit the repository pins.
 if [ -n "${IMAGE:-}" ]; then
   IMAGE_REPO="${IMAGE%:*}"
   IMAGE_TAG="${IMAGE##*:}"
 else
+  PIN_FILE="$ROOT/ci/gremlin-operator/operator-ref"
+  [ -f "$PIN_FILE" ] || die "no $PIN_FILE: the operator commit to build is not pinned"
+  PINNED="$(tr -d '[:space:]' < "$PIN_FILE")"
+  OPERATOR_HEAD="$(git -C "$OPERATOR_CHECKOUT" rev-parse HEAD)" || die "$OPERATOR_CHECKOUT is not a git checkout"
+  case "$OPERATOR_HEAD" in "$PINNED"*) ;; *) die "operator checkout is at $OPERATOR_HEAD but operator-ref pins $PINNED" ;; esac
   IMAGE_REPO=example.com/gremlin-operator
   IMAGE_TAG="chart-test-$RANDOM$RANDOM"
   echo "--- docker build $IMAGE_REPO:$IMAGE_TAG"
@@ -135,6 +140,13 @@ if [ -z "$CTX" ]; then
     || { tail -n 30 "$WORK/load.log" >&2; die "kind load failed"; }
 fi
 require_kind_context
+
+if [ -z "${IMAGE:-}" ] && [ -z "$CLUSTER" ]; then
+  # A reused kind cluster does not have the image this run built.
+  echo "--- kind load docker-image (reused cluster ${CTX#kind-})"
+  kind load docker-image "$IMAGE_REPO:$IMAGE_TAG" --name "${CTX#kind-}" >"$WORK/load.log" 2>&1 \
+    || { tail -n 30 "$WORK/load.log" >&2; die "kind load failed"; }
+fi
 
 install_chart() {
   h install "$RELEASE" "$CHART_DIR" --namespace "$OPERATOR_NS" --create-namespace \
