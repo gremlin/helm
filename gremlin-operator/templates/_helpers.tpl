@@ -33,7 +33,7 @@ Labels on every object's metadata. Selectors use gremlin-operator.selectorLabels
 */}}
 {{- define "gremlin-operator.labels" -}}
 helm.sh/chart: {{ include "gremlin-operator.chart" . }}
-app.kubernetes.io/name: {{ include "gremlin-operator.name" . }}
+app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}

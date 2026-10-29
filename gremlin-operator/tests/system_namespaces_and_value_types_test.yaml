@@ -1,0 +1,155 @@
+suite: system namespaces and value types
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - NOTES.txt
+  - templates/credential-manager-rbac.yaml
+  - templates/credential-manager-deployment.yaml
+  - templates/reconciler-deployment.yaml
+  - templates/metrics.yaml
+tests:
+  - it: refuses default as the install namespace
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: default
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name "default" is a system namespace'
+
+  - it: refuses a kube- namespace as the install namespace
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: kube-system
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name "kube-system" is a system namespace'
+
+  - it: refuses an openshift- namespace as the install namespace
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: openshift-monitoring
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name "openshift-monitoring" is a system namespace'
+
+  - it: refuses default as the release namespace
+    template: NOTES.txt
+    release:
+      name: gremlin-operator
+      namespace: default
+    asserts:
+      - failedTemplate:
+          errorPattern: 'release namespace[^\n]*"default" is a system namespace[^\n]*create workloads'
+
+  - it: refuses a kube- namespace as the release namespace
+    template: NOTES.txt
+    release:
+      name: gremlin-operator
+      namespace: kube-public
+    asserts:
+      - failedTemplate:
+          errorPattern: 'release namespace[^\n]*"kube-public" is a system namespace'
+
+  - it: refuses an openshift- namespace as the release namespace
+    template: NOTES.txt
+    release:
+      name: gremlin-operator
+      namespace: openshift-operators
+    asserts:
+      - failedTemplate:
+          errorPattern: 'release namespace[^\n]*"openshift-operators" is a system namespace'
+
+  - it: refuses a system namespace among the credential namespaces
+    template: NOTES.txt
+    set:
+      credentialNamespaces:
+        - gremlin
+        - kube-system
+    asserts:
+      - failedTemplate:
+          errorPattern: 'credentialNamespaces\[1\] "kube-system" is a system namespace'
+
+  - it: names the value path when credentialNamespaces is a string
+    template: NOTES.txt
+    set:
+      credentialNamespaces: gremlin
+    asserts:
+      - failedTemplate:
+          errorPattern: 'credentialNamespaces must be a list'
+
+  - it: accepts a numeric credential namespace name and quotes it
+    set:
+      credentialNamespaces:
+        - gremlin
+        - 123
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: "123"
+        documentSelector:
+          path: $[?(@.kind=="Role" && @.metadata.namespace=="123")].metadata.name
+          value: gremlin-operator-credential-manager-readonly-role
+        template: templates/credential-manager-rbac.yaml
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --credential-namespaces=gremlin,123
+        template: templates/credential-manager-deployment.yaml
+
+  - it: refuses an invalid nameOverride even when fullnameOverride is set
+    template: NOTES.txt
+    set:
+      fullnameOverride: ops
+      nameOverride: Not_Valid
+    asserts:
+      - failedTemplate:
+          errorPattern: 'nameOverride "Not_Valid" is not a valid name'
+
+  - it: refuses an invalid fullnameOverride
+    template: NOTES.txt
+    set:
+      fullnameOverride: "a b"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'fullnameOverride "a b" is not a valid name'
+
+  - it: keeps a priority class name a single quoted scalar
+    set:
+      reconciler:
+        priorityClassName: "high\nhostNetwork: true"
+    template: templates/reconciler-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: "high\nhostNetwork: true"
+      - notExists:
+          path: spec.template.spec.hostNetwork
+
+  - it: keeps an image pull policy a single quoted scalar
+    set:
+      image:
+        pullPolicy: "Always\nhostNetwork: true"
+    template: templates/credential-manager-deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.hostNetwork
+
+  - it: carries the operator's control-plane label on the reconciler Deployment and metrics Service
+    asserts:
+      - equal:
+          path: metadata.labels["control-plane"]
+          value: controller-manager
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: metadata.labels["control-plane"]
+          value: controller-manager
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-controller-manager-metrics-service
+        template: templates/metrics.yaml
+      - notExists:
+          path: metadata.labels["control-plane"]
+        template: templates/credential-manager-deployment.yaml

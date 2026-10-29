@@ -21,14 +21,29 @@ Compile all problems into a single message, and call fail.
 {{- end -}}
 
 {{/*
-The longest object name the chart renders is a Service, <prefix>-credential-manager-metrics-service, which has to fit
-in 63 characters.
+Names the operator and its documentation reserve for the system. Returns "yes" for default, kube-* and openshift-*.
+*/}}
+{{- define "gremlin-operator.systemNamespace" -}}
+{{- if or (eq . "default") (hasPrefix "kube-" .) (hasPrefix "openshift-" .) -}}yes{{- end -}}
+{{- end -}}
+
+{{/*
+nameOverride and fullnameOverride end up in object names and labels. The longest object name the chart renders is a
+Service, <prefix>-credential-manager-metrics-service, which has to fit in 63 characters.
 */}}
 {{- define "gremlin-operator.validateValues.names" -}}
+{{- $errors := list -}}
+{{- range $path := list "nameOverride" "fullnameOverride" -}}
+{{- $value := toString (default "" (get $.Values $path)) -}}
+{{- if and (ne $value "") (not (and (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$" $value) (le (len $value) 63))) -}}
+{{- $errors = append $errors (printf "- %s %q is not a valid name (a DNS-1123 label of at most 63 characters)." $path $value) -}}
+{{- end -}}
+{{- end -}}
 {{- $prefix := include "gremlin-operator.prefix" . -}}
 {{- if gt (len $prefix) 28 -}}
-- fullnameOverride and nameOverride: the object name prefix "{{ $prefix }}" is {{ len $prefix }} characters, but at most 28 fit in the longest Service name.
+{{- $errors = append $errors (printf "- fullnameOverride and nameOverride: the object name prefix %q is %d characters, but at most 28 fit in the longest Service name." $prefix (len $prefix)) -}}
 {{- end -}}
+{{- join "\n" $errors -}}
 {{- end -}}
 
 {{- define "gremlin-operator.validateValues.installNamespace" -}}
@@ -41,6 +56,8 @@ in 63 characters.
 - installNamespace.name must not be gremlin-system, the credential namespace; the operator processes refuse to start with it.
 {{- else if eq $ns .Release.Namespace -}}
 - installNamespace.name {{ $ns | quote }} is the release namespace; the operator processes refuse to start with their own namespace as the install namespace.
+{{- else if include "gremlin-operator.systemNamespace" $ns -}}
+- installNamespace.name {{ $ns | quote }} is a system namespace. Use a new namespace: the credential manager gets write access to Secrets in the install namespace and the reconciler can create workloads there, so it must not be default, kube-* or openshift-*.
 {{- end -}}
 {{- end -}}
 
@@ -61,6 +78,8 @@ in 63 characters.
 {{- $errors = append $errors (printf "- credentialNamespaces[%d] %q is listed more than once." $i $ns) -}}
 {{- else if eq $ns $.Release.Namespace -}}
 {{- $errors = append $errors (printf "- credentialNamespaces[%d] %q is the release namespace; a credential namespace holds only team-certificate Secrets and the release's own Secrets live in the release namespace." $i $ns) -}}
+{{- else if include "gremlin-operator.systemNamespace" $ns -}}
+{{- $errors = append $errors (printf "- credentialNamespaces[%d] %q is a system namespace; the credential manager can read every Secret in a listed namespace, so it must not be default, kube-* or openshift-*." $i $ns) -}}
 {{- end -}}
 {{- $seen = append $seen $ns -}}
 {{- end -}}
@@ -78,6 +97,8 @@ team certificates.
 {{- define "gremlin-operator.validateValues.releaseNamespace" -}}
 {{- if eq .Release.Namespace "gremlin-system" -}}
 - the release namespace (--namespace) is gremlin-system, the credential namespace; install the chart into its own namespace such as gremlin-operator-system.
+{{- else if include "gremlin-operator.systemNamespace" .Release.Namespace -}}
+- the release namespace (--namespace) {{ .Release.Namespace | quote }} is a system namespace. The credential manager's ServiceAccount lives there and can read every Secret in the cluster, so anyone who can create workloads, exec into pods or mint tokens in it holds those Secrets. Install into a dedicated namespace such as gremlin-operator-system.
 {{- end -}}
 {{- end -}}
 

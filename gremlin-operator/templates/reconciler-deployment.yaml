@@ -10,18 +10,19 @@ metadata:
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
     app.kubernetes.io/component: reconciler
+    control-plane: controller-manager
 spec:
-  replicas: {{ .Values.reconciler.replicas }}
+  replicas: {{ .Values.reconciler.replicas | int }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "gremlin-operator.name" . }}
+      app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
       control-plane: controller-manager
   template:
     metadata:
       annotations:
         {{- toYaml $podAnnotations | nindent 8 }}
       labels:
-        app.kubernetes.io/name: {{ include "gremlin-operator.name" . }}
+        app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
         app.kubernetes.io/component: reconciler
         control-plane: controller-manager
     spec:
@@ -36,7 +37,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.reconciler.priorityClassName }}
-      priorityClassName: {{ . }}
+      priorityClassName: {{ . | quote }}
       {{- end }}
       {{- with .Values.reconciler.nodeSelector }}
       nodeSelector:
@@ -53,7 +54,7 @@ spec:
       containers:
         - name: manager
           image: {{ include "gremlin-operator.image" . | quote }}
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
           command:
             - /reconciler
           args:

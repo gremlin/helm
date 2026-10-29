@@ -7,6 +7,7 @@ metadata:
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
     app.kubernetes.io/component: reconciler
+    control-plane: controller-manager
 spec:
   ports:
     - name: https
@@ -14,7 +15,7 @@ spec:
       protocol: TCP
       targetPort: 8443
   selector:
-    app.kubernetes.io/name: {{ include "gremlin-operator.name" . }}
+    app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
     app.kubernetes.io/component: reconciler
 ---
 apiVersion: v1
@@ -32,7 +33,7 @@ spec:
       protocol: TCP
       targetPort: 8444
   selector:
-    app.kubernetes.io/name: {{ include "gremlin-operator.name" . }}
+    app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
     app.kubernetes.io/component: credential-manager
 ---
 apiVersion: networking.k8s.io/v1
@@ -46,7 +47,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "gremlin-operator.name" . }}
+      app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
       app.kubernetes.io/component: reconciler
   policyTypes:
     - Ingress
@@ -70,7 +71,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "gremlin-operator.name" . }}
+      app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
       app.kubernetes.io/component: credential-manager
   policyTypes:
     - Ingress
