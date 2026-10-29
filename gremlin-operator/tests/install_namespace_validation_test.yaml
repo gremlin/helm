@@ -61,7 +61,7 @@ tests:
       namespace: gremlin-system
     asserts:
       - failedTemplate:
-          errorPattern: 'gremlin-system'
+          errorPattern: '(?i)(release namespace|\.Release\.Namespace|--namespace|credentialNamespaces)[^\n]*gremlin-system|gremlin-system[^\n]*(release namespace|\.Release\.Namespace|--namespace)'
 
   - it: accepts a custom install namespace that differs from both reserved namespaces
     template: templates/reconciler-deployment.yaml
