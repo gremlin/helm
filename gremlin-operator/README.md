@@ -19,12 +19,15 @@ helm install gremlin-operator gremlin/gremlin-operator \
     --namespace gremlin-operator-system --create-namespace
 ```
 
-The chart goes into the release namespace (`gremlin-operator-system` above), where both Deployments run. It also
+The chart goes into the release namespace (`gremlin-operator-system` above), where both Deployments run. Use a
+dedicated namespace: the chart refuses `default`, `gremlin-system` and any `kube-` or `openshift-` namespace. See
+[Trust boundaries](#trust-boundaries). It also
 creates the install namespace `gremlin`, where the operator deploys agents, and the credential namespace
 `gremlin-system`.
 
 Object names start with `gremlin-operator-` whatever the release is called, because the operator and its documentation
-refer to them by name. `fullnameOverride` and `nameOverride` change the prefix.
+refer to them by name. `fullnameOverride` and `nameOverride` change the prefix. Changing `nameOverride` while `fullnameOverride` is set changes
+the Deployments' selector, which Kubernetes does not allow to change, so the upgrade fails.
 
 ## Configuration
 
@@ -39,8 +42,8 @@ Deployment only. A setting you want on both is written in both blocks.
 | `image.pullPolicy`                                 | Container pull policy for both processes                                                     | `IfNotPresent`                                           |
 | `imagePullSecrets`                                 | Pull secrets for a private registry, added to both Deployments                               | `[]`                                                     |
 | `nameOverride`                                     | Replaces the chart name in the `app.kubernetes.io/name` label and the object name prefix     | `""`                                                     |
-| `fullnameOverride`                                 | Replaces the object name prefix. At most 28 characters                                       | `""` (`gremlin-operator`)                                |
-| `installNamespace.name`                            | Namespace the operator deploys agents into. Not `gremlin-system` or the release namespace    | `gremlin`                                                |
+| `fullnameOverride`                                 | Replaces the object name prefix. A DNS-1123 label of at most 28 characters                   | `""` (`gremlin-operator`)                                |
+| `installNamespace.name`                            | Namespace the operator deploys agents into. A new namespace, not a system namespace. [See below](#namespaces-and-uninstall) | `gremlin`                                                |
 | `installNamespace.create`                          | Create the install namespace and keep it on uninstall. [See below](#namespaces-and-uninstall) | `true`                                                  |
 | `gremlinSystemNamespace.create`                    | Create `gremlin-system` and keep it on uninstall. [See below](#namespaces-and-uninstall)     | `true`                                                   |
 | `credentialNamespaces`                             | Namespaces the credential manager may read. [See below](#credential-namespaces)             | `[]` (every namespace)                                   |
@@ -98,20 +101,29 @@ watch exactly the listed namespaces, in the order given. `gremlin-system` keeps 
 
 The list must include `installNamespace.name`. The chart does not create the listed namespaces, so create them before
 you install. A listed namespace should hold only team-certificate Secrets, because the Role covers every Secret in it.
-The release namespace may not be listed, because Helm stores its release Secrets there.
+The release namespace may not be listed, because Helm stores its release Secrets there, and neither may `default` or a
+`kube-` or `openshift-` namespace.
 
 ## Namespaces and uninstall
 
 With default values the chart creates the install namespace and `gremlin-system`, and marks both to be kept when you run
 `helm uninstall`. Uninstall removes every other object of the release, including the ServiceAccounts, Roles and
 RoleBindings inside those namespaces and all cluster-scoped bindings. It leaves both namespaces and every Secret you put
-in them. A kept namespace still carries the release's ownership annotations, so installing again with the same release
-name and namespace adopts it, and installing with another release name fails until you delete the namespace.
+in them. Never delete the kept namespaces: they hold credentials. A kept namespace still carries the release's ownership
+annotations, so installing again with the same release name and namespace adopts it.
 
-A namespace that already exists without Helm's ownership metadata fails the install. This includes a `gremlin` namespace
-made by `helm install gremlin ... --create-namespace` for the `gremlin` chart. Set `installNamespace.create` or
-`gremlinSystemNamespace.create` to `false` for each namespace that already exists. Setting one to `false` on a later
-upgrade leaves the existing namespace in place.
+To reinstall under another release name, Helm refuses the kept namespaces because another release owns them. Set
+`installNamespace.create` and `gremlinSystemNamespace.create` to `false` for the reinstall instead of deleting anything.
+Setting one to `false` on a later upgrade leaves the existing namespace in place.
+
+Choose a new install namespace with `installNamespace.name`. Do not point it at a namespace that already exists for
+another purpose, such as the `gremlin` namespace of the `gremlin` chart: the credential manager gets write access to
+Secrets in the install namespace and the reconciler can create workloads there. If you already run the `gremlin` chart in
+`gremlin`, set `installNamespace.name` to another name, for example `gremlin-operator-agents`, rather than adopting it.
+
+Renaming `installNamespace.name` on `helm upgrade` deletes the ServiceAccounts and grants in the old namespace, and the
+old namespace is kept. DaemonSets and Chao Deployments the operator already created there keep running without them, so
+delete your Agents before you rename it.
 
 Helm never deletes the CRDs in `crds/`, so Agents and the DaemonSet and Chao Deployment they own keep running after
 `helm uninstall`. Delete your Agents first.
@@ -121,6 +133,10 @@ Helm never deletes the CRDs in `crds/`, so Agents and the DaemonSet and Chao Dep
 With `agent.nodeRead.enabled` set to `false`, the node-reader ClusterRole and its binding are not rendered and the
 reconciler is passed `--agent-node-read=false`, so agents run with `GREMLIN_PUSH_POD_CIDR_TAGS` and
 `GREMLIN_PUSH_ZONE_CIDR_TAGS` set to `false`. The value must be a boolean: the string `"false"` is rejected.
+
+The flag exists only in newer operator releases. An operator that does not know `--agent-node-read` exits at start, so
+the reconciler crash-loops. At the time of writing the operator version this chart was built against does not accept it,
+so leave the value at `true` until the operator release you deploy supports it.
 
 ## OpenShift
 
@@ -135,6 +151,25 @@ or Pod Security refuses the agent pods. The reconciler reports refused pods as `
 The operator's SCC is named `gremlin`, the same name as the SCC the `gremlin` chart creates when
 `gremlin.podSecurity.securityContextConstraints.create` is `true`. The two charts clash: with those settings on in both,
 Helm refuses whichever chart you install second, because the SCC already exists. Do not turn both on at once.
+
+`openshift.enabled` also needs an operator release that has the OpenShift support. Check the release you deploy before you
+turn it on.
+
+## Trust boundaries
+
+These are the operator's own warnings, and they hold for a Helm install too.
+
+* Whoever can create workloads, exec into pods or mint tokens in the release namespace holds every Secret in the cluster,
+  because the credential manager's ServiceAccount lives there and reads them. Give that namespace to people you trust
+  with every Secret. With `credentialNamespaces` set, the same applies to the listed namespaces only.
+* The install namespace must hold no ServiceAccount more privileged than `gremlin-agent`. The credential manager can
+  create and read Secrets there, which includes ServiceAccount token Secrets.
+* Setting a `create` value to `false` adopts an existing namespace or ServiceAccount. Its existing admins and any tokens
+  already minted for it keep working with the rights this chart grants.
+* The `agent-editor` and `agent-admin` ClusterRoles that the chart ships are node-root and credential grants. Bind them
+  only to cluster admins.
+* Permission to create `teamcredentials` lets a principal probe which Secrets exist in its own namespace. Grant it with
+  that in mind.
 
 ## Webhooks
 

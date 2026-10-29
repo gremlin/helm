@@ -21,20 +21,25 @@ image:
 imagePullSecrets: []
 
 # nameOverride -
-# Replaces the chart name in the `app.kubernetes.io/name` label and in the object name prefix.
+# Replaces the chart name in the `app.kubernetes.io/name` label and in the object name prefix. A DNS-1123 label.
+# Changing it while `fullnameOverride` is set changes the Deployments' immutable selector, and the upgrade fails.
 nameOverride: ""
 # fullnameOverride -
 # Replaces the object name prefix, `gremlin-operator` by default. The release name is never part of an object name.
-# At most 28 characters.
+# A DNS-1123 label of at most 28 characters.
 fullnameOverride: ""
 
 installNamespace:
   # installNamespace.name -
-  # The namespace the operator deploys agents into. Both processes get this one value. It must not be `gremlin-system`
-  # or the release namespace.
+  # The namespace the operator deploys agents into. Both processes get this one value. Use a new namespace, not
+  # `default`, `gremlin-system`, the release namespace, or a `kube-` or `openshift-` namespace: the credential manager
+  # gets write access to Secrets there and the reconciler can create workloads there, so it must hold no
+  # ServiceAccount more privileged than the agent's. Do not reuse the namespace of another Gremlin install. Renaming it
+  # on upgrade deletes the ServiceAccounts and grants in the old namespace; delete your Agents first.
   name: gremlin
   # installNamespace.create -
-  # Creates the namespace and keeps it when the release is uninstalled. Set to false when it already exists.
+  # Creates the namespace and keeps it when the release is uninstalled. Set to false when it already exists and holds
+  # nothing else. The chart then adopts the namespace, and its existing admins and ServiceAccount tokens keep working.
   create: true
 
 gremlinSystemNamespace:
@@ -47,7 +52,8 @@ gremlinSystemNamespace:
 # Empty (the default) lets the credential manager read Secrets in the whole cluster and use `gremlin-system`. A list
 # restricts it to exactly those namespaces: the cluster-wide Secret binding is not rendered, each listed namespace
 # other than `gremlin-system` gets a read-only Role, and the list must include `installNamespace.name`. The listed
-# namespaces must already exist and hold only team-certificate Secrets.
+# namespaces must already exist and hold only team-certificate Secrets, and must not be `default`, `kube-` or
+# `openshift-` namespaces.
 credentialNamespaces: []
 
 reconciler:
@@ -63,7 +69,8 @@ reconciler:
   resyncInterval: ""
   serviceAccount:
     # reconciler.serviceAccount.create -
-    # Creates the reconciler's ServiceAccount. When false, create one named `<prefix>-controller-manager` yourself.
+    # Creates the reconciler's ServiceAccount. When false, create one named `<prefix>-controller-manager` yourself. The
+    # grants name that ServiceAccount, so whoever creates it first or already holds a token for it inherits them.
     create: true
     # reconciler.serviceAccount.annotations -
     # Annotations to add to the ServiceAccount.
@@ -125,7 +132,8 @@ credentialManager:
   serviceAccount:
     # credentialManager.serviceAccount.create -
     # Creates the credential manager's ServiceAccount. When false, create one named `<prefix>-credential-manager`
-    # yourself.
+    # yourself. The grants name that ServiceAccount, so whoever creates it first or already holds a token for it
+    # inherits them.
     create: true
     # credentialManager.serviceAccount.annotations -
     # Annotations to add to the ServiceAccount.
@@ -177,14 +185,16 @@ agent:
   nodeRead:
     # agent.nodeRead.enabled -
     # Lets the agent read its node. When false, the node-reader ClusterRole and its binding are not rendered and the
-    # reconciler runs agents with `GREMLIN_PUSH_POD_CIDR_TAGS` and `GREMLIN_PUSH_ZONE_CIDR_TAGS` set to false.
+    # reconciler runs agents with `GREMLIN_PUSH_POD_CIDR_TAGS` and `GREMLIN_PUSH_ZONE_CIDR_TAGS` set to false. This
+    # passes `--agent-node-read=false`, so it needs an operator release that accepts that flag; an older operator
+    # exits at start and the reconciler crash-loops.
     enabled: true
 
 openshift:
   # openshift.enabled -
   # Renders the SecurityContextConstraints `gremlin`, the Role and RoleBinding that let the agent ServiceAccount use
   # it, and the `pod-security.kubernetes.io/enforce: privileged` label on the install namespace when the chart
-  # creates it.
+  # creates it. It needs an operator release that has the OpenShift support.
   enabled: false
 
 # webhooks:
