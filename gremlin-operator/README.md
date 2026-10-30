@@ -47,7 +47,7 @@ Deployment only. A setting you want on both is written in both blocks.
 | `installNamespace.create`                          | Create the install namespace, labelled privileged for Pod Security, and keep it on uninstall. [See below](#namespaces-and-uninstall) | `true`                                                  |
 | `gremlinSystemNamespace.create`                    | Create `gremlin-system` and keep it on uninstall. [See below](#namespaces-and-uninstall)     | `true`                                                   |
 | `credentialNamespaces`                             | Namespaces the credential manager may read. [See below](#credential-namespaces)             | `[]` (every namespace)                                   |
-| `reconciler.replicas`                              | Reconciler replicas                                                                          | `1`                                                      |
+| `reconciler.replicas`                              | Reconciler replicas. [See below](#high-availability)                                         | `3`                                                      |
 | `reconciler.logLevel`                              | `debug`, `info`, `error`, `panic` or a positive integer                                      | `""` (no flag)                                           |
 | `reconciler.resyncInterval`                        | Go duration such as `30s` or `1h30m`                                                         | `""` (the operator's `10m`)                              |
 | `reconciler.serviceAccount.create`                 | Create the reconciler ServiceAccount                                                         | `true`                                                   |
@@ -61,7 +61,7 @@ Deployment only. A setting you want on both is written in both blocks.
 | `reconciler.podSecurityContext`                    | Pod-level security context                                                                   | `runAsNonRoot: true`, `seccompProfile: RuntimeDefault`   |
 | `reconciler.securityContext`                       | Container security context                                                                   | `allowPrivilegeEscalation: false`, drop `ALL`            |
 | `reconciler.extraEnv`                              | Environment variables, rendered after the chart's own. [See below](#environment-variables)   | `[]`                                                     |
-| `credentialManager.replicas`                       | Credential manager replicas                                                                  | `1`                                                      |
+| `credentialManager.replicas`                       | Credential manager replicas. [See below](#high-availability)                                 | `3`                                                      |
 | `credentialManager.logLevel`                       | `debug`, `info`, `error`, `panic` or a positive integer                                      | `""` (no flag)                                           |
 | `credentialManager.resyncInterval`                 | Go duration such as `30s` or `1h30m`                                                         | `""` (the operator's `10m`)                              |
 | `credentialManager.serviceAccount.create`          | Create the credential manager ServiceAccount                                                 | `true`                                                   |
@@ -82,6 +82,14 @@ Specify each parameter using the `--set[-file] key=value[,key=value]` argument t
 
 The credential manager always runs with `--zap-devel=false`, and the chart has no value for extra arguments. The chart
 offers no volumes, volume mounts or init containers either: the operator's Deployments own no volumes and need none.
+
+## High availability
+
+Each process runs three replicas by default. Each process elects a leader, so one replica acts at a time and the other
+two stand by; the operator's own install runs one replica, and this chart does not. The chart adds no PodDisruptionBudget,
+pod anti-affinity or topology spread constraints, so the replicas of a process can land on the same node. To spread them,
+set `affinity` in the process's block, `reconciler` or `credentialManager`. Three replicas of each process need room for
+six small pods, so on a single-node or kind cluster you may want to set both `replicas` to `1`.
 
 ## Environment variables
 
