@@ -12,15 +12,15 @@ tests:
   - it: sets the reconciler replicas without touching the credential manager
     set:
       reconciler:
-        replicas: 3
+        replicas: 5
     asserts:
       - equal:
           path: spec.replicas
-          value: 3
+          value: 5
         template: templates/reconciler-deployment.yaml
       - equal:
           path: spec.replicas
-          value: 1
+          value: 3
         template: templates/credential-manager-deployment.yaml
 
   - it: sets the credential manager replicas without touching the reconciler
@@ -34,7 +34,7 @@ tests:
         template: templates/credential-manager-deployment.yaml
       - equal:
           path: spec.replicas
-          value: 1
+          value: 3
         template: templates/reconciler-deployment.yaml
 
   - it: passes the reconciler log level and resync interval to the reconciler only
