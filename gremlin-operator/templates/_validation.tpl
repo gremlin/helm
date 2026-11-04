@@ -39,6 +39,9 @@ Service, <prefix>-credential-manager-metrics-service, which has to fit in 63 cha
 {{- end -}}
 {{- end -}}
 {{- $prefix := include "gremlin-operator.prefix" . -}}
+{{- if not (regexMatch "^[a-z]" $prefix) -}}
+{{- $errors = append $errors (printf "- fullnameOverride and nameOverride: the object name prefix %q must start with a lowercase letter, because Service names must." $prefix) -}}
+{{- end -}}
 {{- if gt (len $prefix) 28 -}}
 {{- $errors = append $errors (printf "- fullnameOverride and nameOverride: the object name prefix %q is %d characters, but at most 28 fit in the longest Service name." $prefix (len $prefix)) -}}
 {{- end -}}
@@ -82,6 +85,11 @@ Takes a dict with path (reconciler or credentialManager) and process (that block
 
 {{- define "gremlin-operator.validateValues.switches" -}}
 {{- $errors := list -}}
+{{- range $path, $value := dict "installNamespace.create" .Values.installNamespace.create "reconciler.serviceAccount.create" .Values.reconciler.serviceAccount.create "credentialManager.serviceAccount.create" .Values.credentialManager.serviceAccount.create -}}
+{{- if not (kindIs "bool" $value) -}}
+{{- $errors = append $errors (printf "- %s must be true or false, but is %s." $path (toJson $value)) -}}
+{{- end -}}
+{{- end -}}
 {{- if not (kindIs "bool" .Values.agent.nodeRead.enabled) -}}
 {{- $errors = append $errors (printf "- agent.nodeRead.enabled must be true or false, but is %s." (toJson .Values.agent.nodeRead.enabled)) -}}
 {{- end -}}

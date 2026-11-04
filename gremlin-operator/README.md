@@ -25,11 +25,14 @@ the install namespace `gremlin`, which the chart creates. Team credentials live 
 in any other namespace the credential manager can read. The chart refuses `default` and any `kube-` or `openshift-`
 namespace as the release namespace. See [Trust boundaries](#trust-boundaries).
 
-Clear a `gremlin-system` namespace that an older operator layout left behind before you install. `--create-namespace`
+Clean a `gremlin-system` namespace that an older operator layout left behind before you install. `--create-namespace`
 neither adopts nor cleans an existing namespace, and the older layout kept the credential manager's Secret rights there,
 in a Role and RoleBinding that name a different operator namespace. Anyone who can claim that namespace would hold Secret
-write in `gremlin-system`. Delete the namespace, or delete the RoleBindings and workloads in it that are not the
+write in `gremlin-system`. Delete those grants in place: the RoleBindings and workloads in it that are not the
 operator's, including `gremlin-operator-credential-manager-rolebinding` and `gremlin-operator-credential-manager-role`.
+Do not delete the namespace while team credential Secrets or `TeamCredential` resources are in it, because deleting it
+deletes them and installing the chart does not restore them. If you must delete it, back them up first and re-create
+them in the install namespace afterwards.
 
 Object names start with `gremlin-operator-` whatever the release is called, because the operator and its documentation
 refer to them by name. `fullnameOverride` and `nameOverride` change the prefix. Changing `nameOverride` while `fullnameOverride` is set changes
@@ -184,8 +187,8 @@ go.
 ## Upgrading from an older operator layout
 
 This applies to development, demo and CI clusters that ran the operator in a namespace other than `gremlin-system`, with
-its Secret rights in a separate credential namespace. Remove that install and clear `gremlin-system` first, as
-[Install](#install) describes. Then install the chart. Apply the Agent CRD before or together with the new image: a
+its Secret rights in a separate credential namespace. Remove that install and clean `gremlin-system` first, as
+[Install](#install) describes; back up any team credentials that are in it before you remove anything. Then install the chart. Apply the Agent CRD before or together with the new image: a
 CRD older than the credential manager makes its status write fail, so no credential is copied and the pods of an Agent
 that names proxy credentials, a trust bundle or an identity are held.
 

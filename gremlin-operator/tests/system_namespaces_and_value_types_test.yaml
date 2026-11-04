@@ -116,3 +116,49 @@ tests:
       - notExists:
           path: metadata.labels["control-plane"]
         template: templates/credential-manager-deployment.yaml
+
+  - it: renders a numeric release name as a string instance label
+    release:
+      name: "123"
+    template: templates/reconciler-deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: "123"
+
+  - it: refuses an object name prefix that starts with a digit
+    template: NOTES.txt
+    set:
+      fullnameOverride: 1ops
+    asserts:
+      - failedTemplate:
+          errorPattern: 'prefix "1ops" must start with a lowercase letter'
+
+  - it: refuses an install namespace create switch that is the string false
+    template: NOTES.txt
+    set:
+      installNamespace:
+        create: "false"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.create must be true or false, but is "false"'
+
+  - it: refuses a reconciler ServiceAccount create switch that is the string false
+    template: NOTES.txt
+    set:
+      reconciler:
+        serviceAccount:
+          create: "false"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'reconciler\.serviceAccount\.create must be true or false, but is "false"'
+
+  - it: refuses a credential manager ServiceAccount create switch that is the string false
+    template: NOTES.txt
+    set:
+      credentialManager:
+        serviceAccount:
+          create: "false"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'credentialManager\.serviceAccount\.create must be true or false, but is "false"'
