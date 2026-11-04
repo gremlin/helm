@@ -60,7 +60,7 @@ documentation [here](https://github.com/gremlin/helm/blob/master/gremlin-integra
 
 ```shell
 helm install gremlin-operator gremlin/gremlin-operator \
-    --namespace gremlin-operator-system --create-namespace
+    --namespace gremlin-system --create-namespace
 ```
 
 For more detailed instructions, see the chart's

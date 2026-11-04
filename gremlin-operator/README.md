@@ -9,21 +9,27 @@ Deployment, with the Gremlin CRDs and the RBAC they need. The operator then depl
 * Helm 3
 * Adding the Gremlin helm repo. `helm repo add gremlin https://helm.gremlin.com/ && helm repo update`
 * Permission to create cluster-scoped resources: the CRDs, ClusterRoles and ClusterRoleBindings.
-* Only one operator install per cluster works: the CRDs, ClusterRoles and the names `gremlin-system`, `gremlin-agent`
-  and `gremlin-chao` are cluster-wide or fixed by the operator.
+* Only one operator install per cluster works: the CRDs, ClusterRoles and the names `gremlin-agent` and `gremlin-chao`
+  are cluster-wide or fixed by the operator.
+* No `gremlin-system` namespace left from an older operator layout. See [Install](#install).
 
 ## Install
 
 ```shell
 helm install gremlin-operator gremlin/gremlin-operator \
-    --namespace gremlin-operator-system --create-namespace
+    --namespace gremlin-system --create-namespace
 ```
 
-The chart goes into the release namespace (`gremlin-operator-system` above), where both Deployments run. Use a
-dedicated namespace: the chart refuses `default`, `gremlin-system` and any `kube-` or `openshift-` namespace. See
-[Trust boundaries](#trust-boundaries). It also
-creates the install namespace `gremlin`, where the operator deploys agents, and the credential namespace
-`gremlin-system`.
+The operator runs in the release namespace, `gremlin-system` above, where both Deployments run. Agents and Chao run in
+the install namespace `gremlin`, which the chart creates. Team credentials live in the install namespace by default, or
+in any other namespace the credential manager can read. The chart refuses `default` and any `kube-` or `openshift-`
+namespace as the release namespace. See [Trust boundaries](#trust-boundaries).
+
+Clear a `gremlin-system` namespace that an older operator layout left behind before you install. `--create-namespace`
+neither adopts nor cleans an existing namespace, and the older layout kept the credential manager's Secret rights there,
+in a Role and RoleBinding that name a different operator namespace. Anyone who can claim that namespace would hold Secret
+write in `gremlin-system`. Delete the namespace, or delete the RoleBindings and workloads in it that are not the
+operator's, including `gremlin-operator-credential-manager-rolebinding` and `gremlin-operator-credential-manager-role`.
 
 Object names start with `gremlin-operator-` whatever the release is called, because the operator and its documentation
 refer to them by name. `fullnameOverride` and `nameOverride` change the prefix. Changing `nameOverride` while `fullnameOverride` is set changes
@@ -45,8 +51,6 @@ Deployment only. A setting you want on both is written in both blocks.
 | `fullnameOverride`                                 | Replaces the object name prefix. A DNS-1123 label of at most 28 characters                   | `""` (`gremlin-operator`)                                |
 | `installNamespace.name`                            | Namespace the operator deploys agents into. A new namespace, not a system namespace. [See below](#namespaces-and-uninstall) | `gremlin`                                                |
 | `installNamespace.create`                          | Create the install namespace, labelled privileged for Pod Security, and keep it on uninstall. [See below](#namespaces-and-uninstall) | `true`                                                  |
-| `gremlinSystemNamespace.create`                    | Create `gremlin-system` and keep it on uninstall. [See below](#namespaces-and-uninstall)     | `true`                                                   |
-| `credentialNamespaces`                             | Namespaces the credential manager may read. [See below](#credential-namespaces)             | `[]` (every namespace)                                   |
 | `reconciler.replicas`                              | Reconciler replicas. [See below](#high-availability)                                         | `3`                                                      |
 | `reconciler.logLevel`                              | `debug`, `info`, `error`, `panic` or a positive integer                                      | `""` (no flag)                                           |
 | `reconciler.resyncInterval`                        | Go duration such as `30s` or `1h30m`                                                         | `""` (the operator's `10m`)                              |
@@ -100,33 +104,22 @@ the last entry when a name appears twice, so an entry here overrides a chart-set
 If you override it, keep it below that process's memory limit. Overriding `POD_NAMESPACE` turns off the operator's check
 that the install namespace differs from its own namespace.
 
-## Credential namespaces
-
-By default the credential manager reads Secrets in the whole cluster and works in `gremlin-system`. Setting
-`credentialNamespaces` restricts it. The cluster-wide Secret binding is not rendered, each listed namespace other than
-`gremlin-system` gets a read-only Role and RoleBinding for the credential manager, and the credential manager is told to
-watch exactly the listed namespaces, in the order given. `gremlin-system` keeps its Role and is watched only when listed.
-
-The list must include `installNamespace.name`. The chart does not create the listed namespaces, so create them before
-you install. A listed namespace should hold only team-certificate Secrets, because the Role covers every Secret in it.
-The release namespace may not be listed, because Helm stores its release Secrets there, and neither may `default` or a
-`kube-` or `openshift-` namespace.
-
 ## Namespaces and uninstall
 
-With default values the chart creates the install namespace and `gremlin-system`, and marks both to be kept when you run
-`helm uninstall`. Uninstall removes every other object of the release, including the ServiceAccounts, Roles and
-RoleBindings inside those namespaces and all cluster-scoped bindings. It leaves both namespaces and every Secret you put
-in them. Never delete the kept namespaces: they hold credentials. A kept namespace still carries the release's ownership
-annotations, so installing again with the same release name and namespace adopts it.
+With default values the chart creates the install namespace and marks it to be kept when you run `helm uninstall`. The
+release namespace, `gremlin-system` in the install command, is made by `--create-namespace` and is not part of the
+release, so Helm leaves it too. Uninstall removes every other object of the release, including the ServiceAccounts,
+Roles and RoleBindings inside the namespaces and all cluster-scoped bindings. It leaves the install namespace and every
+Secret you put in it. Never delete the kept install namespace: it holds credentials. It still carries the release's
+ownership annotations, so installing again with the same release name and namespace adopts it.
 
-To reinstall under another release name, Helm refuses the kept namespaces because another release owns them. Set
-`installNamespace.create` and `gremlinSystemNamespace.create` to `false` for the reinstall instead of deleting anything.
-Setting one to `false` on a later upgrade leaves the existing namespace in place.
+To reinstall under another release name, Helm refuses the kept install namespace because another release owns it. Set
+`installNamespace.create` to `false` for the reinstall instead of deleting anything. Setting it to `false` on a later
+upgrade leaves the existing namespace in place.
 
 The chart always labels an install namespace it creates `pod-security.kubernetes.io/enforce: privileged`, on every
 cluster, because the agent pods run on the host's network and PID namespaces and Pod Security would refuse them
-otherwise. It does not label `gremlin-system`.
+otherwise. It does not label the release namespace.
 
 When `installNamespace.create` is `false`, the chart does not create or label the install namespace. On any cluster whose
 Pod Security default blocks privileged pods, not only OpenShift, add the label to the existing namespace yourself, with
@@ -173,7 +166,7 @@ These are the operator's own warnings, and they hold for a Helm install too.
 
 * Whoever can create workloads, exec into pods or mint tokens in the release namespace holds every Secret in the cluster,
   because the credential manager's ServiceAccount lives there and reads them. Give that namespace to people you trust
-  with every Secret. With `credentialNamespaces` set, the same applies to the listed namespaces only.
+  with every Secret. The chart always binds that cluster-wide read; it offers no way to narrow it to listed namespaces.
 * The install namespace must hold no ServiceAccount more privileged than `gremlin-agent`. The credential manager can
   create and read Secrets there, which includes ServiceAccount token Secrets.
 * Setting a `create` value to `false` adopts an existing namespace or ServiceAccount. Its existing admins and any tokens
@@ -187,6 +180,18 @@ These are the operator's own warnings, and they hold for a Helm install too.
 
 Webhooks are not supported in this chart version. `values.yaml` holds a commented placeholder where their settings will
 go.
+
+## Upgrading from an older operator layout
+
+This applies to development, demo and CI clusters that ran the operator in a namespace other than `gremlin-system`, with
+its Secret rights in a separate credential namespace. Remove that install and clear `gremlin-system` first, as
+[Install](#install) describes. Then install the chart. Apply the Agent CRD before or together with the new image: a
+CRD older than the credential manager makes its status write fail, so no credential is copied and the pods of an Agent
+that names proxy credentials, a trust bundle or an identity are held.
+
+The reconciler's NetworkPolicy admits metrics scrapers only from namespaces labelled `metrics=enabled`, and the older
+layout shipped no such policy. Label the namespaces your scrapers run in before the upgrade:
+`kubectl label namespace <namespace> metrics=enabled`.
 
 ## Upgrading CRDs
 
