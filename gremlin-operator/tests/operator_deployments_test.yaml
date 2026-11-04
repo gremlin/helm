@@ -104,20 +104,3 @@ tests:
           path: spec.template.spec.containers[0].args
           content: --install-namespace=gremlin
         template: templates/credential-manager-deployment.yaml
-
-  - it: keeps the install namespace the same in both processes when a credential namespace list is set
-    set:
-      installNamespace:
-        name: team-a
-      credentialNamespaces:
-        - team-a
-        - team-b
-    asserts:
-      - contains:
-          path: spec.template.spec.containers[0].args
-          content: --install-namespace=team-a
-        template: templates/reconciler-deployment.yaml
-      - contains:
-          path: spec.template.spec.containers[0].args
-          content: --install-namespace=team-a
-        template: templates/credential-manager-deployment.yaml

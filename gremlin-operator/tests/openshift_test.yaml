@@ -96,10 +96,12 @@ tests:
           path: metadata.name
           value: gremlin
       - notExists:
-          path: metadata.labels["pod-security.kubernetes.io/enforce"]
+          path: kind
         documentSelector:
-          path: metadata.name
-          value: gremlin-system
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin-system")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
 
   - it: labels a custom install namespace privileged when OpenShift is on
     set:
@@ -153,10 +155,12 @@ tests:
           path: metadata.name
           value: gremlin
       - notExists:
-          path: metadata.labels["pod-security.kubernetes.io/enforce"]
+          path: kind
         documentSelector:
-          path: metadata.name
-          value: gremlin-system
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin-system")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
 
   - it: still renders the OpenShift objects but no namespace label when the chart does not create the install namespace
     set:
@@ -180,10 +184,12 @@ tests:
           skipEmptyTemplates: true
         template: templates/namespaces.yaml
       - notExists:
-          path: metadata.labels["pod-security.kubernetes.io/enforce"]
+          path: kind
         documentSelector:
-          path: metadata.name
-          value: gremlin-system
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin-system")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
         template: templates/namespaces.yaml
 
   - it: refuses an OpenShift switch that is the string true
