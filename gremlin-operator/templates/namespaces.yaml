@@ -9,14 +9,3 @@ metadata:
   annotations:
     helm.sh/resource-policy: keep
 {{- end }}
-{{- if .Values.gremlinSystemNamespace.create }}
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: gremlin-system
-  labels:
-    {{- include "gremlin-operator.labels" . | nindent 4 }}
-  annotations:
-    helm.sh/resource-policy: keep
-{{- end }}

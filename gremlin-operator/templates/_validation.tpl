@@ -5,7 +5,6 @@ Compile all problems into a single message, and call fail.
 {{- $messages := list -}}
 {{- $messages = append $messages (include "gremlin-operator.validateValues.names" .) -}}
 {{- $messages = append $messages (include "gremlin-operator.validateValues.installNamespace" .) -}}
-{{- $messages = append $messages (include "gremlin-operator.validateValues.credentialNamespaces" .) -}}
 {{- $messages = append $messages (include "gremlin-operator.validateValues.releaseNamespace" .) -}}
 {{- $messages = append $messages (include "gremlin-operator.validateValues.process" (dict "path" "reconciler" "process" .Values.reconciler)) -}}
 {{- $messages = append $messages (include "gremlin-operator.validateValues.process" (dict "path" "credentialManager" "process" .Values.credentialManager)) -}}
@@ -52,8 +51,6 @@ Service, <prefix>-credential-manager-metrics-service, which has to fit in 63 cha
 - installNamespace.name must not be empty.
 {{- else if not (and (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$" $ns) (le (len $ns) 63)) -}}
 - installNamespace.name {{ $ns | quote }} is not a valid namespace name (a DNS-1123 label of at most 63 characters).
-{{- else if eq $ns "gremlin-system" -}}
-- installNamespace.name must not be gremlin-system, the credential namespace; the operator processes refuse to start with it.
 {{- else if eq $ns .Release.Namespace -}}
 - installNamespace.name {{ $ns | quote }} is the release namespace; the operator processes refuse to start with their own namespace as the install namespace.
 {{- else if include "gremlin-operator.systemNamespace" $ns -}}
@@ -61,44 +58,9 @@ Service, <prefix>-credential-manager-metrics-service, which has to fit in 63 cha
 {{- end -}}
 {{- end -}}
 
-{{- define "gremlin-operator.validateValues.credentialNamespaces" -}}
-{{- $list := .Values.credentialNamespaces -}}
-{{- if not (kindIs "slice" $list) -}}
-- credentialNamespaces must be a list of namespace names.
-{{- else -}}
-{{- $errors := list -}}
-{{- $seen := list -}}
-{{- range $i, $entry := $list -}}
-{{- $ns := toString $entry -}}
-{{- if or (kindIs "invalid" $entry) (eq $ns "") -}}
-{{- $errors = append $errors (printf "- credentialNamespaces[%d] must not be empty." $i) -}}
-{{- else if not (and (regexMatch "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$" $ns) (le (len $ns) 63)) -}}
-{{- $errors = append $errors (printf "- credentialNamespaces[%d] %q is not a valid namespace name (a DNS-1123 label of at most 63 characters)." $i $ns) -}}
-{{- else if has $ns $seen -}}
-{{- $errors = append $errors (printf "- credentialNamespaces[%d] %q is listed more than once." $i $ns) -}}
-{{- else if eq $ns $.Release.Namespace -}}
-{{- $errors = append $errors (printf "- credentialNamespaces[%d] %q is the release namespace; a credential namespace holds only team-certificate Secrets and the release's own Secrets live in the release namespace." $i $ns) -}}
-{{- else if include "gremlin-operator.systemNamespace" $ns -}}
-{{- $errors = append $errors (printf "- credentialNamespaces[%d] %q is a system namespace; the credential manager can read every Secret in a listed namespace, so it must not be default, kube-* or openshift-*." $i $ns) -}}
-{{- end -}}
-{{- $seen = append $seen $ns -}}
-{{- end -}}
-{{- if and $list (not (has (toString $.Values.installNamespace.name) $seen)) -}}
-{{- $errors = append $errors (printf "- credentialNamespaces must list installNamespace.name %q when it is not empty, or the Agent reports InstallNamespaceNotWatched." (toString $.Values.installNamespace.name)) -}}
-{{- end -}}
-{{- join "\n" $errors -}}
-{{- end -}}
-{{- end -}}
-
-{{/*
-Helm stores its release Secrets in the release namespace, and the credential namespace is dedicated to Secrets of
-team certificates.
-*/}}
 {{- define "gremlin-operator.validateValues.releaseNamespace" -}}
-{{- if eq .Release.Namespace "gremlin-system" -}}
-- the release namespace (--namespace) is gremlin-system, the credential namespace; install the chart into its own namespace such as gremlin-operator-system.
-{{- else if include "gremlin-operator.systemNamespace" .Release.Namespace -}}
-- the release namespace (--namespace) {{ .Release.Namespace | quote }} is a system namespace. The credential manager's ServiceAccount lives there and can read every Secret in the cluster, so anyone who can create workloads, exec into pods or mint tokens in it holds those Secrets. Install into a dedicated namespace such as gremlin-operator-system.
+{{- if include "gremlin-operator.systemNamespace" .Release.Namespace -}}
+- the release namespace (--namespace) {{ .Release.Namespace | quote }} is a system namespace. The credential manager's ServiceAccount lives there and can read every Secret in the cluster, so anyone who can create workloads, exec into pods or mint tokens in it holds those Secrets. Install into a dedicated namespace such as gremlin-system.
 {{- end -}}
 {{- end -}}
 

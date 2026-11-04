@@ -131,7 +131,7 @@ metadata:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
 rules:
   - apiGroups:
-      - ""
+      - events.k8s.io
     resources:
       - events
     verbs:

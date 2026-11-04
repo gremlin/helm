@@ -9,7 +9,3 @@ blocks privileged pods, label it yourself, or agent pods are refused:
 
   kubectl label namespace {{ .Values.installNamespace.name }} pod-security.kubernetes.io/enforce=privileged
 {{- end }}
-{{- if .Values.credentialNamespaces }}
-
-The credential manager watches only: {{ join ", " .Values.credentialNamespaces }}. Each of these namespaces must exist.
-{{- end }}

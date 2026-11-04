@@ -4,7 +4,6 @@ release:
   namespace: gremlin-operator-system
 templates:
   - NOTES.txt
-  - templates/credential-manager-rbac.yaml
   - templates/credential-manager-deployment.yaml
   - templates/reconciler-deployment.yaml
   - templates/metrics.yaml
@@ -62,42 +61,6 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: 'release namespace[^\n]*"openshift-operators" is a system namespace'
-
-  - it: refuses a system namespace among the credential namespaces
-    template: NOTES.txt
-    set:
-      credentialNamespaces:
-        - gremlin
-        - kube-system
-    asserts:
-      - failedTemplate:
-          errorPattern: 'credentialNamespaces\[1\] "kube-system" is a system namespace'
-
-  - it: names the value path when credentialNamespaces is a string
-    template: NOTES.txt
-    set:
-      credentialNamespaces: gremlin
-    asserts:
-      - failedTemplate:
-          errorPattern: 'credentialNamespaces must be a list'
-
-  - it: accepts a numeric credential namespace name and quotes it
-    set:
-      credentialNamespaces:
-        - gremlin
-        - 123
-    asserts:
-      - equal:
-          path: metadata.namespace
-          value: "123"
-        documentSelector:
-          path: $[?(@.kind=="Role" && @.metadata.namespace=="123")].metadata.name
-          value: gremlin-operator-credential-manager-readonly-role
-        template: templates/credential-manager-rbac.yaml
-      - contains:
-          path: spec.template.spec.containers[0].args
-          content: --credential-namespaces=gremlin,123
-        template: templates/credential-manager-deployment.yaml
 
   - it: refuses an invalid nameOverride even when fullnameOverride is set
     template: NOTES.txt
