@@ -57,7 +57,7 @@ Service, <prefix>-credential-manager-metrics-service, which has to fit in 63 cha
 {{- else if eq $ns .Release.Namespace -}}
 - installNamespace.name {{ $ns | quote }} is the release namespace; the operator processes refuse to start with their own namespace as the install namespace.
 {{- else if include "gremlin-operator.systemNamespace" $ns -}}
-- installNamespace.name {{ $ns | quote }} is a system namespace. Use a new namespace: the credential manager gets write access to Secrets in the install namespace and the reconciler can create workloads there, so it must not be default, kube-* or openshift-*.
+- installNamespace.name {{ $ns | quote }} is a system namespace. Use a new namespace: the credential manager gets write access to Secrets in the install namespace and the reconciler can create workloads there, so it must not be default, openshift, kube-* or openshift-*.
 {{- end -}}
 {{- end -}}
 
@@ -65,10 +65,11 @@ Service, <prefix>-credential-manager-metrics-service, which has to fit in 63 cha
 {{- if include "gremlin-operator.systemNamespace" .Release.Namespace -}}
 - the release namespace (--namespace) {{ .Release.Namespace | quote }} is a system namespace. The credential manager's ServiceAccount lives there and can read every Secret in the cluster, so anyone who can create workloads, exec into pods or mint tokens in it holds those Secrets. Install into a dedicated namespace such as gremlin-system.
 {{- end -}}
-{{- $prefix := include "gremlin-operator.prefix" . -}}
+{{- range $prefix := uniq (list "gremlin-operator" (include "gremlin-operator.prefix" .)) -}}
 {{- range $old := list (dict "kind" "Role" "name" (printf "%s-credential-manager-role" $prefix)) (dict "kind" "RoleBinding" "name" (printf "%s-credential-manager-rolebinding" $prefix)) -}}
 {{- if lookup "rbac.authorization.k8s.io/v1" $old.kind $.Release.Namespace $old.name }}
 - the release namespace {{ $.Release.Namespace | quote }} still holds the {{ $old.kind }} {{ $old.name | quote }} that an older operator layout granted the credential manager there. Delete it before installing: it gives Secret write in this namespace to a ServiceAccount of another namespace.
+{{- end -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}
