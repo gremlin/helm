@@ -61,7 +61,7 @@ spec:
             - --leader-elect
             - --health-probe-bind-address=:8081
             - --metrics-bind-address=:8443
-            - {{ printf "--install-namespace=%s" .Values.installNamespace.name | quote }}
+            - {{ printf "--install-namespace=%s" (toString .Values.installNamespace.name) | quote }}
             {{- if not .Values.agent.nodeRead.enabled }}
             - --agent-node-read=false
             {{- end }}

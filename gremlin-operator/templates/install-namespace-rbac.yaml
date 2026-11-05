@@ -1,5 +1,5 @@
 {{- $prefix := include "gremlin-operator.prefix" . }}
-{{- $namespace := .Values.installNamespace.name }}
+{{- $namespace := toString .Values.installNamespace.name }}
 {{- $reconciler := include "gremlin-operator.reconcilerName" . }}
 {{- $credentialManager := include "gremlin-operator.credentialManagerName" . }}
 apiVersion: v1
