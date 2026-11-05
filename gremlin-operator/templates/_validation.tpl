@@ -63,7 +63,7 @@ Service, <prefix>-credential-manager-metrics-service, which has to fit in 63 cha
 
 {{- define "gremlin-operator.validateValues.releaseNamespace" -}}
 {{- if include "gremlin-operator.systemNamespace" .Release.Namespace -}}
-- the release namespace (--namespace) {{ .Release.Namespace | quote }} is a system namespace. The credential manager's ServiceAccount lives there and can read every Secret in the cluster, so anyone who can create workloads, exec into pods or mint tokens in it holds those Secrets. Install into a dedicated namespace such as gremlin-system.
+- the release namespace (--namespace) {{ .Release.Namespace | quote }} is a system namespace. The credential manager's ServiceAccount lives there and can read every Secret in the cluster, so anyone who can create workloads, exec into pods or mint tokens in it holds those Secrets. Install into a dedicated namespace of your own.
 {{- end -}}
 {{- range $prefix := uniq (list "gremlin-operator" (include "gremlin-operator.prefix" .)) -}}
 {{- range $old := list (dict "kind" "Role" "name" (printf "%s-credential-manager-role" $prefix)) (dict "kind" "RoleBinding" "name" (printf "%s-credential-manager-rolebinding" $prefix)) -}}
