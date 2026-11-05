@@ -21,7 +21,8 @@ image:
 imagePullSecrets: []
 
 # nameOverride -
-# Replaces the chart name in the `app.kubernetes.io/name` label and in the object name prefix. A DNS-1123 label.
+# Replaces the chart name in the `app.kubernetes.io/name` label and in the object name prefix. A DNS-1123 label, of
+# at most 28 characters when `fullnameOverride` is empty.
 # Changing it while `fullnameOverride` is set changes the Deployments' immutable selector, and the upgrade fails.
 nameOverride: ""
 # fullnameOverride -
@@ -32,9 +33,9 @@ fullnameOverride: ""
 installNamespace:
   # installNamespace.name -
   # The namespace the operator deploys agents into, and where team credentials live by default. Both processes get
-  # this one value. Use a new namespace, not `default`, the release namespace, or a `kube-` or `openshift-` namespace:
+  # this one value. Use a new namespace, not `default`, `openshift`, the release namespace, or a `kube-` or `openshift-` namespace:
   # the credential manager gets write access to Secrets there and the reconciler can create workloads there, so it must
-  # hold no ServiceAccount more privileged than the agent's. Do not reuse the namespace of another Gremlin install.
+  # hold no ServiceAccount more privileged than the agent's or Chao's. Do not reuse the namespace of another Gremlin install.
   # Renaming it on upgrade deletes the ServiceAccounts and grants in the old namespace; delete your Agents first.
   name: gremlin
   # installNamespace.create -
@@ -50,7 +51,7 @@ reconciler:
   # others stand by. The operator's own install runs one replica on purpose; this chart does not.
   replicas: 3
   # reconciler.logLevel -
-  # Log level: debug, info, error, panic or a positive integer. Empty passes no flag.
+  # Log level: debug, info, error, panic or a positive integer up to 127. Empty passes no flag.
   logLevel: ""
   # reconciler.resyncInterval -
   # How often the reconciler re-checks every resource, as a Go duration such as `30s` or `1h30m`. Empty keeps the
@@ -112,7 +113,7 @@ credentialManager:
   # and the others stand by. The operator's own install runs one replica on purpose; this chart does not.
   replicas: 3
   # credentialManager.logLevel -
-  # Log level: debug, info, error, panic or a positive integer. Empty passes no flag. Development mode stays off
+  # Log level: debug, info, error, panic or a positive integer up to 127. Empty passes no flag. Development mode stays off
   # whatever the level.
   logLevel: ""
   # credentialManager.resyncInterval -

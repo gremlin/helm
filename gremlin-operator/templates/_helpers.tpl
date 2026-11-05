@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "gremlin-operator.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default .Chart.Name (default "" .Values.nameOverride | toString) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -10,7 +10,7 @@ The prefix of every object name the chart owns. The release name never enters it
 refer to these objects by name, and only one operator can run in a cluster.
 */}}
 {{- define "gremlin-operator.prefix" -}}
-{{- default (include "gremlin-operator.name" .) .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
+{{- default (include "gremlin-operator.name" .) (default "" .Values.fullnameOverride | toString) | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{- define "gremlin-operator.reconcilerName" -}}
@@ -29,7 +29,7 @@ Create chart name and version as used by the chart label.
 {{- end }}
 
 {{/*
-Labels on every object's metadata. Selectors use gremlin-operator.selectorLabels, never these.
+Labels on every object's metadata. Selectors are written out in each template and never use these.
 */}}
 {{- define "gremlin-operator.labels" -}}
 helm.sh/chart: {{ include "gremlin-operator.chart" . }}

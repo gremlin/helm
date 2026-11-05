@@ -20,10 +20,10 @@ Compile all problems into a single message, and call fail.
 {{- end -}}
 
 {{/*
-Names the operator and its documentation reserve for the system. Returns "yes" for default, kube-* and openshift-*.
+Names the operator and its documentation reserve for the system. Returns "yes" for default, openshift, kube-* and openshift-*.
 */}}
 {{- define "gremlin-operator.systemNamespace" -}}
-{{- if or (eq . "default") (hasPrefix "kube-" .) (hasPrefix "openshift-" .) -}}yes{{- end -}}
+{{- if or (eq . "default") (eq . "openshift") (hasPrefix "kube-" .) (hasPrefix "openshift-" .) -}}yes{{- end -}}
 {{- end -}}
 
 {{/*
@@ -72,13 +72,16 @@ Takes a dict with path (reconciler or credentialManager) and process (that block
 */}}
 {{- define "gremlin-operator.validateValues.process" -}}
 {{- $errors := list -}}
+{{- if not (regexMatch "^[0-9]+$" (toString .process.replicas)) -}}
+{{- $errors = append $errors (printf "- %s.replicas must be a whole number of 0 or more, but is %s." .path (toJson .process.replicas)) -}}
+{{- end -}}
 {{- $resync := ternary "" (toString .process.resyncInterval) (kindIs "invalid" .process.resyncInterval) -}}
 {{- if and (ne $resync "") (not (and (regexMatch "^\\+?(([0-9]+(\\.[0-9]*)?|\\.[0-9]+)(ns|us|µs|μs|ms|s|m|h))+$" $resync) (regexMatch "[1-9]" $resync))) -}}
 {{- $errors = append $errors (printf "- %s.resyncInterval %q is not a positive duration such as 30s or 1h30m." .path $resync) -}}
 {{- end -}}
 {{- $level := ternary "" (toString .process.logLevel) (kindIs "invalid" .process.logLevel) -}}
-{{- if and (ne $level "") (not (or (regexMatch "(?i)^(debug|info|error|panic)$" $level) (and (regexMatch "^[0-9]+$" $level) (regexMatch "[1-9]" $level)))) -}}
-{{- $errors = append $errors (printf "- %s.logLevel %q is not one of debug, info, error, panic or a positive integer." .path $level) -}}
+{{- if and (ne $level "") (not (or (regexMatch "(?i)^(debug|info|error|panic)$" $level) (and (regexMatch "^[0-9]+$" $level) (regexMatch "[1-9]" $level) (le (len $level) 3) (le (atoi $level) 127)))) -}}
+{{- $errors = append $errors (printf "- %s.logLevel %q is not one of debug, info, error, panic or a positive integer up to 127." .path $level) -}}
 {{- end -}}
 {{- join "\n" $errors -}}
 {{- end -}}

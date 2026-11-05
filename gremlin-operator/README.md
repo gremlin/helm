@@ -22,7 +22,8 @@ helm install gremlin-operator gremlin/gremlin-operator \
 
 The operator runs in the release namespace, `gremlin-system` above, where both Deployments run. Agents and Chao run in
 the install namespace `gremlin`, which the chart creates. Team credentials live in the install namespace by default, or
-in any other namespace the credential manager can read. The chart refuses `default` and any `kube-` or `openshift-`
+in any other namespace the credential manager can read, but never in the release namespace: the operator's own Secrets
+live there, and anyone who can create workloads there holds the credential manager's identity. The chart refuses `default`, `openshift` and any `kube-` or `openshift-`
 namespace as the release namespace. See [Trust boundaries](#trust-boundaries).
 
 Clean a `gremlin-system` namespace that an older operator layout left behind before you install. `--create-namespace`
@@ -50,12 +51,12 @@ Deployment only. A setting you want on both is written in both blocks.
 | `image.tag`                                        | Image tag                                                                                    | `""` (the chart `appVersion`)                            |
 | `image.pullPolicy`                                 | Container pull policy for both processes                                                     | `IfNotPresent`                                           |
 | `imagePullSecrets`                                 | Pull secrets for a private registry, added to both Deployments                               | `[]`                                                     |
-| `nameOverride`                                     | Replaces the chart name in the `app.kubernetes.io/name` label and the object name prefix     | `""`                                                     |
+| `nameOverride`                                     | Replaces the chart name in the `app.kubernetes.io/name` label and the object name prefix, at most 28 characters when `fullnameOverride` is empty | `""`                                                     |
 | `fullnameOverride`                                 | Replaces the object name prefix. A DNS-1123 label of at most 28 characters                   | `""` (`gremlin-operator`)                                |
 | `installNamespace.name`                            | Namespace the operator deploys agents into. A new namespace, not a system namespace. [See below](#namespaces-and-uninstall) | `gremlin`                                                |
 | `installNamespace.create`                          | Create the install namespace, labelled privileged for Pod Security, and keep it on uninstall. [See below](#namespaces-and-uninstall) | `true`                                                  |
 | `reconciler.replicas`                              | Reconciler replicas. [See below](#high-availability)                                         | `3`                                                      |
-| `reconciler.logLevel`                              | `debug`, `info`, `error`, `panic` or a positive integer                                      | `""` (no flag)                                           |
+| `reconciler.logLevel`                              | `debug`, `info`, `error`, `panic` or a positive integer up to 127                           | `""` (no flag)                                           |
 | `reconciler.resyncInterval`                        | Go duration such as `30s` or `1h30m`                                                         | `""` (the operator's `10m`)                              |
 | `reconciler.serviceAccount.create`                 | Create the reconciler ServiceAccount                                                         | `true`                                                   |
 | `reconciler.serviceAccount.annotations`            | Annotations for the reconciler ServiceAccount                                                | `{}`                                                     |
@@ -69,7 +70,7 @@ Deployment only. A setting you want on both is written in both blocks.
 | `reconciler.securityContext`                       | Container security context                                                                   | `allowPrivilegeEscalation: false`, drop `ALL`            |
 | `reconciler.extraEnv`                              | Environment variables, rendered after the chart's own. [See below](#environment-variables)   | `[]`                                                     |
 | `credentialManager.replicas`                       | Credential manager replicas. [See below](#high-availability)                                 | `3`                                                      |
-| `credentialManager.logLevel`                       | `debug`, `info`, `error`, `panic` or a positive integer                                      | `""` (no flag)                                           |
+| `credentialManager.logLevel`                       | `debug`, `info`, `error`, `panic` or a positive integer up to 127                           | `""` (no flag)                                           |
 | `credentialManager.resyncInterval`                 | Go duration such as `30s` or `1h30m`                                                         | `""` (the operator's `10m`)                              |
 | `credentialManager.serviceAccount.create`          | Create the credential manager ServiceAccount                                                 | `true`                                                   |
 | `credentialManager.serviceAccount.annotations`     | Annotations for the credential manager ServiceAccount                                        | `{}`                                                     |
@@ -96,7 +97,9 @@ Each process runs three replicas by default. Each process elects a leader, so on
 two stand by; the operator's own install runs one replica, and this chart does not. The chart adds no PodDisruptionBudget,
 pod anti-affinity or topology spread constraints, so the replicas of a process can land on the same node. To spread them,
 set `affinity` in the process's block, `reconciler` or `credentialManager`. Three replicas of each process need room for
-six small pods, so on a single-node or kind cluster you may want to set both `replicas` to `1`.
+six small pods, so on a single-node or kind cluster you may want to set both `replicas` to `1`. Every credential manager
+replica, standby included, holds the ServiceAccount token that reads every Secret in the cluster; use
+`credentialManager.nodeSelector` or `affinity` to keep them on nodes you trust.
 
 ## Environment variables
 
@@ -113,7 +116,9 @@ With default values the chart creates the install namespace and marks it to be k
 release namespace, `gremlin-system` in the install command, is made by `--create-namespace` and is not part of the
 release, so Helm leaves it too. Uninstall removes every other object of the release, including the ServiceAccounts,
 Roles and RoleBindings inside the namespaces and all cluster-scoped bindings. It leaves the install namespace and every
-Secret you put in it. Never delete the kept install namespace: it holds credentials. It still carries the release's
+Secret you put in it. Never delete the kept install namespace: it holds credentials. It also stays labelled privileged, so once no Agent runs
+there, remove the label with `kubectl label namespace <name> pod-security.kubernetes.io/enforce-` or restrict who can
+create pods in it. It still carries the release's
 ownership annotations, so installing again with the same release name and namespace adopts it.
 
 To reinstall under another release name, Helm refuses the kept install namespace because another release owns it. Set
@@ -170,7 +175,7 @@ These are the operator's own warnings, and they hold for a Helm install too.
 * Whoever can create workloads, exec into pods or mint tokens in the release namespace holds every Secret in the cluster,
   because the credential manager's ServiceAccount lives there and reads them. Give that namespace to people you trust
   with every Secret. The chart always binds that cluster-wide read; it offers no way to narrow it to listed namespaces.
-* The install namespace must hold no ServiceAccount more privileged than `gremlin-agent`. The credential manager can
+* The install namespace must hold no ServiceAccount more privileged than `gremlin-agent` and `gremlin-chao`. The credential manager can
   create and read Secrets there, which includes ServiceAccount token Secrets.
 * Setting a `create` value to `false` adopts an existing namespace or ServiceAccount. Its existing admins and any tokens
   already minted for it keep working with the rights this chart grants.

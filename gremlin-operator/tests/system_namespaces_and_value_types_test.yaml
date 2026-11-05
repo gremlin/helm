@@ -191,3 +191,55 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].args
           content: "--resync-interval=+1.s"
+
+  - it: refuses openshift as the release namespace
+    release:
+      namespace: openshift
+    template: NOTES.txt
+    asserts:
+      - failedTemplate:
+          errorPattern: 'release namespace \(--namespace\) "openshift" is a system namespace'
+
+  - it: refuses openshift as the install namespace
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: openshift
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name "openshift" is a system namespace'
+
+  - it: refuses a reconciler replica count that is not a whole number
+    template: NOTES.txt
+    set:
+      reconciler:
+        replicas: three
+    asserts:
+      - failedTemplate:
+          errorPattern: 'reconciler\.replicas must be a whole number of 0 or more, but is "three"'
+
+  - it: refuses a negative credential manager replica count
+    template: NOTES.txt
+    set:
+      credentialManager:
+        replicas: -1
+    asserts:
+      - failedTemplate:
+          errorPattern: 'credentialManager\.replicas must be a whole number of 0 or more, but is -1'
+
+  - it: refuses a numeric log level above 127
+    template: NOTES.txt
+    set:
+      reconciler:
+        logLevel: "200"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'reconciler\.logLevel "200" is not one of debug, info, error, panic or a positive integer up to 127'
+
+  - it: refuses a numeric fullnameOverride with the prefix message
+    template: NOTES.txt
+    set:
+      fullnameOverride: 123
+    asserts:
+      - failedTemplate:
+          errorPattern: 'prefix "123" must start with a lowercase letter'
