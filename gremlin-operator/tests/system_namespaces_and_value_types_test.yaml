@@ -243,3 +243,47 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: 'prefix "123" must start with a lowercase letter'
+
+  - it: refuses a resync interval above what the operator can parse
+    template: NOTES.txt
+    set:
+      reconciler:
+        resyncInterval: 3000000h
+    asserts:
+      - failedTemplate:
+          errorPattern: 'reconciler\.resyncInterval "3000000h" is outside what the operator accepts'
+
+  - it: refuses a resync interval that rounds to zero nanoseconds
+    template: NOTES.txt
+    set:
+      credentialManager:
+        resyncInterval: 0.0000000001s
+    asserts:
+      - failedTemplate:
+          errorPattern: 'credentialManager\.resyncInterval "0\.0000000001s" is outside what the operator accepts'
+
+  - it: accepts a sum of units below the limit
+    template: templates/reconciler-deployment.yaml
+    set:
+      reconciler:
+        resyncInterval: 1h30m15.5s
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--resync-interval=1h30m15.5s"
+
+  - it: renders numeric pod annotations and node selector values as strings
+    template: templates/reconciler-deployment.yaml
+    set:
+      reconciler:
+        podAnnotations:
+          prometheus.io/port: 8443
+        nodeSelector:
+          rack: 7
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["prometheus.io/port"]
+          value: "8443"
+      - equal:
+          path: spec.template.spec.nodeSelector.rack
+          value: "7"

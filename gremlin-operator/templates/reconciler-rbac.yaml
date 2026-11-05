@@ -10,7 +10,7 @@ metadata:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
   {{- with .Values.reconciler.serviceAccount.annotations }}
   annotations:
-    {{- toYaml . | nindent 4 }}
+    {{- include "gremlin-operator.stringMap" . | trim | nindent 4 }}
   {{- end }}
 ---
 {{- end }}

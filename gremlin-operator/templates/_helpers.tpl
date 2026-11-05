@@ -47,3 +47,13 @@ The one image both processes run; the command picks the process.
 {{- define "gremlin-operator.image" -}}
 {{- printf "%s:%s" .Values.image.repository (default .Chart.AppVersion .Values.image.tag | toString) }}
 {{- end }}
+
+{{/*
+Renders a map of strings as YAML with every key and value quoted, so a value such as 8443 stays a string where the API
+requires one (annotations, nodeSelector).
+*/}}
+{{- define "gremlin-operator.stringMap" -}}
+{{- range $key, $value := . -}}
+{{ $key | quote }}: {{ toString $value | quote }}{{ "\n" }}
+{{- end -}}
+{{- end -}}

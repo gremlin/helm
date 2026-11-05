@@ -20,7 +20,7 @@ spec:
   template:
     metadata:
       annotations:
-        {{- toYaml $podAnnotations | nindent 8 }}
+        {{- include "gremlin-operator.stringMap" $podAnnotations | trim | nindent 8 }}
       labels:
         app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
         app.kubernetes.io/component: reconciler
@@ -41,7 +41,7 @@ spec:
       {{- end }}
       {{- with .Values.reconciler.nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
+        {{- include "gremlin-operator.stringMap" . | trim | nindent 8 }}
       {{- end }}
       {{- with .Values.reconciler.affinity }}
       affinity:

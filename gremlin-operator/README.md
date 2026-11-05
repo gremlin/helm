@@ -29,7 +29,7 @@ namespace as the release namespace. See [Trust boundaries](#trust-boundaries).
 Clean a `gremlin-system` namespace that an older operator layout left behind before you install. `--create-namespace`
 neither adopts nor cleans an existing namespace, and the older layout kept the credential manager's Secret rights there,
 in a Role and RoleBinding that name a different operator namespace. Anyone who can claim that namespace would hold Secret
-write in `gremlin-system`. Delete those grants in place: the RoleBindings and workloads in it that are not the
+write in `gremlin-system`. On a real install the chart refuses to continue while either object exists. Delete those grants in place: the RoleBindings and workloads in it that are not the
 operator's, including `gremlin-operator-credential-manager-rolebinding` and `gremlin-operator-credential-manager-role`.
 Do not delete the namespace while team credential Secrets or `TeamCredential` resources are in it, because deleting it
 deletes them and installing the chart does not restore them. If you must delete it, back them up first and re-create

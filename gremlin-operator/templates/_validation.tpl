@@ -65,6 +65,12 @@ Service, <prefix>-credential-manager-metrics-service, which has to fit in 63 cha
 {{- if include "gremlin-operator.systemNamespace" .Release.Namespace -}}
 - the release namespace (--namespace) {{ .Release.Namespace | quote }} is a system namespace. The credential manager's ServiceAccount lives there and can read every Secret in the cluster, so anyone who can create workloads, exec into pods or mint tokens in it holds those Secrets. Install into a dedicated namespace such as gremlin-system.
 {{- end -}}
+{{- $prefix := include "gremlin-operator.prefix" . -}}
+{{- range $old := list (dict "kind" "Role" "name" (printf "%s-credential-manager-role" $prefix)) (dict "kind" "RoleBinding" "name" (printf "%s-credential-manager-rolebinding" $prefix)) -}}
+{{- if lookup "rbac.authorization.k8s.io/v1" $old.kind $.Release.Namespace $old.name }}
+- the release namespace {{ $.Release.Namespace | quote }} still holds the {{ $old.kind }} {{ $old.name | quote }} that an older operator layout granted the credential manager there. Delete it before installing: it gives Secret write in this namespace to a ServiceAccount of another namespace.
+{{- end -}}
+{{- end -}}
 {{- end -}}
 
 {{/*
@@ -78,6 +84,16 @@ Takes a dict with path (reconciler or credentialManager) and process (that block
 {{- $resync := ternary "" (toString .process.resyncInterval) (kindIs "invalid" .process.resyncInterval) -}}
 {{- if and (ne $resync "") (not (and (regexMatch "^\\+?(([0-9]+(\\.[0-9]*)?|\\.[0-9]+)(ns|us|µs|μs|ms|s|m|h))+$" $resync) (regexMatch "[1-9]" $resync))) -}}
 {{- $errors = append $errors (printf "- %s.resyncInterval %q is not a positive duration such as 30s or 1h30m." .path $resync) -}}
+{{- end -}}
+{{- if and (ne $resync "") (regexMatch "^\\+?(([0-9]+(\\.[0-9]*)?|\\.[0-9]+)(ns|us|µs|μs|ms|s|m|h))+$" $resync) -}}
+{{- $units := dict "ns" 1.0 "us" 1000.0 "µs" 1000.0 "μs" 1000.0 "ms" 1000000.0 "s" 1000000000.0 "m" 60000000000.0 "h" 3600000000000.0 -}}
+{{- $total := 0.0 -}}
+{{- range $part := regexFindAll "([0-9]+(\\.[0-9]*)?|\\.[0-9]+)(ns|us|µs|μs|ms|s|m|h)" $resync -1 -}}
+{{- $total = addf $total (mulf (float64 (regexFind "^[0-9.]+" $part)) (get $units (regexFind "[a-zµμ]+$" $part))) -}}
+{{- end -}}
+{{- if or (lt $total 1.0) (ge $total 9223372036854775807.0) -}}
+{{- $errors = append $errors (printf "- %s.resyncInterval %q is outside what the operator accepts: at least 1ns and below about 2562047h." $.path $resync) -}}
+{{- end -}}
 {{- end -}}
 {{- $level := ternary "" (toString .process.logLevel) (kindIs "invalid" .process.logLevel) -}}
 {{- if and (ne $level "") (not (or (regexMatch "(?i)^(debug|info|error|panic)$" $level) (and (regexMatch "^[0-9]+$" $level) (regexMatch "[1-9]" $level) (le (len $level) 3) (le (atoi $level) 127)))) -}}
