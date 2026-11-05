@@ -52,6 +52,10 @@ its source value (as the container-driver sockets do) over hardcoding it, when t
 small, fixed-shape values block — hardcoding only the GPU vendor gap below because that block's
 shape is genuinely open-ended.
 
+The `gremlin-operator` chart offers no named-fragment values (no `extraVolumes`, `extraVolumeMounts` or
+`initContainers`). Its Deployments' only container is `manager` and they own no volumes, so whoever adds such a value
+adds that process's reserved list and the collision check with it.
+
 **Known gap:** `gremlin.gpu.<vendor>` blocks are still static. A hand-configured vendor's
 `volumes`/`volumeMounts` entries are not covered by the check — a collision there surfaces only as
 a Kubernetes API rejection at apply time, not a chart-level failure. Whoever adds a vendor block

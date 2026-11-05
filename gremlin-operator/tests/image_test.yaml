@@ -1,0 +1,91 @@
+suite: operator image
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - templates/reconciler-deployment.yaml
+  - templates/credential-manager-deployment.yaml
+chart:
+  appVersion: "9.8.7"
+tests:
+  - it: runs both processes from gremlin/gremlin-operator at the chart appVersion by default
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: gremlin/gremlin-operator:9.8.7
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: gremlin/gremlin-operator:9.8.7
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: IfNotPresent
+        template: templates/credential-manager-deployment.yaml
+
+  - it: uses an explicit image tag in both processes in place of the appVersion
+    set:
+      image:
+        tag: custom-tag
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: gremlin/gremlin-operator:custom-tag
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: gremlin/gremlin-operator:custom-tag
+        template: templates/credential-manager-deployment.yaml
+
+  - it: uses an explicit image repository and pull policy in both processes
+    set:
+      image:
+        repository: registry.example.com/mirror/gremlin-operator
+        tag: v1
+        pullPolicy: Always
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/gremlin-operator:v1
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: registry.example.com/mirror/gremlin-operator:v1
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].imagePullPolicy
+          value: Always
+        template: templates/credential-manager-deployment.yaml
+
+  - it: passes image pull secrets to both Deployments
+    set:
+      imagePullSecrets:
+        - name: registry-credentials
+    asserts:
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.imagePullSecrets
+          value:
+            - name: registry-credentials
+        template: templates/credential-manager-deployment.yaml
+
+  - it: renders no image pull secrets by default
+    asserts:
+      - notExists:
+          path: spec.template.spec.imagePullSecrets
+        template: templates/reconciler-deployment.yaml
+      - notExists:
+          path: spec.template.spec.imagePullSecrets
+        template: templates/credential-manager-deployment.yaml

@@ -1,0 +1,97 @@
+{{- $prefix := include "gremlin-operator.prefix" . }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $prefix }}-controller-manager-metrics-service
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+    app.kubernetes.io/component: reconciler
+    control-plane: controller-manager
+spec:
+  ports:
+    - name: https
+      port: 8443
+      protocol: TCP
+      targetPort: 8443
+  selector:
+    app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
+    app.kubernetes.io/component: reconciler
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $prefix }}-credential-manager-metrics-service
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+    app.kubernetes.io/component: credential-manager
+spec:
+  ports:
+    - name: https
+      port: 8444
+      protocol: TCP
+      targetPort: 8444
+  selector:
+    app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
+    app.kubernetes.io/component: credential-manager
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $prefix }}-allow-metrics-traffic
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+    app.kubernetes.io/component: reconciler
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
+      app.kubernetes.io/component: reconciler
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              metrics: enabled
+      ports:
+        - port: 8443
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $prefix }}-credential-manager-allow-metrics-traffic
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+    app.kubernetes.io/component: credential-manager
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
+      app.kubernetes.io/component: credential-manager
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              metrics: enabled
+      ports:
+        - port: 8444
+          protocol: TCP
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $prefix }}-metrics-reader
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - nonResourceURLs:
+      - /metrics
+    verbs:
+      - get

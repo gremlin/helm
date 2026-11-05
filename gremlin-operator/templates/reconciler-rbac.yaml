@@ -1,0 +1,155 @@
+{{- $name := include "gremlin-operator.reconcilerName" . }}
+{{- $prefix := include "gremlin-operator.prefix" . }}
+{{- if .Values.reconciler.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+  {{- with .Values.reconciler.serviceAccount.annotations }}
+  annotations:
+    {{- include "gremlin-operator.stringMap" . | trim | nindent 4 }}
+  {{- end }}
+---
+{{- end }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $prefix }}-manager-role
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+  - apiGroups:
+      - authentication.k8s.io
+    resources:
+      - tokenreviews
+    verbs:
+      - create
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - subjectaccessreviews
+    verbs:
+      - create
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - agents
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - agents/status
+    verbs:
+      - patch
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - teamcredentials
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $prefix }}-manager-rolebinding
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $prefix }}-manager-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ .Release.Namespace | quote }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $prefix }}-leader-election-role
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - coordination.k8s.io
+    resourceNames:
+      - reconciler.gremlin.com
+    resources:
+      - leases
+    verbs:
+      - get
+      - update
+  - apiGroups:
+      - coordination.k8s.io
+    resources:
+      - leases
+    verbs:
+      - create
+  - apiGroups:
+      - ""
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $prefix }}-leader-election-rolebinding
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $prefix }}-leader-election-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ .Release.Namespace | quote }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ $prefix }}-reconciler-agent-events
+  namespace: default
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - events.k8s.io
+    resources:
+      - events
+    verbs:
+      - create
+      - patch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ $prefix }}-reconciler-agent-events-binding
+  namespace: default
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ $prefix }}-reconciler-agent-events
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ .Release.Namespace | quote }}

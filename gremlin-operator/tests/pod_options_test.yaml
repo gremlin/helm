@@ -1,0 +1,373 @@
+suite: per-process pod options
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - templates/reconciler-deployment.yaml
+  - templates/credential-manager-deployment.yaml
+tests:
+  - it: applies every pod option set under reconciler to the reconciler Deployment only
+    set:
+      reconciler:
+        nodeSelector:
+          disktype: ssd
+        tolerations:
+          - key: dedicated
+            operator: Equal
+            value: operator
+            effect: NoSchedule
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: zone
+                      operator: In
+                      values:
+                        - a
+        priorityClassName: reconciler-priority
+        podAnnotations:
+          example.com/owner: reconciler
+        podSecurityContext:
+          runAsUser: 11111
+        securityContext:
+          readOnlyRootFilesystem: true
+        extraEnv:
+          - name: RECONCILER_ONLY
+            value: "yes"
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            disktype: ssd
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.tolerations[0].key
+          value: dedicated
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].key
+          value: zone
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: reconciler-priority
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.metadata.annotations["example.com/owner"]
+          value: reconciler
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 11111
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+        template: templates/reconciler-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RECONCILER_ONLY
+            value: "yes"
+        template: templates/reconciler-deployment.yaml
+      - notExists:
+          path: spec.template.spec.nodeSelector
+        template: templates/credential-manager-deployment.yaml
+      - notExists:
+          path: spec.template.spec.tolerations
+        template: templates/credential-manager-deployment.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: templates/credential-manager-deployment.yaml
+      - notExists:
+          path: spec.template.spec.priorityClassName
+        template: templates/credential-manager-deployment.yaml
+      - notExists:
+          path: spec.template.metadata.annotations["example.com/owner"]
+        template: templates/credential-manager-deployment.yaml
+      - notExists:
+          path: spec.template.spec.securityContext.runAsUser
+        template: templates/credential-manager-deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+        template: templates/credential-manager-deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: RECONCILER_ONLY
+            value: "yes"
+        template: templates/credential-manager-deployment.yaml
+      - lengthEqual:
+          path: spec.template.spec.containers[0].env
+          count: 2
+        template: templates/credential-manager-deployment.yaml
+
+  - it: applies every pod option set under credentialManager to the credential manager Deployment only
+    set:
+      credentialManager:
+        nodeSelector:
+          disktype: hdd
+        tolerations:
+          - key: dedicated
+            operator: Equal
+            value: credentials
+            effect: NoSchedule
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: zone
+                      operator: In
+                      values:
+                        - b
+        priorityClassName: credential-priority
+        podAnnotations:
+          example.com/owner: credential-manager
+        podSecurityContext:
+          runAsUser: 22222
+        securityContext:
+          readOnlyRootFilesystem: true
+        extraEnv:
+          - name: CREDENTIAL_MANAGER_ONLY
+            value: "yes"
+    asserts:
+      - equal:
+          path: spec.template.spec.nodeSelector
+          value:
+            disktype: hdd
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.tolerations[0].value
+          value: credentials
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution.nodeSelectorTerms[0].matchExpressions[0].values[0]
+          value: b
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: credential-priority
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.metadata.annotations["example.com/owner"]
+          value: credential-manager
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 22222
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+          value: true
+        template: templates/credential-manager-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CREDENTIAL_MANAGER_ONLY
+            value: "yes"
+        template: templates/credential-manager-deployment.yaml
+      - notExists:
+          path: spec.template.spec.nodeSelector
+        template: templates/reconciler-deployment.yaml
+      - notExists:
+          path: spec.template.spec.tolerations
+        template: templates/reconciler-deployment.yaml
+      - notExists:
+          path: spec.template.spec.affinity
+        template: templates/reconciler-deployment.yaml
+      - notExists:
+          path: spec.template.spec.priorityClassName
+        template: templates/reconciler-deployment.yaml
+      - notExists:
+          path: spec.template.metadata.annotations["example.com/owner"]
+        template: templates/reconciler-deployment.yaml
+      - notExists:
+          path: spec.template.spec.securityContext.runAsUser
+        template: templates/reconciler-deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem
+        template: templates/reconciler-deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: CREDENTIAL_MANAGER_ONLY
+            value: "yes"
+        template: templates/reconciler-deployment.yaml
+      - lengthEqual:
+          path: spec.template.spec.containers[0].env
+          count: 2
+        template: templates/reconciler-deployment.yaml
+
+  - it: gives both Deployments the restrictive security contexts by default
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.securityContext
+          value:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].securityContext
+          value:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+        template: templates/credential-manager-deployment.yaml
+
+  - it: gives the reconciler its GOMEMLIMIT and POD_NAMESPACE before any extra environment
+    set:
+      reconciler:
+        extraEnv:
+          - name: HTTPS_PROXY
+            value: http://proxy.example.com:3128
+    template: templates/reconciler-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: GOMEMLIMIT
+              value: 100MiB
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: HTTPS_PROXY
+              value: http://proxy.example.com:3128
+
+  - it: gives the credential manager its GOMEMLIMIT and POD_NAMESPACE before any extra environment
+    set:
+      credentialManager:
+        extraEnv:
+          - name: HTTPS_PROXY
+            value: http://proxy.example.com:3128
+    template: templates/credential-manager-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env
+          value:
+            - name: GOMEMLIMIT
+              value: 400MiB
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: HTTPS_PROXY
+              value: http://proxy.example.com:3128
+
+  - it: lets a process extra environment override GOMEMLIMIT for that process only
+    set:
+      credentialManager:
+        extraEnv:
+          - name: GOMEMLIMIT
+            value: 800MiB
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[2]
+          value:
+            name: GOMEMLIMIT
+            value: 800MiB
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: 100MiB
+        template: templates/reconciler-deployment.yaml
+      - lengthEqual:
+          path: spec.template.spec.containers[0].env
+          count: 2
+        template: templates/reconciler-deployment.yaml
+
+  - it: keeps the default-container annotation next to a process pod annotations
+    set:
+      reconciler:
+        podAnnotations:
+          example.com/owner: reconciler
+      credentialManager:
+        podAnnotations:
+          example.com/owner: credential-manager
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            kubectl.kubernetes.io/default-container: manager
+            example.com/owner: reconciler
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            kubectl.kubernetes.io/default-container: manager
+            example.com/owner: credential-manager
+        template: templates/credential-manager-deployment.yaml
+
+  - it: carries only the default-container annotation on both pods by default
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            kubectl.kubernetes.io/default-container: manager
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.metadata.annotations
+          value:
+            kubectl.kubernetes.io/default-container: manager
+        template: templates/credential-manager-deployment.yaml
+
+  - it: renders no volumes, volume mounts or init containers in either Deployment
+    set:
+      reconciler:
+        extraVolumes:
+          - name: injected
+            emptyDir: {}
+        extraVolumeMounts:
+          - name: injected
+            mountPath: /injected
+        initContainers:
+          - name: injected
+            image: busybox
+      credentialManager:
+        extraVolumes:
+          - name: injected
+            emptyDir: {}
+        extraVolumeMounts:
+          - name: injected
+            mountPath: /injected
+        initContainers:
+          - name: injected
+            image: busybox
+    asserts:
+      - notExists:
+          path: spec.template.spec.volumes
+        template: templates/reconciler-deployment.yaml
+      - notExists:
+          path: spec.template.spec.initContainers
+        template: templates/reconciler-deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].volumeMounts
+        template: templates/reconciler-deployment.yaml
+      - notExists:
+          path: spec.template.spec.volumes
+        template: templates/credential-manager-deployment.yaml
+      - notExists:
+          path: spec.template.spec.initContainers
+        template: templates/credential-manager-deployment.yaml
+      - notExists:
+          path: spec.template.spec.containers[0].volumeMounts
+        template: templates/credential-manager-deployment.yaml

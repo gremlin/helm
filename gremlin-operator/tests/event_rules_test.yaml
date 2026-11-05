@@ -1,0 +1,64 @@
+suite: Event rules
+release:
+  name: gremlin-operator
+  namespace: gremlin-system
+templates:
+  - templates/credential-manager-rbac.yaml
+  - templates/reconciler-rbac.yaml
+tests:
+  - it: grants the reconciler Events in the events.k8s.io API group in default
+    template: templates/reconciler-rbac.yaml
+    documentSelector:
+      path: $[?(@.kind=="Role" && @.metadata.name=="gremlin-operator-reconciler-agent-events")].metadata.name
+      value: gremlin-operator-reconciler-agent-events
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: default
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - events.k8s.io
+              resources:
+                - events
+              verbs:
+                - create
+                - patch
+
+  - it: grants the credential manager Events in the events.k8s.io API group in default
+    template: templates/credential-manager-rbac.yaml
+    documentSelector:
+      path: $[?(@.kind=="Role" && @.metadata.name=="gremlin-operator-credential-manager-agent-events")].metadata.name
+      value: gremlin-operator-credential-manager-agent-events
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: default
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - events.k8s.io
+              resources:
+                - events
+              verbs:
+                - create
+                - patch
+
+  - it: keeps the core API group for Events in both leader-election Roles
+    asserts:
+      - equal:
+          path: rules[?(@.resources[0]=="events")].apiGroups[0]
+          value: ""
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-leader-election-role
+        template: templates/reconciler-rbac.yaml
+      - equal:
+          path: rules[?(@.resources[0]=="events")].apiGroups[0]
+          value: ""
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-credential-manager-leader-election-role
+        template: templates/credential-manager-rbac.yaml
