@@ -1,0 +1,15 @@
+suite: numeric namespace names
+release:
+  name: gremlin-operator
+  namespace: gremlin-system
+templates:
+  - templates/namespaces.yaml
+tests:
+  - it: renders a numeric install namespace as a string Namespace name
+    set:
+      installNamespace:
+        name: "123"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: "123"

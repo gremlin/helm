@@ -162,3 +162,32 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: 'credentialManager\.serviceAccount\.create must be true or false, but is "false"'
+
+  - it: renders a numeric release namespace as a string in the Deployment
+    release:
+      namespace: "456"
+    template: templates/reconciler-deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: "456"
+
+  - it: accepts a resync interval Go parses without a leading or trailing digit or with a plus sign
+    template: templates/reconciler-deployment.yaml
+    set:
+      reconciler:
+        resyncInterval: ".5s"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--resync-interval=.5s"
+
+  - it: accepts a plus-signed resync interval with a trailing dot
+    template: templates/credential-manager-deployment.yaml
+    set:
+      credentialManager:
+        resyncInterval: "+1.s"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--resync-interval=+1.s"

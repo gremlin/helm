@@ -6,7 +6,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: gremlin-agent
-  namespace: {{ $namespace }}
+  namespace: {{ $namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
 ---
@@ -14,7 +14,7 @@ apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: gremlin-chao
-  namespace: {{ $namespace }}
+  namespace: {{ $namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
 ---
@@ -22,7 +22,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ $prefix }}-agent-daemonsets
-  namespace: {{ $namespace }}
+  namespace: {{ $namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
 rules:
@@ -47,7 +47,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ $prefix }}-agent-daemonsets
-  namespace: {{ $namespace }}
+  namespace: {{ $namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
 roleRef:
@@ -57,13 +57,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ $reconciler }}
-    namespace: {{ .Release.Namespace }}
+    namespace: {{ .Release.Namespace | quote }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ $prefix }}-chao-deployments
-  namespace: {{ $namespace }}
+  namespace: {{ $namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
 rules:
@@ -89,7 +89,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ $prefix }}-chao-deployments
-  namespace: {{ $namespace }}
+  namespace: {{ $namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
 roleRef:
@@ -99,13 +99,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ $reconciler }}
-    namespace: {{ .Release.Namespace }}
+    namespace: {{ .Release.Namespace | quote }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ $prefix }}-chao-lease
-  namespace: {{ $namespace }}
+  namespace: {{ $namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
 rules:
@@ -129,7 +129,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ $prefix }}-chao-lease
-  namespace: {{ $namespace }}
+  namespace: {{ $namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
 roleRef:
@@ -139,13 +139,13 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: gremlin-chao
-    namespace: {{ $namespace }}
+    namespace: {{ $namespace | quote }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ $prefix }}-credential-manager-trust-bundles
-  namespace: {{ $namespace }}
+  namespace: {{ $namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
 rules:
@@ -160,7 +160,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ $prefix }}-credential-manager-trust-bundles
-  namespace: {{ $namespace }}
+  namespace: {{ $namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
 roleRef:
@@ -170,7 +170,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ $credentialManager }}
-    namespace: {{ .Release.Namespace }}
+    namespace: {{ .Release.Namespace | quote }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -194,7 +194,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ $prefix }}-credential-copy-writer
-  namespace: {{ $namespace }}
+  namespace: {{ $namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
 roleRef:
@@ -204,7 +204,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: {{ $credentialManager }}
-    namespace: {{ .Release.Namespace }}
+    namespace: {{ .Release.Namespace | quote }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -378,7 +378,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: gremlin-chao
-    namespace: {{ $namespace }}
+    namespace: {{ $namespace | quote }}
 {{- if .Values.agent.nodeRead.enabled }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -408,5 +408,5 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: gremlin-agent
-    namespace: {{ $namespace }}
+    namespace: {{ $namespace | quote }}
 {{- end }}

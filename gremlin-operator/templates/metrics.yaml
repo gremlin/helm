@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ $prefix }}-controller-manager-metrics-service
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Release.Namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
     app.kubernetes.io/component: reconciler
@@ -22,7 +22,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ $prefix }}-credential-manager-metrics-service
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Release.Namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
     app.kubernetes.io/component: credential-manager
@@ -40,7 +40,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: {{ $prefix }}-allow-metrics-traffic
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Release.Namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
     app.kubernetes.io/component: reconciler
@@ -64,7 +64,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: {{ $prefix }}-credential-manager-allow-metrics-traffic
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Release.Namespace | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
     app.kubernetes.io/component: credential-manager

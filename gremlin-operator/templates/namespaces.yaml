@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: {{ .Values.installNamespace.name }}
+  name: {{ .Values.installNamespace.name | quote }}
   labels:
     {{- include "gremlin-operator.labels" . | nindent 4 }}
     pod-security.kubernetes.io/enforce: privileged

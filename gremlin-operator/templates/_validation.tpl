@@ -73,7 +73,7 @@ Takes a dict with path (reconciler or credentialManager) and process (that block
 {{- define "gremlin-operator.validateValues.process" -}}
 {{- $errors := list -}}
 {{- $resync := ternary "" (toString .process.resyncInterval) (kindIs "invalid" .process.resyncInterval) -}}
-{{- if and (ne $resync "") (not (and (regexMatch "^([0-9]+(\\.[0-9]+)?(ns|us|µs|μs|ms|s|m|h))+$" $resync) (regexMatch "[1-9]" $resync))) -}}
+{{- if and (ne $resync "") (not (and (regexMatch "^\\+?(([0-9]+(\\.[0-9]*)?|\\.[0-9]+)(ns|us|µs|μs|ms|s|m|h))+$" $resync) (regexMatch "[1-9]" $resync))) -}}
 {{- $errors = append $errors (printf "- %s.resyncInterval %q is not a positive duration such as 30s or 1h30m." .path $resync) -}}
 {{- end -}}
 {{- $level := ternary "" (toString .process.logLevel) (kindIs "invalid" .process.logLevel) -}}
