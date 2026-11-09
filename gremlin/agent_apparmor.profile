@@ -28,6 +28,7 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   capability sys_admin,       # setns into container namespaces
   capability sys_ptrace,      # reading other processes' /proc entries
   capability dac_read_search, # reading other processes' /proc entries
+  capability dac_override,    # Disk and IO into container volumes owned by non-root users
 
   deny mount,
 
