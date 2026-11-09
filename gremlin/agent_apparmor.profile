@@ -4,63 +4,33 @@
 profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   #include <abstractions/base>
 
+  # Everything is allowed by default; the deny rules below carve out what the agent must not touch.
+  # The /proc and /sys denies follow moby's docker-default profile.
   network,
   file,
-  umount,
-  mount,
 
-  /entrypoint.sh rix,
-  /var/lib/gremlin/** rwix,
-  /var/log/gremlin/** rwix,
-  /etc/gremlin/** rwix,
+  # Container runtime sockets and gremlind's control socket (/var/lib/gremlin/gremlin.sock)
+  unix,
 
-  # /dev/null
-  /dev rix,
-  /dev/null rwlix,
+  # Process Killer, plus halting/rolling back the agent's own attack processes. Killing a process in
+  # another container also needs that container's profile to allow receiving the signal.
+  signal,
 
-  # Container runtime
-  /var/run/docker.sock rwix,
-  /run/crio/crio.sock rwix,
-  /run/containers/containers.sock rwix,
+  # Reading other processes' /proc/<pid>/{fd,exe,ns,root,net} for discovery and container targeting
+  ptrace (read),
 
-  # We need access to Pid 1's real pid to resolve the container driver
-  # we're just taking a read perm here to accomlish this
-  file r @{PROC}/1/ns/pid,
-  ptrace read,
+  capability kill,            # Process Killer, halting attacks
+  capability net_admin,       # tc for network attacks and Time Travel NTP blocking
+  capability net_raw,         # DNS dependency discovery (packet capture)
+  capability sys_boot,        # Shutdown
+  capability sys_time,        # Time Travel
+  capability sys_resource,    # oom_score_adj for container Memory and Process Exhaustion
+  capability sys_admin,       # setns into container namespaces
+  capability sys_ptrace,      # reading other processes' /proc entries
+  capability dac_read_search, # reading other processes' /proc entries
 
+  deny mount,
 
-  # Attack capabilities
-  /sys/fs/cgroup/** rw,
-  /proc/** rl,
-  # In order to join target container network space
-  @{PROC}/[0-9]+/ns/net w,
-
-  # Needed for specific Gremlin Attacks
-  capability sys_boot,
-  capability sys_time,
-  capability sys_admin, # needed for setns
-  capability net_admin,
-  capability kill,
-  capability setfcap,
-  capability audit_write,
-  capability mknod,
-  capability sys_chroot,
-
-  # Needed to execute attacks
-  capability net_bind_service,
-  capability setuid,
-  capability setgid,
-  capability chown,
-
-  # Needed for Gremlin Service Discovery and executing a certificate expiry experiment
-  capability dac_read_search,
-  capability sys_ptrace,
-  capability net_raw,
-
-  # Needed for Gremlin Process Exhaustion
-  capability sys_resource,
-
-  # General deny
   deny /bin/** wl,
   deny /boot/** wl,
   deny /etc/** wl,
@@ -72,35 +42,26 @@ profile gremlin-agent flags=(attach_disconnected,mediate_deleted) {
   deny /root/** wl,
   deny /sbin/** wl,
   deny /srv/** wl,
-  deny /tmp/** wl,
   deny /usr/** wl,
 
-  # No write in /dev except /dev/null
-  deny /dev/[^n]*/** wl,
-  deny /dev/n[^u]*/** wl,
-  deny /dev/nu[^l]*/** wl,
-  deny /dev/nul[^l]*/** wl,
-
-  deny /usr/bin/top mrwklx,
-
+  deny /dev/{mem,kmem,port} rwklx,
 
   deny @{PROC}/* w,   # deny write for all files directly in /proc (not in a subdir)
   # deny write to files not in /proc/<number>/** or /proc/sys/**
-  deny @{PROC}/{[^1-9],[^1-9][^0-9],[^1-9s][^0-9y][^0-9s],[^1-9][^0-9][^0-9][^0-9]*}/** w,
-  deny @{PROC}/sys/[^k]** w,  # deny /proc/sys except /proc/sys/k* (effectively /proc/sys/kernel)
-  deny @{PROC}/sys/kernel/{?,??,[^s][^h][^m]**} w,  # deny everything except shm* in /proc/sys/kernel/
-  deny @{PROC}/sysrq-trigger wklx,
-  deny @{PROC}/mem wklx,
-  deny @{PROC}/kmem wklx,
-  deny @{PROC}/kcore wklx,
+  deny @{PROC}/{[^1-9/],[^1-9/][^0-9/],[^1-9s/][^0-9y/][^0-9s/],[^1-9/][^0-9/][^0-9/][^0-9/]*}/** w,
+  deny @{PROC}/sys/** w,
+  deny @{PROC}/sysrq-trigger rwklx,
+  deny @{PROC}/mem rwklx,
+  deny @{PROC}/kmem rwklx,
+  deny @{PROC}/kcore rwklx,
 
-  # Everything in /sys/fs that's not cgroups
+  # Everything in /sys that's not cgroups
   deny /sys/[^f]*/** wklx,
   deny /sys/f[^s]*/** wklx,
   deny /sys/fs/[^c]*/** wklx,
   deny /sys/fs/c[^g]*/** wklx,
   deny /sys/fs/cg[^r]*/** wklx,
-
-  deny /sys/firmware/** wklx,
-  deny /sys/kernel/security/** wklx,
+  deny /sys/firmware/** rwklx,
+  deny /sys/devices/virtual/powercap/** rwklx,
+  deny /sys/kernel/security/** rwklx,
 }
