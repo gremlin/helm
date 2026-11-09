@@ -82,6 +82,19 @@ tests:
     asserts:
       - failedTemplate:
           errorPattern: "grants only the read-only verbs get and list"
+  - it: should fail if a dynamic query allowlist entry has an unknown scope
+    set:
+      chao:
+        features:
+          dynamicQuery:
+            enabled: true
+            allowlist:
+              - apiGroups: [""]
+                resources: ["pods/log"]
+                scope: namespaced
+    asserts:
+      - failedTemplate:
+          errorPattern: 'entry scope must be cluster or namespace, but found: "namespaced"'
   - it: should fail if a dynamic query denylist entry contains a comma
     set:
       chao:

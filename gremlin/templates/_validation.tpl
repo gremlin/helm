@@ -6,6 +6,7 @@ Compile all warnings into a single message, and call fail.
 {{- $messages := append $messages (include "gremlin.validateValues.secret" .) -}}
 {{- $messages := append $messages (include "gremlin.validateValues.chaoDynamicQuery" .) -}}
 {{- $messages := append $messages (include "gremlin.validateValues.chaoDynamicQueryVerbs" .) -}}
+{{- $messages := append $messages (include "gremlin.validateValues.chaoDynamicQueryScope" .) -}}
 {{- $messages := append $messages (include "gremlin.validateValues.chaoDynamicQueryDenylist" .) -}}
 {{- $messages := without $messages "" -}}
 {{- $message := join "\n" $messages -}}
@@ -36,6 +37,24 @@ Compile all warnings into a single message, and call fail.
 {{- end -}}
 {{- if $rejected -}}
 - chao.features.dynamicQuery.allowlist grants only the read-only verbs get and list, but found: {{ join ", " (uniq $rejected) }}.
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{/*
+An entry's scope decides whether it lands in the cluster-wide ClusterRole or in a Role confined to the release
+namespace, so a misspelled scope must not quietly fall through to the broader grant.
+*/}}
+{{- define "gremlin.validateValues.chaoDynamicQueryScope" -}}
+{{- if .Values.chao.features.dynamicQuery.enabled -}}
+{{- $rejected := list -}}
+{{- range $entry := default (list) .Values.chao.features.dynamicQuery.allowlist -}}
+{{- if and (hasKey $entry "scope") (not (has $entry.scope (list "cluster" "namespace"))) -}}
+{{- $rejected = append $rejected (toJson $entry.scope) -}}
+{{- end -}}
+{{- end -}}
+{{- if $rejected -}}
+- chao.features.dynamicQuery.allowlist entry scope must be cluster or namespace, but found: {{ join ", " (uniq $rejected) }}.
 {{- end -}}
 {{- end -}}
 {{- end -}}
