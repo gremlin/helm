@@ -1,0 +1,11 @@
+{{- $_ := include "gremlin-operator.validateValues" $ -}}
+The Gremlin operator is installed in the namespace {{ .Release.Namespace }}.
+
+Create an Agent resource to deploy agents into the install namespace {{ .Values.installNamespace.name | quote }}.
+{{- if not .Values.installNamespace.create }}
+
+installNamespace.create is false, so this release does not label the install namespace. If Pod Security on your cluster
+blocks privileged pods, label it yourself, or agent pods are refused:
+
+  kubectl label namespace {{ .Values.installNamespace.name }} pod-security.kubernetes.io/enforce=privileged
+{{- end }}

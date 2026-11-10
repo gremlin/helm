@@ -1,0 +1,202 @@
+suite: OpenShift manifest set
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - NOTES.txt
+  - templates/openshift.yaml
+  - templates/namespaces.yaml
+tests:
+  - it: renders the gremlin SecurityContextConstraints when OpenShift is on
+    set:
+      openshift:
+        enabled: true
+    template: templates/openshift.yaml
+    asserts:
+      - isKind:
+          of: SecurityContextConstraints
+        documentSelector:
+          path: metadata.name
+          value: gremlin
+      - isAPIVersion:
+          of: security.openshift.io/v1
+        documentSelector:
+          path: metadata.name
+          value: gremlin
+
+  - it: grants the agent ServiceAccount the SCC through a Role and RoleBinding in the install namespace
+    set:
+      openshift:
+        enabled: true
+    template: templates/openshift.yaml
+    asserts:
+      - isKind:
+          of: Role
+        documentSelector:
+          path: $[?(@.kind=="Role" && @.metadata.name=="gremlin-operator-agent-scc")].metadata.name
+          value: gremlin-operator-agent-scc
+      - equal:
+          path: metadata.namespace
+          value: gremlin
+        documentSelector:
+          path: $[?(@.kind=="Role" && @.metadata.name=="gremlin-operator-agent-scc")].metadata.name
+          value: gremlin-operator-agent-scc
+      - isNotEmpty:
+          path: rules
+        documentSelector:
+          path: $[?(@.kind=="Role" && @.metadata.name=="gremlin-operator-agent-scc")].metadata.name
+          value: gremlin-operator-agent-scc
+      - equal:
+          path: roleRef.name
+          value: gremlin-operator-agent-scc
+        documentSelector:
+          path: $[?(@.kind=="RoleBinding" && @.metadata.name=="gremlin-operator-agent-scc")].metadata.name
+          value: gremlin-operator-agent-scc
+      - equal:
+          path: subjects
+          value:
+            - kind: ServiceAccount
+              name: gremlin-agent
+              namespace: gremlin
+        documentSelector:
+          path: $[?(@.kind=="RoleBinding" && @.metadata.name=="gremlin-operator-agent-scc")].metadata.name
+          value: gremlin-operator-agent-scc
+
+  - it: follows a custom install namespace for the SCC Role and RoleBinding
+    set:
+      openshift:
+        enabled: true
+      installNamespace:
+        name: team-a
+    template: templates/openshift.yaml
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: team-a
+        documentSelector:
+          path: $[?(@.kind=="Role" && @.metadata.name=="gremlin-operator-agent-scc")].metadata.name
+          value: gremlin-operator-agent-scc
+      - equal:
+          path: subjects[0].namespace
+          value: team-a
+        documentSelector:
+          path: $[?(@.kind=="RoleBinding" && @.metadata.name=="gremlin-operator-agent-scc")].metadata.name
+          value: gremlin-operator-agent-scc
+
+  - it: labels the install namespace privileged when OpenShift is on and the chart creates it
+    set:
+      openshift:
+        enabled: true
+    template: templates/namespaces.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["pod-security.kubernetes.io/enforce"]
+          value: privileged
+        documentSelector:
+          path: metadata.name
+          value: gremlin
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin-system")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+
+  - it: labels a custom install namespace privileged when OpenShift is on
+    set:
+      openshift:
+        enabled: true
+      installNamespace:
+        name: team-a
+    template: templates/namespaces.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["pod-security.kubernetes.io/enforce"]
+          value: privileged
+        documentSelector:
+          path: metadata.name
+          value: team-a
+
+  - it: renders none of the OpenShift objects when OpenShift is off
+    asserts:
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="SecurityContextConstraints" && @.metadata.name=="gremlin")].kind
+          value: SecurityContextConstraints
+          matchMany: true
+          skipEmptyTemplates: true
+        template: templates/openshift.yaml
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Role" && @.metadata.name=="gremlin-operator-agent-scc" && @.metadata.namespace=="gremlin")].kind
+          value: Role
+          matchMany: true
+          skipEmptyTemplates: true
+        template: templates/openshift.yaml
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="RoleBinding" && @.metadata.name=="gremlin-operator-agent-scc" && @.metadata.namespace=="gremlin")].kind
+          value: RoleBinding
+          matchMany: true
+          skipEmptyTemplates: true
+        template: templates/openshift.yaml
+
+  - it: labels the install namespace privileged when OpenShift is off and the chart creates it
+    template: templates/namespaces.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["pod-security.kubernetes.io/enforce"]
+          value: privileged
+        documentSelector:
+          path: metadata.name
+          value: gremlin
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin-system")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+
+  - it: still renders the OpenShift objects but no namespace label when the chart does not create the install namespace
+    set:
+      openshift:
+        enabled: true
+      installNamespace:
+        create: false
+    asserts:
+      - isKind:
+          of: SecurityContextConstraints
+        documentSelector:
+          path: metadata.name
+          value: gremlin
+        template: templates/openshift.yaml
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+        template: templates/namespaces.yaml
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin-system")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+        template: templates/namespaces.yaml
+
+  - it: refuses an OpenShift switch that is the string true
+    template: NOTES.txt
+    set:
+      openshift:
+        enabled: "true"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'openshift\.enabled'

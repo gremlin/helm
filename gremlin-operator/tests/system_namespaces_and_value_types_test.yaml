@@ -1,0 +1,289 @@
+suite: system namespaces and value types
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - NOTES.txt
+  - templates/credential-manager-deployment.yaml
+  - templates/reconciler-deployment.yaml
+  - templates/metrics.yaml
+tests:
+  - it: refuses default as the install namespace
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: default
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name "default" is a system namespace'
+
+  - it: refuses a kube- namespace as the install namespace
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: kube-system
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name "kube-system" is a system namespace'
+
+  - it: refuses an openshift- namespace as the install namespace
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: openshift-monitoring
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name "openshift-monitoring" is a system namespace'
+
+  - it: refuses default as the release namespace
+    template: NOTES.txt
+    release:
+      name: gremlin-operator
+      namespace: default
+    asserts:
+      - failedTemplate:
+          errorPattern: 'release namespace[^\n]*"default" is a system namespace[^\n]*create workloads'
+
+  - it: refuses a kube- namespace as the release namespace
+    template: NOTES.txt
+    release:
+      name: gremlin-operator
+      namespace: kube-public
+    asserts:
+      - failedTemplate:
+          errorPattern: 'release namespace[^\n]*"kube-public" is a system namespace'
+
+  - it: refuses an openshift- namespace as the release namespace
+    template: NOTES.txt
+    release:
+      name: gremlin-operator
+      namespace: openshift-operators
+    asserts:
+      - failedTemplate:
+          errorPattern: 'release namespace[^\n]*"openshift-operators" is a system namespace'
+
+  - it: refuses an invalid nameOverride even when fullnameOverride is set
+    template: NOTES.txt
+    set:
+      fullnameOverride: ops
+      nameOverride: Not_Valid
+    asserts:
+      - failedTemplate:
+          errorPattern: 'nameOverride "Not_Valid" is not a valid name'
+
+  - it: refuses an invalid fullnameOverride
+    template: NOTES.txt
+    set:
+      fullnameOverride: "a b"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'fullnameOverride "a b" is not a valid name'
+
+  - it: keeps a priority class name a single quoted scalar
+    set:
+      reconciler:
+        priorityClassName: "high\nhostNetwork: true"
+    template: templates/reconciler-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: "high\nhostNetwork: true"
+      - notExists:
+          path: spec.template.spec.hostNetwork
+
+  - it: keeps an image pull policy a single quoted scalar
+    set:
+      image:
+        pullPolicy: "Always\nhostNetwork: true"
+    template: templates/credential-manager-deployment.yaml
+    asserts:
+      - notExists:
+          path: spec.template.spec.hostNetwork
+
+  - it: carries the operator's control-plane label on the reconciler Deployment and metrics Service
+    asserts:
+      - equal:
+          path: metadata.labels["control-plane"]
+          value: controller-manager
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: metadata.labels["control-plane"]
+          value: controller-manager
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-controller-manager-metrics-service
+        template: templates/metrics.yaml
+      - notExists:
+          path: metadata.labels["control-plane"]
+        template: templates/credential-manager-deployment.yaml
+
+  - it: renders a numeric release name as a string instance label
+    release:
+      name: "123"
+    template: templates/reconciler-deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.labels["app.kubernetes.io/instance"]
+          value: "123"
+
+  - it: refuses an object name prefix that starts with a digit
+    template: NOTES.txt
+    set:
+      fullnameOverride: 1ops
+    asserts:
+      - failedTemplate:
+          errorPattern: 'prefix "1ops" must start with a lowercase letter'
+
+  - it: refuses an install namespace create switch that is the string false
+    template: NOTES.txt
+    set:
+      installNamespace:
+        create: "false"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.create must be true or false, but is "false"'
+
+  - it: refuses a reconciler ServiceAccount create switch that is the string false
+    template: NOTES.txt
+    set:
+      reconciler:
+        serviceAccount:
+          create: "false"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'reconciler\.serviceAccount\.create must be true or false, but is "false"'
+
+  - it: refuses a credential manager ServiceAccount create switch that is the string false
+    template: NOTES.txt
+    set:
+      credentialManager:
+        serviceAccount:
+          create: "false"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'credentialManager\.serviceAccount\.create must be true or false, but is "false"'
+
+  - it: renders a numeric release namespace as a string in the Deployment
+    release:
+      namespace: "456"
+    template: templates/reconciler-deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: "456"
+
+  - it: accepts a resync interval Go parses without a leading or trailing digit or with a plus sign
+    template: templates/reconciler-deployment.yaml
+    set:
+      reconciler:
+        resyncInterval: ".5s"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--resync-interval=.5s"
+
+  - it: accepts a plus-signed resync interval with a trailing dot
+    template: templates/credential-manager-deployment.yaml
+    set:
+      credentialManager:
+        resyncInterval: "+1.s"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--resync-interval=+1.s"
+
+  - it: refuses openshift as the release namespace
+    release:
+      namespace: openshift
+    template: NOTES.txt
+    asserts:
+      - failedTemplate:
+          errorPattern: 'release namespace \(--namespace\) "openshift" is a system namespace'
+
+  - it: refuses openshift as the install namespace
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: openshift
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name "openshift" is a system namespace'
+
+  - it: refuses a reconciler replica count that is not a whole number
+    template: NOTES.txt
+    set:
+      reconciler:
+        replicas: three
+    asserts:
+      - failedTemplate:
+          errorPattern: 'reconciler\.replicas must be a whole number of 0 or more, but is "three"'
+
+  - it: refuses a negative credential manager replica count
+    template: NOTES.txt
+    set:
+      credentialManager:
+        replicas: -1
+    asserts:
+      - failedTemplate:
+          errorPattern: 'credentialManager\.replicas must be a whole number of 0 or more, but is -1'
+
+  - it: refuses a numeric log level above 127
+    template: NOTES.txt
+    set:
+      reconciler:
+        logLevel: "200"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'reconciler\.logLevel "200" is not one of debug, info, error, panic or a positive integer up to 127'
+
+  - it: refuses a numeric fullnameOverride with the prefix message
+    template: NOTES.txt
+    set:
+      fullnameOverride: 123
+    asserts:
+      - failedTemplate:
+          errorPattern: 'prefix "123" must start with a lowercase letter'
+
+  - it: refuses a resync interval above what the operator can parse
+    template: NOTES.txt
+    set:
+      reconciler:
+        resyncInterval: 3000000h
+    asserts:
+      - failedTemplate:
+          errorPattern: 'reconciler\.resyncInterval "3000000h" is outside what the operator accepts'
+
+  - it: refuses a resync interval that rounds to zero nanoseconds
+    template: NOTES.txt
+    set:
+      credentialManager:
+        resyncInterval: 0.0000000001s
+    asserts:
+      - failedTemplate:
+          errorPattern: 'credentialManager\.resyncInterval "0\.0000000001s" is outside what the operator accepts'
+
+  - it: accepts a sum of units below the limit
+    template: templates/reconciler-deployment.yaml
+    set:
+      reconciler:
+        resyncInterval: 1h30m15.5s
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--resync-interval=1h30m15.5s"
+
+  - it: renders numeric pod annotations and node selector values as strings
+    template: templates/reconciler-deployment.yaml
+    set:
+      reconciler:
+        podAnnotations:
+          prometheus.io/port: 8443
+        nodeSelector:
+          rack: 7
+    asserts:
+      - equal:
+          path: spec.template.metadata.annotations["prometheus.io/port"]
+          value: "8443"
+      - equal:
+          path: spec.template.spec.nodeSelector.rack
+          value: "7"

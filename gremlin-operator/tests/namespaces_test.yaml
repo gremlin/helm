@@ -1,0 +1,95 @@
+suite: namespaces
+release:
+  name: gremlin-operator
+  namespace: gremlin-system
+templates:
+  - templates/namespaces.yaml
+tests:
+  - it: creates the install namespace, labels it privileged and keeps it when the release is removed
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: Namespace
+        documentSelector:
+          path: metadata.name
+          value: gremlin
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+        documentSelector:
+          path: metadata.name
+          value: gremlin
+      - equal:
+          path: metadata.labels["pod-security.kubernetes.io/enforce"]
+          value: privileged
+        documentSelector:
+          path: metadata.name
+          value: gremlin
+
+  - it: renders no Namespace for the release namespace or gremlin-system
+    asserts:
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin-system")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+
+  - it: renders no Namespace for a custom release namespace either
+    release:
+      name: gremlin-operator
+      namespace: ops
+    asserts:
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="ops")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin-system")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+
+  - it: keeps a custom install namespace when the release is removed
+    set:
+      installNamespace:
+        name: team-a
+    asserts:
+      - equal:
+          path: metadata.annotations["helm.sh/resource-policy"]
+          value: keep
+        documentSelector:
+          path: metadata.name
+          value: team-a
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Namespace" && @.metadata.name=="gremlin")].kind
+          value: Namespace
+          matchMany: true
+          skipEmptyTemplates: true
+
+  - it: does not create the install namespace when told not to
+    set:
+      installNamespace:
+        create: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders no Namespace when installNamespace.create is false and an old gremlinSystemNamespace value is passed
+    set:
+      installNamespace:
+        create: false
+      gremlinSystemNamespace:
+        create: true
+    asserts:
+      - hasDocuments:
+          count: 0

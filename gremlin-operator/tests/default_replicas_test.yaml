@@ -1,0 +1,46 @@
+suite: default replicas
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - templates/reconciler-deployment.yaml
+  - templates/credential-manager-deployment.yaml
+tests:
+  - it: runs three replicas of each process by default
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 3
+        template: templates/credential-manager-deployment.yaml
+
+  - it: leaves the credential manager at three replicas when the reconciler is set to one
+    set:
+      reconciler:
+        replicas: 1
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 3
+        template: templates/credential-manager-deployment.yaml
+
+  - it: leaves the reconciler at three replicas when the credential manager is set to one
+    set:
+      credentialManager:
+        replicas: 1
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 3
+        template: templates/reconciler-deployment.yaml

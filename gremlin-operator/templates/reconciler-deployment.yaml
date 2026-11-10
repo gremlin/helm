@@ -1,0 +1,103 @@
+{{- $podAnnotations := dict "kubectl.kubernetes.io/default-container" "manager" }}
+{{- range $key, $value := .Values.reconciler.podAnnotations }}
+{{- $_ := set $podAnnotations $key $value }}
+{{- end }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "gremlin-operator.reconcilerName" . }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+    app.kubernetes.io/component: reconciler
+    control-plane: controller-manager
+spec:
+  replicas: {{ .Values.reconciler.replicas | int }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
+      control-plane: controller-manager
+  template:
+    metadata:
+      annotations:
+        {{- include "gremlin-operator.stringMap" $podAnnotations | trim | nindent 8 }}
+      labels:
+        app.kubernetes.io/name: {{ include "gremlin-operator.name" . | quote }}
+        app.kubernetes.io/component: reconciler
+        control-plane: controller-manager
+    spec:
+      serviceAccountName: {{ include "gremlin-operator.reconcilerName" . }}
+      terminationGracePeriodSeconds: 10
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.reconciler.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.reconciler.priorityClassName }}
+      priorityClassName: {{ . | quote }}
+      {{- end }}
+      {{- with .Values.reconciler.nodeSelector }}
+      nodeSelector:
+        {{- include "gremlin-operator.stringMap" . | trim | nindent 8 }}
+      {{- end }}
+      {{- with .Values.reconciler.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.reconciler.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: manager
+          image: {{ include "gremlin-operator.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          command:
+            - /reconciler
+          args:
+            - --leader-elect
+            - --health-probe-bind-address=:8081
+            - --metrics-bind-address=:8443
+            - {{ printf "--install-namespace=%s" (toString .Values.installNamespace.name) | quote }}
+            {{- if not .Values.agent.nodeRead.enabled }}
+            - --agent-node-read=false
+            {{- end }}
+            {{- with .Values.reconciler.resyncInterval }}
+            - {{ printf "--resync-interval=%s" (toString .) | quote }}
+            {{- end }}
+            {{- with .Values.reconciler.logLevel }}
+            - {{ printf "--zap-log-level=%s" (toString .) | quote }}
+            {{- end }}
+          env:
+            - name: GOMEMLIMIT
+              value: 100MiB
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            {{- with .Values.reconciler.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- with .Values.reconciler.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.reconciler.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
