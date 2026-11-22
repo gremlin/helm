@@ -1,0 +1,23 @@
+repos:
+  - repo: local
+    hooks:
+      - id: helm-schema
+        name: Helm values schema
+        entry: hooks/helm-schema.sh
+        language: script
+        pass_filenames: false
+        files: ^[^/]+/(values\.yaml|\.schema\.yaml|schemas/.*\.json)$
+
+      - id: helm-docs
+        name: Helm docs
+        entry: hooks/helm-docs.sh
+        language: script
+        pass_filenames: false
+        files: ^[^/]+/(values\.yaml|Chart\.yaml|README\.md\.gotmpl)$
+
+      - id: helm-lint
+        name: Helm lint
+        entry: hooks/helm-lint.sh
+        language: script
+        pass_filenames: false
+        files: ^[^/]+/(templates/.*|values\.yaml|values\.schema\.json|Chart\.yaml)$|^ci/linting/

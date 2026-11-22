@@ -1,0 +1,17 @@
+input:
+  - values.yaml
+
+draft: 2020
+indent: 2
+output: values.schema.json
+
+useHelmDocs: true
+
+bundle: true
+bundleRoot: "."
+bundleWithoutID: false
+
+schemaRoot:
+  id: gremlin
+  title: Gremlin Agent Chart Schema
+  description: Schema for the Gremlin agent Helm values

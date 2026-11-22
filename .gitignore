@@ -5,3 +5,9 @@
 
 .serena/cache/
 reviews/
+
+# Contract working files are local-only in this repository — see CLAUDE.md.
+.claude/contracts/
+tests/contract/
+
+__pycache__/

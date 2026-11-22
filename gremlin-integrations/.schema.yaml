@@ -1,0 +1,17 @@
+input:
+  - values.yaml
+
+draft: 2020
+indent: 2
+output: values.schema.json
+
+useHelmDocs: true
+
+bundle: true
+bundleRoot: "."
+bundleWithoutID: false
+
+schemaRoot:
+  id: gremlin-integrations
+  title: Gremlin Integrations Chart Schema
+  description: Schema for the Gremlin integrations Helm values
