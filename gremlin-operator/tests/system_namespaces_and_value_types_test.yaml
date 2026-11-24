@@ -262,6 +262,25 @@ tests:
       - failedTemplate:
           errorPattern: 'credentialManager\.resyncInterval "0\.0000000001s" is outside what the operator accepts'
 
+  - it: refuses a resync interval whose parts each round down to zero nanoseconds
+    template: NOTES.txt
+    set:
+      reconciler:
+        resyncInterval: 0.6ns0.6ns
+    asserts:
+      - failedTemplate:
+          errorPattern: 'reconciler\.resyncInterval "0\.6ns0\.6ns" is outside what the operator accepts'
+
+  - it: accepts a resync interval whose whole parts reach one nanosecond
+    template: templates/reconciler-deployment.yaml
+    set:
+      reconciler:
+        resyncInterval: 0.6ns1ns
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--resync-interval=0.6ns1ns"
+
   - it: accepts a sum of units below the limit
     template: templates/reconciler-deployment.yaml
     set:

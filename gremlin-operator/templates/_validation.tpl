@@ -90,7 +90,7 @@ Takes a dict with path (reconciler or credentialManager) and process (that block
 {{- $units := dict "ns" 1.0 "us" 1000.0 "µs" 1000.0 "μs" 1000.0 "ms" 1000000.0 "s" 1000000000.0 "m" 60000000000.0 "h" 3600000000000.0 -}}
 {{- $total := 0.0 -}}
 {{- range $part := regexFindAll "([0-9]+(\\.[0-9]*)?|\\.[0-9]+)(ns|us|µs|μs|ms|s|m|h)" $resync -1 -}}
-{{- $total = addf $total (mulf (float64 (regexFind "^[0-9.]+" $part)) (get $units (regexFind "[a-zµμ]+$" $part))) -}}
+{{- $total = addf $total (floor (mulf (float64 (regexFind "^[0-9.]+" $part)) (get $units (regexFind "[a-zµμ]+$" $part)))) -}}
 {{- end -}}
 {{- if or (lt $total 1.0) (ge $total 9223372036854775807.0) -}}
 {{- $errors = append $errors (printf "- %s.resyncInterval %q is outside what the operator accepts: at least 1ns and below about 2562047h." $.path $resync) -}}
