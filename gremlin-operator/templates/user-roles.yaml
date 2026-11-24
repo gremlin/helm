@@ -1,28 +1,137 @@
 {{- $prefix := include "gremlin-operator.prefix" . }}
-{{- $roles := dict "admin" (list "*") "editor" (list "create" "delete" "get" "list" "patch" "update" "watch") "viewer" (list "get" "list" "watch") }}
-{{- range $resource := list "agent" "teamcredential" }}
-{{- range $role := list "admin" "editor" "viewer" }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ $prefix }}-{{ $resource }}-{{ $role }}-role
+  name: {{ $prefix }}-agent-admin-role
   labels:
-    {{- include "gremlin-operator.labels" $ | nindent 4 }}
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
 rules:
   - apiGroups:
       - gremlin.com
     resources:
-      - {{ $resource }}s
+      - agents
     verbs:
-      {{- range get $roles $role }}
-      - {{ . | quote }}
-      {{- end }}
+      - "*"
   - apiGroups:
       - gremlin.com
     resources:
-      - {{ $resource }}s/status
+      - agents/status
     verbs:
       - get
 ---
-{{- end }}
-{{- end }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $prefix }}-agent-editor-role
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - agents
+    verbs:
+      - "create"
+      - "delete"
+      - "get"
+      - "list"
+      - "patch"
+      - "update"
+      - "watch"
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - agents/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $prefix }}-agent-viewer-role
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - agents
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - agents/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $prefix }}-teamcredential-admin-role
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - teamcredentials
+    verbs:
+      - "*"
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - teamcredentials/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $prefix }}-teamcredential-editor-role
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - teamcredentials
+    verbs:
+      - "create"
+      - "delete"
+      - "get"
+      - "list"
+      - "patch"
+      - "update"
+      - "watch"
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - teamcredentials/status
+    verbs:
+      - get
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $prefix }}-teamcredential-viewer-role
+  labels:
+    {{- include "gremlin-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - teamcredentials
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+  - apiGroups:
+      - gremlin.com
+    resources:
+      - teamcredentials/status
+    verbs:
+      - get
+---
