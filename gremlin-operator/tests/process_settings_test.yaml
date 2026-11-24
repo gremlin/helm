@@ -1,0 +1,519 @@
+suite: per-process settings
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - NOTES.txt
+  - templates/reconciler-deployment.yaml
+  - templates/credential-manager-deployment.yaml
+  - templates/reconciler-rbac.yaml
+  - templates/credential-manager-rbac.yaml
+tests:
+  - it: sets the reconciler replicas without touching the credential manager
+    set:
+      reconciler:
+        replicas: 5
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 5
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 3
+        template: templates/credential-manager-deployment.yaml
+
+  - it: sets the credential manager replicas without touching the reconciler
+    set:
+      credentialManager:
+        replicas: 2
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.replicas
+          value: 3
+        template: templates/reconciler-deployment.yaml
+
+  - it: passes the reconciler log level and resync interval to the reconciler only
+    set:
+      reconciler:
+        logLevel: debug
+        resyncInterval: 5m
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --zap-log-level=debug
+        template: templates/reconciler-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resync-interval=5m
+        template: templates/reconciler-deployment.yaml
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 6
+        template: templates/reconciler-deployment.yaml
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 5
+        template: templates/credential-manager-deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --zap-log-level=debug
+        template: templates/credential-manager-deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --resync-interval=5m
+        template: templates/credential-manager-deployment.yaml
+
+  - it: passes the credential manager log level and resync interval to the credential manager only
+    set:
+      credentialManager:
+        logLevel: error
+        resyncInterval: 30s
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --zap-log-level=error
+        template: templates/credential-manager-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resync-interval=30s
+        template: templates/credential-manager-deployment.yaml
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 7
+        template: templates/credential-manager-deployment.yaml
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 4
+        template: templates/reconciler-deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --zap-log-level=error
+        template: templates/reconciler-deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --resync-interval=30s
+        template: templates/reconciler-deployment.yaml
+
+  - it: lets the two processes run different log levels and resync intervals at once
+    set:
+      reconciler:
+        logLevel: debug
+        resyncInterval: 1m
+      credentialManager:
+        logLevel: info
+        resyncInterval: 1h
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --zap-log-level=debug
+        template: templates/reconciler-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resync-interval=1m
+        template: templates/reconciler-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --zap-log-level=info
+        template: templates/credential-manager-deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resync-interval=1h
+        template: templates/credential-manager-deployment.yaml
+
+  - it: adds neither flag when log level and resync interval are left empty
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 4
+        template: templates/reconciler-deployment.yaml
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 5
+        template: templates/credential-manager-deployment.yaml
+
+  - it: accepts the log level Info
+    set:
+      reconciler:
+        logLevel: "Info"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --zap-log-level=Info
+        template: templates/reconciler-deployment.yaml
+
+  - it: accepts the log level ERROR
+    set:
+      reconciler:
+        logLevel: "ERROR"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --zap-log-level=ERROR
+        template: templates/reconciler-deployment.yaml
+
+  - it: accepts the log level panic
+    set:
+      reconciler:
+        logLevel: "panic"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --zap-log-level=panic
+        template: templates/reconciler-deployment.yaml
+
+  - it: accepts the log level 3
+    set:
+      reconciler:
+        logLevel: "3"
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --zap-log-level=3
+        template: templates/reconciler-deployment.yaml
+
+  - it: accepts the resync interval 1h30m
+    set:
+      credentialManager:
+        resyncInterval: 1h30m
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resync-interval=1h30m
+        template: templates/credential-manager-deployment.yaml
+
+  - it: accepts the resync interval 1.5s
+    set:
+      credentialManager:
+        resyncInterval: 1.5s
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resync-interval=1.5s
+        template: templates/credential-manager-deployment.yaml
+
+  - it: accepts the resync interval 250ms
+    set:
+      credentialManager:
+        resyncInterval: 250ms
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --resync-interval=250ms
+        template: templates/credential-manager-deployment.yaml
+
+  - it: overrides the reconciler memory limit and keeps the credential manager defaults
+    set:
+      reconciler:
+        resources:
+          limits:
+            memory: 256Mi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 256Mi
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 512Mi
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 500m
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: 64Mi
+        template: templates/credential-manager-deployment.yaml
+
+  - it: overrides the credential manager memory limit and keeps the reconciler defaults
+    set:
+      credentialManager:
+        resources:
+          limits:
+            memory: 1Gi
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 1Gi
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 128Mi
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: 500m
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: 10m
+        template: templates/reconciler-deployment.yaml
+
+  - it: annotates only the credential manager ServiceAccount when its annotations are set
+    set:
+      credentialManager:
+        serviceAccount:
+          annotations:
+            example.com/role: cm
+    asserts:
+      - equal:
+          path: metadata.annotations["example.com/role"]
+          value: cm
+        documentSelector:
+          path: $[?(@.kind=="ServiceAccount")].metadata.name
+          value: gremlin-operator-credential-manager
+        template: templates/credential-manager-rbac.yaml
+      - notExists:
+          path: metadata.annotations["example.com/role"]
+        documentSelector:
+          path: $[?(@.kind=="ServiceAccount")].metadata.name
+          value: gremlin-operator-controller-manager
+        template: templates/reconciler-rbac.yaml
+
+  - it: annotates only the reconciler ServiceAccount when its annotations are set
+    set:
+      reconciler:
+        serviceAccount:
+          annotations:
+            example.com/role: rc
+    asserts:
+      - equal:
+          path: metadata.annotations["example.com/role"]
+          value: rc
+        documentSelector:
+          path: $[?(@.kind=="ServiceAccount")].metadata.name
+          value: gremlin-operator-controller-manager
+        template: templates/reconciler-rbac.yaml
+      - notExists:
+          path: metadata.annotations["example.com/role"]
+        documentSelector:
+          path: $[?(@.kind=="ServiceAccount")].metadata.name
+          value: gremlin-operator-credential-manager
+        template: templates/credential-manager-rbac.yaml
+
+  - it: does not create the reconciler ServiceAccount when told not to and still creates the credential manager one
+    set:
+      reconciler:
+        serviceAccount:
+          create: false
+    asserts:
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="ServiceAccount" && @.metadata.name=="gremlin-operator-controller-manager" && @.metadata.namespace=="gremlin-operator-system")].kind
+          value: ServiceAccount
+          matchMany: true
+          skipEmptyTemplates: true
+        template: templates/reconciler-rbac.yaml
+      - isKind:
+          of: ServiceAccount
+        documentSelector:
+          path: $[?(@.kind=="ServiceAccount")].metadata.name
+          value: gremlin-operator-credential-manager
+        template: templates/credential-manager-rbac.yaml
+
+  - it: does not create the credential manager ServiceAccount when told not to and still creates the reconciler one
+    set:
+      credentialManager:
+        serviceAccount:
+          create: false
+    asserts:
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="ServiceAccount" && @.metadata.name=="gremlin-operator-credential-manager" && @.metadata.namespace=="gremlin-operator-system")].kind
+          value: ServiceAccount
+          matchMany: true
+          skipEmptyTemplates: true
+        template: templates/credential-manager-rbac.yaml
+      - isKind:
+          of: ServiceAccount
+        documentSelector:
+          path: $[?(@.kind=="ServiceAccount")].metadata.name
+          value: gremlin-operator-controller-manager
+        template: templates/reconciler-rbac.yaml
+
+  - it: refuses the reconciler resync interval ten minutes
+    template: NOTES.txt
+    set:
+      reconciler:
+        resyncInterval: "ten minutes"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            reconciler\.resyncInterval[^\n]*["'`]ten minutes["'`]|reconciler\.resyncInterval[ :=]+ten minutes([ ,.;:)]|$)
+
+  - it: refuses the reconciler resync interval 10
+    template: NOTES.txt
+    set:
+      reconciler:
+        resyncInterval: "10"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            reconciler\.resyncInterval[^\n]*["'`]10["'`]|reconciler\.resyncInterval[ :=]+10([ ,.;:)]|$)
+
+  - it: refuses the reconciler resync interval 0s
+    template: NOTES.txt
+    set:
+      reconciler:
+        resyncInterval: "0s"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            reconciler\.resyncInterval[^\n]*["'`]0s["'`]|reconciler\.resyncInterval[ :=]+0s([ ,.;:)]|$)
+
+  - it: refuses the reconciler resync interval -5m
+    template: NOTES.txt
+    set:
+      reconciler:
+        resyncInterval: "-5m"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            reconciler\.resyncInterval[^\n]*["'`]-5m["'`]|reconciler\.resyncInterval[ :=]+-5m([ ,.;:)]|$)
+
+  - it: refuses the reconciler resync interval 1d
+    template: NOTES.txt
+    set:
+      reconciler:
+        resyncInterval: "1d"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            reconciler\.resyncInterval[^\n]*["'`]1d["'`]|reconciler\.resyncInterval[ :=]+1d([ ,.;:)]|$)
+
+  - it: refuses the reconciler log level verbose
+    template: NOTES.txt
+    set:
+      reconciler:
+        logLevel: "verbose"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            reconciler\.logLevel[^\n]*["'`]verbose["'`]|reconciler\.logLevel[ :=]+verbose([ ,.;:)]|$)
+
+  - it: refuses the reconciler log level 0
+    template: NOTES.txt
+    set:
+      reconciler:
+        logLevel: "0"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            reconciler\.logLevel[^\n]*["'`]0["'`]|reconciler\.logLevel[ :=]+0([ ,.;:)]|$)
+
+  - it: refuses the reconciler log level -1
+    template: NOTES.txt
+    set:
+      reconciler:
+        logLevel: "-1"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            reconciler\.logLevel[^\n]*["'`]-1["'`]|reconciler\.logLevel[ :=]+-1([ ,.;:)]|$)
+
+  - it: refuses the reconciler log level debugging
+    template: NOTES.txt
+    set:
+      reconciler:
+        logLevel: "debugging"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            reconciler\.logLevel[^\n]*["'`]debugging["'`]|reconciler\.logLevel[ :=]+debugging([ ,.;:)]|$)
+
+  - it: refuses the credentialManager resync interval ten minutes
+    template: NOTES.txt
+    set:
+      credentialManager:
+        resyncInterval: "ten minutes"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            credentialManager\.resyncInterval[^\n]*["'`]ten minutes["'`]|credentialManager\.resyncInterval[ :=]+ten minutes([ ,.;:)]|$)
+
+  - it: refuses the credentialManager resync interval 10
+    template: NOTES.txt
+    set:
+      credentialManager:
+        resyncInterval: "10"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            credentialManager\.resyncInterval[^\n]*["'`]10["'`]|credentialManager\.resyncInterval[ :=]+10([ ,.;:)]|$)
+
+  - it: refuses the credentialManager resync interval 0s
+    template: NOTES.txt
+    set:
+      credentialManager:
+        resyncInterval: "0s"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            credentialManager\.resyncInterval[^\n]*["'`]0s["'`]|credentialManager\.resyncInterval[ :=]+0s([ ,.;:)]|$)
+
+  - it: refuses the credentialManager resync interval -5m
+    template: NOTES.txt
+    set:
+      credentialManager:
+        resyncInterval: "-5m"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            credentialManager\.resyncInterval[^\n]*["'`]-5m["'`]|credentialManager\.resyncInterval[ :=]+-5m([ ,.;:)]|$)
+
+  - it: refuses the credentialManager resync interval 1d
+    template: NOTES.txt
+    set:
+      credentialManager:
+        resyncInterval: "1d"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            credentialManager\.resyncInterval[^\n]*["'`]1d["'`]|credentialManager\.resyncInterval[ :=]+1d([ ,.;:)]|$)
+
+  - it: refuses the credentialManager log level verbose
+    template: NOTES.txt
+    set:
+      credentialManager:
+        logLevel: "verbose"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            credentialManager\.logLevel[^\n]*["'`]verbose["'`]|credentialManager\.logLevel[ :=]+verbose([ ,.;:)]|$)
+
+  - it: refuses the credentialManager log level 0
+    template: NOTES.txt
+    set:
+      credentialManager:
+        logLevel: "0"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            credentialManager\.logLevel[^\n]*["'`]0["'`]|credentialManager\.logLevel[ :=]+0([ ,.;:)]|$)
+
+  - it: refuses the credentialManager log level -1
+    template: NOTES.txt
+    set:
+      credentialManager:
+        logLevel: "-1"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            credentialManager\.logLevel[^\n]*["'`]-1["'`]|credentialManager\.logLevel[ :=]+-1([ ,.;:)]|$)
+
+  - it: refuses the credentialManager log level debugging
+    template: NOTES.txt
+    set:
+      credentialManager:
+        logLevel: "debugging"
+    asserts:
+      - failedTemplate:
+          errorPattern: |-
+            credentialManager\.logLevel[^\n]*["'`]debugging["'`]|credentialManager\.logLevel[ :=]+debugging([ ,.;:)]|$)

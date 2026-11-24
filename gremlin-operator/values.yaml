@@ -1,0 +1,191 @@
+# Default values for gremlin-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+#
+# The chart is installed into the operator namespace (the Helm release namespace), `gremlin-system` in the README. Every setting that configures one
+# process's pod is in that process's block, `reconciler` or `credentialManager`, and applies to that Deployment only.
+
+# image.repository -
+# The image both processes run. The command selects the process.
+# image.tag -
+# Overrides the image tag, whose default is the chart appVersion.
+# image.pullPolicy -
+# Container pull policy for both processes.
+image:
+  repository: gremlin/gremlin-operator
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# imagePullSecrets -
+# Pull secrets for a private registry, as a list of `name:` entries. Added to both Deployments.
+imagePullSecrets: []
+
+# nameOverride -
+# Replaces the chart name in the `app.kubernetes.io/name` label and in the object name prefix. A DNS-1123 label, of
+# at most 28 characters when `fullnameOverride` is empty.
+# Changing it while `fullnameOverride` is set changes the Deployments' immutable selector, and the upgrade fails.
+nameOverride: ""
+# fullnameOverride -
+# Replaces the object name prefix, `gremlin-operator` by default. The release name is never part of an object name.
+# A DNS-1123 label of at most 28 characters.
+fullnameOverride: ""
+
+installNamespace:
+  # installNamespace.name -
+  # The namespace the operator deploys agents into, and where team credentials live by default. Both processes get
+  # this one value. Use a new namespace, not `default`, `openshift`, the release namespace, or a `kube-` or `openshift-` namespace:
+  # the credential manager gets write access to Secrets there and the reconciler can create workloads there, so it must
+  # hold no ServiceAccount more privileged than the agent's or Chao's. Do not reuse the namespace of another Gremlin install.
+  # Renaming it on upgrade deletes the ServiceAccounts and grants in the old namespace; delete your Agents first.
+  name: gremlin
+  # installNamespace.create -
+  # Creates the namespace, labels it `pod-security.kubernetes.io/enforce: privileged` so Pod Security admits the agent
+  # pods, and keeps it when the release is uninstalled. Set to false when it already exists and holds nothing else. The
+  # chart then adopts the namespace, and its existing admins and ServiceAccount tokens keep working, but it does not
+  # label it: on any cluster whose Pod Security default blocks privileged pods, label it yourself.
+  create: true
+
+reconciler:
+  # reconciler.replicas -
+  # Number of reconciler pods. Three give high availability: leader election lets one replica act at a time and the
+  # others stand by. The operator's own install runs one replica on purpose; this chart does not.
+  replicas: 3
+  # reconciler.logLevel -
+  # Log level: debug, info, error, panic or a positive integer up to 127. Empty passes no flag.
+  logLevel: ""
+  # reconciler.resyncInterval -
+  # How often the reconciler re-checks every resource, as a Go duration such as `30s` or `1h30m`. Empty keeps the
+  # operator's default.
+  resyncInterval: ""
+  serviceAccount:
+    # reconciler.serviceAccount.create -
+    # Creates the reconciler's ServiceAccount. When false, create one named `<prefix>-controller-manager` yourself. The
+    # grants name that ServiceAccount, so whoever creates it first or already holds a token for it inherits them.
+    create: true
+    # reconciler.serviceAccount.annotations -
+    # Annotations to add to the ServiceAccount.
+    annotations: {}
+  # reconciler.resources -
+  # Resource requests and limits for the reconciler container. `GOMEMLIMIT` is 100MiB, so keep the memory limit above it.
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 128Mi
+  # reconciler.nodeSelector -
+  # Map of node labels for pod assignment.
+  nodeSelector: {}
+  # reconciler.tolerations -
+  # List of node taints to tolerate.
+  tolerations: []
+  # reconciler.affinity -
+  # Map of node and pod affinities.
+  affinity: {}
+  # reconciler.priorityClassName -
+  # The priority class of the pod. Empty sets none.
+  priorityClassName: ""
+  # reconciler.podAnnotations -
+  # Annotations added to the pod, next to `kubectl.kubernetes.io/default-container`. A key set here wins.
+  podAnnotations: {}
+  # reconciler.podSecurityContext -
+  # Pod-level security context.
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  # reconciler.securityContext -
+  # Security context of the reconciler container.
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  # reconciler.extraEnv -
+  # Environment variables added after `GOMEMLIMIT` and `POD_NAMESPACE`. A name set twice takes the last entry, so an
+  # entry here overrides a chart-set variable.
+  extraEnv: []
+
+credentialManager:
+  # credentialManager.replicas -
+  # Number of credential manager pods. Three give high availability: leader election lets one replica act at a time
+  # and the others stand by. The operator's own install runs one replica on purpose; this chart does not.
+  replicas: 3
+  # credentialManager.logLevel -
+  # Log level: debug, info, error, panic or a positive integer up to 127. Empty passes no flag. Development mode stays off
+  # whatever the level.
+  logLevel: ""
+  # credentialManager.resyncInterval -
+  # How often the credential manager re-checks every credential, as a Go duration such as `30s` or `1h30m`. Empty
+  # keeps the operator's default.
+  resyncInterval: ""
+  serviceAccount:
+    # credentialManager.serviceAccount.create -
+    # Creates the credential manager's ServiceAccount. When false, create one named `<prefix>-credential-manager`
+    # yourself. The grants name that ServiceAccount, so whoever creates it first or already holds a token for it
+    # inherits them.
+    create: true
+    # credentialManager.serviceAccount.annotations -
+    # Annotations to add to the ServiceAccount.
+    annotations: {}
+  # credentialManager.resources -
+  # Resource requests and limits for the credential manager container. `GOMEMLIMIT` is 400MiB, so keep the memory
+  # limit above it.
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # credentialManager.nodeSelector -
+  # Map of node labels for pod assignment.
+  nodeSelector: {}
+  # credentialManager.tolerations -
+  # List of node taints to tolerate.
+  tolerations: []
+  # credentialManager.affinity -
+  # Map of node and pod affinities.
+  affinity: {}
+  # credentialManager.priorityClassName -
+  # The priority class of the pod. Empty sets none.
+  priorityClassName: ""
+  # credentialManager.podAnnotations -
+  # Annotations added to the pod, next to `kubectl.kubernetes.io/default-container`. A key set here wins.
+  podAnnotations: {}
+  # credentialManager.podSecurityContext -
+  # Pod-level security context.
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  # credentialManager.securityContext -
+  # Security context of the credential manager container.
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+  # credentialManager.extraEnv -
+  # Environment variables added after `GOMEMLIMIT` and `POD_NAMESPACE`. A name set twice takes the last entry, so an
+  # entry here overrides a chart-set variable.
+  extraEnv: []
+
+agent:
+  nodeRead:
+    # agent.nodeRead.enabled -
+    # Lets the agent read its node. When false, the node-reader ClusterRole and its binding are not rendered and the
+    # reconciler runs agents with `GREMLIN_PUSH_POD_CIDR_TAGS` and `GREMLIN_PUSH_ZONE_CIDR_TAGS` set to false. This
+    # passes `--agent-node-read=false`, so it needs an operator release that accepts that flag; an older operator
+    # exits at start and the reconciler crash-loops.
+    enabled: true
+
+openshift:
+  # openshift.enabled -
+  # Renders the SecurityContextConstraints `gremlin` and the Role and RoleBinding that let the agent ServiceAccount use
+  # it. It needs an operator release that has the OpenShift support.
+  enabled: false
+
+# webhooks:
+#   Webhooks are not supported in this chart version. Their certificate settings will be added here.

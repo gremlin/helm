@@ -1,0 +1,154 @@
+suite: metrics selectors
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - templates/metrics.yaml
+  - templates/reconciler-deployment.yaml
+  - templates/credential-manager-deployment.yaml
+tests:
+  - it: selects the reconciler pods from its metrics Service and NetworkPolicy by labels its pod template carries
+    asserts:
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: gremlin-operator
+            app.kubernetes.io/component: reconciler
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-controller-manager-metrics-service
+        template: templates/metrics.yaml
+      - equal:
+          path: spec.podSelector.matchLabels
+          value:
+            app.kubernetes.io/name: gremlin-operator
+            app.kubernetes.io/component: reconciler
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-allow-metrics-traffic
+        template: templates/metrics.yaml
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/name: gremlin-operator
+            app.kubernetes.io/component: reconciler
+        template: templates/reconciler-deployment.yaml
+
+  - it: selects the credential manager pods from its metrics Service and NetworkPolicy by labels its pod template carries
+    asserts:
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: gremlin-operator
+            app.kubernetes.io/component: credential-manager
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-credential-manager-metrics-service
+        template: templates/metrics.yaml
+      - equal:
+          path: spec.podSelector.matchLabels
+          value:
+            app.kubernetes.io/name: gremlin-operator
+            app.kubernetes.io/component: credential-manager
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-credential-manager-allow-metrics-traffic
+        template: templates/metrics.yaml
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/name: gremlin-operator
+            app.kubernetes.io/component: credential-manager
+        template: templates/credential-manager-deployment.yaml
+
+  - it: keeps each process's selectors and pod labels together when nameOverride is set
+    set:
+      nameOverride: opx
+    asserts:
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: opx
+            app.kubernetes.io/component: reconciler
+        documentSelector:
+          path: metadata.name
+          value: opx-controller-manager-metrics-service
+        template: templates/metrics.yaml
+      - equal:
+          path: spec.podSelector.matchLabels
+          value:
+            app.kubernetes.io/name: opx
+            app.kubernetes.io/component: reconciler
+        documentSelector:
+          path: metadata.name
+          value: opx-allow-metrics-traffic
+        template: templates/metrics.yaml
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/name: opx
+            app.kubernetes.io/component: reconciler
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.selector
+          value:
+            app.kubernetes.io/name: opx
+            app.kubernetes.io/component: credential-manager
+        documentSelector:
+          path: metadata.name
+          value: opx-credential-manager-metrics-service
+        template: templates/metrics.yaml
+      - equal:
+          path: spec.podSelector.matchLabels
+          value:
+            app.kubernetes.io/name: opx
+            app.kubernetes.io/component: credential-manager
+        documentSelector:
+          path: metadata.name
+          value: opx-credential-manager-allow-metrics-traffic
+        template: templates/metrics.yaml
+      - isSubset:
+          path: spec.template.metadata.labels
+          content:
+            app.kubernetes.io/name: opx
+            app.kubernetes.io/component: credential-manager
+        template: templates/credential-manager-deployment.yaml
+
+  - it: does not let the credential manager's metrics selectors reach the reconciler pods
+    asserts:
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: reconciler
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: spec.template.metadata.labels["app.kubernetes.io/component"]
+          value: credential-manager
+        template: templates/credential-manager-deployment.yaml
+      - notEqual:
+          path: spec.selector["app.kubernetes.io/component"]
+          value: reconciler
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-credential-manager-metrics-service
+        template: templates/metrics.yaml
+      - notEqual:
+          path: spec.podSelector.matchLabels["app.kubernetes.io/component"]
+          value: reconciler
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-credential-manager-allow-metrics-traffic
+        template: templates/metrics.yaml
+      - notEqual:
+          path: spec.selector["app.kubernetes.io/component"]
+          value: credential-manager
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-controller-manager-metrics-service
+        template: templates/metrics.yaml
+      - notEqual:
+          path: spec.podSelector.matchLabels["app.kubernetes.io/component"]
+          value: credential-manager
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-allow-metrics-traffic
+        template: templates/metrics.yaml

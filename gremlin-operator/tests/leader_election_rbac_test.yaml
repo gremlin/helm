@@ -1,0 +1,137 @@
+suite: leader election RBAC
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - templates/reconciler-rbac.yaml
+  - templates/credential-manager-rbac.yaml
+tests:
+  - it: scopes the reconciler leader-election Role to its own Lease with unrestricted create and no ConfigMap rule
+    template: templates/reconciler-rbac.yaml
+    documentSelector:
+      path: metadata.name
+      value: gremlin-operator-leader-election-role
+    asserts:
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.namespace
+          value: gremlin-operator-system
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - coordination.k8s.io
+              resourceNames:
+                - reconciler.gremlin.com
+              resources:
+                - leases
+              verbs:
+                - get
+                - update
+            - apiGroups:
+                - coordination.k8s.io
+              resources:
+                - leases
+              verbs:
+                - create
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+                - patch
+
+  - it: scopes the credential manager leader-election Role to its own Lease with unrestricted create and no ConfigMap rule
+    template: templates/credential-manager-rbac.yaml
+    documentSelector:
+      path: metadata.name
+      value: gremlin-operator-credential-manager-leader-election-role
+    asserts:
+      - isKind:
+          of: Role
+      - equal:
+          path: metadata.namespace
+          value: gremlin-operator-system
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - coordination.k8s.io
+              resourceNames:
+                - credential-manager.gremlin.com
+              resources:
+                - leases
+              verbs:
+                - get
+                - update
+            - apiGroups:
+                - coordination.k8s.io
+              resources:
+                - leases
+              verbs:
+                - create
+            - apiGroups:
+                - ""
+              resources:
+                - events
+              verbs:
+                - create
+                - patch
+
+  - it: binds each leader-election Role only to its own process ServiceAccount
+    asserts:
+      - equal:
+          path: roleRef.name
+          value: gremlin-operator-leader-election-role
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-leader-election-rolebinding
+        template: templates/reconciler-rbac.yaml
+      - equal:
+          path: subjects
+          value:
+            - kind: ServiceAccount
+              name: gremlin-operator-controller-manager
+              namespace: gremlin-operator-system
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-leader-election-rolebinding
+        template: templates/reconciler-rbac.yaml
+      - equal:
+          path: roleRef.name
+          value: gremlin-operator-credential-manager-leader-election-role
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-credential-manager-leader-election-rolebinding
+        template: templates/credential-manager-rbac.yaml
+      - equal:
+          path: subjects
+          value:
+            - kind: ServiceAccount
+              name: gremlin-operator-credential-manager
+              namespace: gremlin-operator-system
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-credential-manager-leader-election-rolebinding
+        template: templates/credential-manager-rbac.yaml
+
+  - it: ships no Lease objects
+    asserts:
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Lease" && @.metadata.name=="reconciler.gremlin.com")].kind
+          value: Lease
+          matchMany: true
+          skipEmptyTemplates: true
+        template: templates/reconciler-rbac.yaml
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="Lease" && @.metadata.name=="credential-manager.gremlin.com")].kind
+          value: Lease
+          matchMany: true
+          skipEmptyTemplates: true
+        template: templates/credential-manager-rbac.yaml

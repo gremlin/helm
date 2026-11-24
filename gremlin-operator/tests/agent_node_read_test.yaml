@@ -1,0 +1,145 @@
+suite: agent node read
+release:
+  name: gremlin-operator
+  namespace: gremlin-operator-system
+templates:
+  - NOTES.txt
+  - templates/install-namespace-rbac.yaml
+  - templates/reconciler-deployment.yaml
+  - templates/credential-manager-deployment.yaml
+tests:
+  - it: grants the agent ServiceAccount its node read and leaves the reconciler arguments alone by default
+    asserts:
+      - isKind:
+          of: ClusterRole
+        documentSelector:
+          path: $[?(@.kind=="ClusterRole" && @.metadata.name=="gremlin-operator-agent-node-reader")].metadata.name
+          value: gremlin-operator-agent-node-reader
+        template: templates/install-namespace-rbac.yaml
+      - equal:
+          path: rules
+          value:
+            - apiGroups:
+                - ""
+              resources:
+                - nodes
+              verbs:
+                - get
+        documentSelector:
+          path: $[?(@.kind=="ClusterRole" && @.metadata.name=="gremlin-operator-agent-node-reader")].metadata.name
+          value: gremlin-operator-agent-node-reader
+        template: templates/install-namespace-rbac.yaml
+      - equal:
+          path: subjects
+          value:
+            - kind: ServiceAccount
+              name: gremlin-agent
+              namespace: gremlin
+        documentSelector:
+          path: $[?(@.kind=="ClusterRoleBinding" && @.metadata.name=="gremlin-operator-agent-node-reader")].metadata.name
+          value: gremlin-operator-agent-node-reader
+        template: templates/install-namespace-rbac.yaml
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 4
+        template: templates/reconciler-deployment.yaml
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --agent-node-read=false
+        template: templates/reconciler-deployment.yaml
+
+  - it: removes the node-reader ClusterRole and its binding and tells the reconciler when the node read is off
+    set:
+      agent:
+        nodeRead:
+          enabled: false
+    asserts:
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="ClusterRole" && @.metadata.name=="gremlin-operator-agent-node-reader")].kind
+          value: ClusterRole
+          matchMany: true
+          skipEmptyTemplates: true
+        template: templates/install-namespace-rbac.yaml
+      - notExists:
+          path: kind
+        documentSelector:
+          path: $[?(@.kind=="ClusterRoleBinding" && @.metadata.name=="gremlin-operator-agent-node-reader")].kind
+          value: ClusterRoleBinding
+          matchMany: true
+          skipEmptyTemplates: true
+        template: templates/install-namespace-rbac.yaml
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --agent-node-read=false
+        template: templates/reconciler-deployment.yaml
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 5
+        template: templates/reconciler-deployment.yaml
+
+  - it: keeps the agent and Chao ServiceAccounts and the Chao reader when the node read is off
+    set:
+      agent:
+        nodeRead:
+          enabled: false
+    template: templates/install-namespace-rbac.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+        documentSelector:
+          path: metadata.name
+          value: gremlin-agent
+      - isKind:
+          of: ClusterRoleBinding
+        documentSelector:
+          path: $[?(@.kind=="ClusterRoleBinding" && @.metadata.name=="gremlin-operator-chao-reader")].kind
+          value: ClusterRoleBinding
+
+  - it: leaves the credential manager arguments alone when the node read is off
+    set:
+      agent:
+        nodeRead:
+          enabled: false
+    template: templates/credential-manager-deployment.yaml
+    asserts:
+      - lengthEqual:
+          path: spec.template.spec.containers[0].args
+          count: 5
+      - notContains:
+          path: spec.template.spec.containers[0].args
+          content: --agent-node-read=false
+
+  - it: renders the node-reader again when the node read is switched back on explicitly
+    set:
+      agent:
+        nodeRead:
+          enabled: true
+    template: templates/install-namespace-rbac.yaml
+    asserts:
+      - isKind:
+          of: ClusterRole
+        documentSelector:
+          path: $[?(@.kind=="ClusterRole" && @.metadata.name=="gremlin-operator-agent-node-reader")].metadata.name
+          value: gremlin-operator-agent-node-reader
+
+  - it: refuses a node read switch that is the string false
+    template: NOTES.txt
+    set:
+      agent:
+        nodeRead:
+          enabled: "false"
+    asserts:
+      - failedTemplate:
+          errorPattern: 'agent\.nodeRead\.enabled'
+
+  - it: refuses a node read switch that is a number
+    template: NOTES.txt
+    set:
+      agent:
+        nodeRead:
+          enabled: 0
+    asserts:
+      - failedTemplate:
+          errorPattern: 'agent\.nodeRead\.enabled'

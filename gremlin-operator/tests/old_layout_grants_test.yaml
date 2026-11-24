@@ -1,0 +1,46 @@
+suite: grants left by an older operator layout
+release:
+  name: gremlin-operator
+  namespace: gremlin-system
+templates:
+  - NOTES.txt
+kubernetesProvider:
+  scheme:
+    rbac.authorization.k8s.io/v1/Role:
+      gvr: { group: rbac.authorization.k8s.io, version: v1, resource: roles }
+      namespaced: true
+    rbac.authorization.k8s.io/v1/RoleBinding:
+      gvr: { group: rbac.authorization.k8s.io, version: v1, resource: rolebindings }
+      namespaced: true
+  objects:
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: Role
+      metadata: { name: gremlin-operator-credential-manager-role, namespace: gremlin-system }
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      metadata: { name: other-credential-manager-rolebinding, namespace: gremlin-system }
+tests:
+  - it: refuses to install while the release namespace holds the older credential Role
+    asserts:
+      - failedTemplate:
+          errorPattern: 'still holds the Role "gremlin-operator-credential-manager-role"'
+
+  - it: still finds the older Role when a name override changes the prefix
+    set:
+      fullnameOverride: custom
+    asserts:
+      - failedTemplate:
+          errorPattern: 'still holds the Role "gremlin-operator-credential-manager-role"'
+
+  - it: finds an older RoleBinding named with the override prefix
+    set:
+      fullnameOverride: other
+    asserts:
+      - failedTemplate:
+          errorPattern: 'still holds the RoleBinding "other-credential-manager-rolebinding"'
+
+  - it: does not look in a namespace other than the release namespace
+    release:
+      namespace: operators
+    asserts:
+      - notFailedTemplate: {}

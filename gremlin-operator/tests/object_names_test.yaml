@@ -1,0 +1,98 @@
+suite: object names
+templates:
+  - templates/reconciler-deployment.yaml
+  - templates/credential-manager-deployment.yaml
+  - templates/reconciler-rbac.yaml
+  - templates/credential-manager-rbac.yaml
+  - templates/install-namespace-rbac.yaml
+tests:
+  - it: keeps the operator object names whatever the release is called
+    release:
+      name: my-release
+      namespace: ops
+    asserts:
+      - equal:
+          path: metadata.name
+          value: gremlin-operator-controller-manager
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: metadata.name
+          value: gremlin-operator-credential-manager
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: metadata.namespace
+          value: ops
+        template: templates/reconciler-deployment.yaml
+      - isKind:
+          of: ServiceAccount
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-controller-manager
+        template: templates/reconciler-rbac.yaml
+      - isKind:
+          of: ClusterRoleBinding
+        documentSelector:
+          path: metadata.name
+          value: gremlin-operator-credential-manager-cluster-rolebinding
+        template: templates/credential-manager-rbac.yaml
+
+  - it: replaces the object name prefix with fullnameOverride
+    release:
+      name: gremlin-operator
+      namespace: gremlin-operator-system
+    set:
+      fullnameOverride: ops
+    asserts:
+      - equal:
+          path: metadata.name
+          value: ops-controller-manager
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: metadata.name
+          value: ops-credential-manager
+        template: templates/credential-manager-deployment.yaml
+      - equal:
+          path: spec.template.spec.serviceAccountName
+          value: ops-controller-manager
+        template: templates/reconciler-deployment.yaml
+      - isKind:
+          of: ClusterRoleBinding
+        documentSelector:
+          path: $[?(@.kind=="ClusterRoleBinding" && @.metadata.name=="ops-agent-node-reader")].metadata.name
+          value: ops-agent-node-reader
+        template: templates/install-namespace-rbac.yaml
+
+  - it: replaces the object name prefix with nameOverride when fullnameOverride is empty
+    release:
+      name: gremlin-operator
+      namespace: gremlin-operator-system
+    set:
+      nameOverride: opx
+    asserts:
+      - equal:
+          path: metadata.name
+          value: opx-controller-manager
+        template: templates/reconciler-deployment.yaml
+      - equal:
+          path: metadata.name
+          value: opx-credential-manager
+        template: templates/credential-manager-deployment.yaml
+
+  - it: keeps the names the operator binary fixes under any override
+    release:
+      name: gremlin-operator
+      namespace: gremlin-operator-system
+    set:
+      fullnameOverride: ops
+    template: templates/install-namespace-rbac.yaml
+    asserts:
+      - isKind:
+          of: ServiceAccount
+        documentSelector:
+          path: metadata.name
+          value: gremlin-agent
+      - isKind:
+          of: ServiceAccount
+        documentSelector:
+          path: metadata.name
+          value: gremlin-chao

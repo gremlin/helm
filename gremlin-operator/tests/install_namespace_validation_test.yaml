@@ -1,0 +1,88 @@
+suite: install namespace validation
+release:
+  name: gremlin-operator
+  namespace: gremlin-system
+templates:
+  - NOTES.txt
+  - templates/reconciler-deployment.yaml
+tests:
+  - it: accepts the default values with gremlin-system as the release namespace
+    template: templates/reconciler-deployment.yaml
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: gremlin-system
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --install-namespace=gremlin
+
+  - it: refuses an install namespace equal to the release namespace gremlin-system
+    template: NOTES.txt
+    set:
+      installNamespace:
+        name: gremlin-system
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name "gremlin-system" is the release namespace'
+
+  - it: refuses an install namespace equal to a custom release namespace
+    template: NOTES.txt
+    release:
+      name: gremlin-operator
+      namespace: ops
+    set:
+      installNamespace:
+        name: ops
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name "ops" is the release namespace'
+
+  - it: accepts gremlin-system as the install namespace when the release namespace is another one
+    template: templates/reconciler-deployment.yaml
+    release:
+      name: gremlin-operator
+      namespace: ops
+    set:
+      installNamespace:
+        name: gremlin-system
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --install-namespace=gremlin-system
+
+  - it: refuses an install namespace that is not a DNS-1123 label
+    template: NOTES.txt
+    release:
+      name: gremlin-operator
+      namespace: ops
+    set:
+      installNamespace:
+        name: Not_A_Label
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name'
+
+  - it: refuses an empty install namespace
+    template: NOTES.txt
+    release:
+      name: gremlin-operator
+      namespace: ops
+    set:
+      installNamespace:
+        name: ""
+    asserts:
+      - failedTemplate:
+          errorPattern: 'installNamespace\.name'
+
+  - it: accepts a custom install namespace that differs from the release namespace
+    template: templates/reconciler-deployment.yaml
+    release:
+      name: gremlin-operator
+      namespace: ops
+    set:
+      installNamespace:
+        name: team-a
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: --install-namespace=team-a

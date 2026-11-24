@@ -1,0 +1,38 @@
+suite: numeric namespace names
+release:
+  name: gremlin-operator
+  namespace: gremlin-system
+templates:
+  - templates/namespaces.yaml
+  - templates/reconciler-deployment.yaml
+  - templates/credential-manager-deployment.yaml
+tests:
+  - it: renders a numeric install namespace as a string Namespace name
+    template: templates/namespaces.yaml
+    set:
+      installNamespace:
+        name: "123"
+    asserts:
+      - equal:
+          path: metadata.name
+          value: "123"
+
+  - it: passes an unquoted numeric install namespace to the reconciler as its digits
+    template: templates/reconciler-deployment.yaml
+    set:
+      installNamespace:
+        name: 123
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--install-namespace=123"
+
+  - it: passes an unquoted numeric install namespace to the credential manager as its digits
+    template: templates/credential-manager-deployment.yaml
+    set:
+      installNamespace:
+        name: 123
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].args
+          content: "--install-namespace=123"
